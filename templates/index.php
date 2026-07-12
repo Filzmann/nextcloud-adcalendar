@@ -10,6 +10,7 @@ script('adcalendar', 'components/calendar-cell');
 script('adcalendar', 'components/entry-dialog');
 script('adcalendar', 'components/meeting-finder');
 script('adcalendar', 'components/shift-defaults');
+script('adcalendar', 'components/tab-navigation');
 script('adcalendar', 'components/week-table');
 script('adcalendar', 'main');
 style('adcalendar', 'style');

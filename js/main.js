@@ -14,6 +14,14 @@
     ]);
     const elements = Object.fromEntries(['week-label','calendar-body','calendar-head','notice','role-filters','area-filters','person-search','search-results','selected-people','filter-status','week-number','toggle-view','settings','settings-form','peer-settings'].map(id => [id, document.getElementById(`adc-${id}`)]));
     const state = new window.AdCalendar.modules.CalendarState(LEADERSHIP_STAFF_ROLES).restore();
+    const tabs = new window.AdCalendar.components.TabNavigation({
+        calendarButton: document.getElementById('adc-tab-calendar'),
+        settingsButton: document.getElementById('adc-tab-settings'),
+        calendarPanel: document.getElementById('adc-calendar-view'),
+        settingsPanel: document.getElementById('adc-settings-view'),
+        onChange: tab => { state.activeTab = tab; state.persist(); },
+    });
+    tabs.show(state.activeTab, false);
     const calendarCell = new window.AdCalendar.components.CalendarCell();
     const weekTable = new window.AdCalendar.components.WeekTable({
         head: elements['calendar-head'], body: elements['calendar-body'], calendarCell,
@@ -89,16 +97,6 @@
         } catch (error) { show(error, true); }
     }
 
-    function showTab(tab) {
-        state.activeTab = tab === 'settings' ? 'settings' : 'calendar';
-        const calendar = state.activeTab === 'calendar';
-        document.getElementById('adc-calendar-view').hidden = !calendar;
-        document.getElementById('adc-settings-view').hidden = calendar;
-        document.getElementById('adc-tab-calendar').setAttribute('aria-selected', String(calendar));
-        document.getElementById('adc-tab-settings').setAttribute('aria-selected', String(!calendar));
-        state.persist();
-    }
-
     function renderTable() {
         const employees = state.availableEmployees();
         elements['filter-status'].textContent = state.selected.size ? `${employees.length} ausgewaehlt` : state.roles.size || state.areas.size ? `${employees.length} gefiltert` : 'Alle Personen';
@@ -128,7 +126,7 @@
 
     async function load() {
         const sunday = new Date(state.monday); sunday.setDate(sunday.getDate() + 6); elements['week-label'].textContent = `${state.monday.toLocaleDateString('de-DE')} – ${sunday.toLocaleDateString('de-DE')}`; elements['week-number'].value = isoWeekValue(state.monday);
-        try { state.data = await repository.week(isoDay(state.monday)); state.data.entries = EntryModel.get_all(state.data.entries); state.applyInitialFilters(); renderFilters(); renderTable(); showTab(state.activeTab); show(''); } catch (error) { show(error, true); }
+        try { state.data = await repository.week(isoDay(state.monday)); state.data.entries = EntryModel.get_all(state.data.entries); state.applyInitialFilters(); renderFilters(); renderTable(); tabs.show(state.activeTab, false); show(''); } catch (error) { show(error, true); }
     }
 
     async function loadSettings() {
@@ -139,8 +137,6 @@
 
     document.getElementById('adc-previous-week').addEventListener('click', () => { state.monday.setDate(state.monday.getDate() - 7); load(); });
     document.getElementById('adc-next-week').addEventListener('click', () => { state.monday.setDate(state.monday.getDate() + 7); load(); });
-    document.getElementById('adc-tab-calendar').addEventListener('click', () => showTab('calendar'));
-    document.getElementById('adc-tab-settings').addEventListener('click', () => showTab('settings'));
     document.getElementById('adc-open-meeting-finder').addEventListener('click', () => meetingFinder.open(isoDay(state.monday), state.data.employees, [...state.selected]));
     document.getElementById('adc-save-default').addEventListener('click', async () => {
         try {

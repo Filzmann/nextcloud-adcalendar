@@ -10,6 +10,7 @@ const meetingFinder = readFileSync(new URL('../../js/components/meeting-finder.j
 const shiftDefaults = readFileSync(new URL('../../js/components/shift-defaults.js', import.meta.url), 'utf8');
 const stateSource = readFileSync(new URL('../../js/modules/calendar-state.js', import.meta.url), 'utf8');
 const weekTable = readFileSync(new URL('../../js/components/week-table.js', import.meta.url), 'utf8');
+const tabNavigation = readFileSync(new URL('../../js/components/tab-navigation.js', import.meta.url), 'utf8');
 for (const contract of [
     "['delete','Dienst und Termine löschen']",
     "['detach','Nur Dienst löschen; Termine als Sperrtermine behalten']",
@@ -21,12 +22,15 @@ for (const contract of [
     'repository.savePreferences(state.toPreference())',
     "new Set(['ad-Stab-HR', 'ad-Stab-QMB', 'ad-GF-AS', 'ad-GF-Digi', 'ad-AsdGF-Digi', 'ad-Sekretariat', 'ad-PDL'])",
     'GF, PDL, Stabsstellen und Sekretariat anzeigen',
-    "showTab('settings')",
+    'tabs.show(state.activeTab, false)',
     'shiftDefaults.set(state.data.shiftDefaults || {})',
     'repository.saveShiftDefaults(defaults)',
     'meetingFinder.open(isoDay(state.monday)',
 ]) {
     if (!source.includes(contract)) throw new Error(`Frontend-Vertrag fehlt: ${contract}`);
+}
+for (const contract of ['class TabNavigation', "addEventListener('click'", "this.show('settings')", "this.onChange(active)"]) {
+    if (!tabNavigation.includes(contract)) throw new Error(`Tab-Komponentenvertrag fehlt: ${contract}`);
 }
 for (const contract of ['class WeekTable', 'adc-group-heading', 'this.calendarCell.render(entries, employee)', "return 'Geschäftsführung, PDL und Stabsstellen'", 'groupCell.colSpan = 8', 'this.staffRank(a) - this.staffRank(b)']) {
     if (!weekTable.includes(contract)) throw new Error(`Wochenmatrix-Komponentenvertrag fehlt: ${contract}`);
@@ -69,6 +73,17 @@ if (!cellHtml.includes('adc-entry__children') || cellHtml.indexOf('Teamtermin') 
     throw new Error('Termin wurde nicht sichtbar innerhalb des Dienstes gerendert.');
 }
 if ((cellHtml.match(/Teamtermin/g) || []).length !== 1) throw new Error('Enthaltener Termin wurde mehrfach gerendert.');
+
+const tabContext = { window: {} };
+runInNewContext(tabNavigation, tabContext);
+const fakeButton = () => ({ listeners: {}, attributes: {}, addEventListener(type, listener) { this.listeners[type] = listener; }, setAttribute(name, value) { this.attributes[name] = value; }, click() { this.listeners.click(); } });
+const calendarButton = fakeButton(); const settingsButton = fakeButton();
+const calendarPanel = { hidden: false }; const settingsPanel = { hidden: true }; const tabChanges = [];
+new tabContext.window.AdCalendar.components.TabNavigation({ calendarButton, settingsButton, calendarPanel, settingsPanel, onChange: tab => tabChanges.push(tab) });
+settingsButton.click();
+if (!calendarPanel.hidden || settingsPanel.hidden || settingsButton.attributes['aria-selected'] !== 'true' || tabChanges[0] !== 'settings') {
+    throw new Error('Klick auf den Einstellungs-Tab schaltet die Panels nicht um.');
+}
 
 const stateContext = { window: {}, Date, Set, URLSearchParams, Number };
 runInNewContext(stateSource, stateContext);
