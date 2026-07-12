@@ -41,11 +41,17 @@ final class ApiController extends Controller {
     }
 
     #[NoAdminRequired]
-    public function delete(int $id): JSONResponse {
+    public function delete(int $id, string $childMode = ''): JSONResponse {
         try { $entry = $this->calendar->existing($id); } catch (\Throwable) { return new JSONResponse(['error' => 'Nicht gefunden.'], Response::STATUS_NOT_FOUND); }
         if (!$this->access->canManage($entry->employeeUid())) return $this->denied();
-        $this->calendar->delete($id);
-        return new JSONResponse(['deleted' => true]);
+        try {
+            $preview = $this->calendar->deletionPreview($id);
+            if ($entry->type() === 'shift' && $preview['children'] !== [] && $childMode === '') {
+                return new JSONResponse(['confirmationRequired' => true, 'children' => $preview['children']], Response::STATUS_CONFLICT);
+            }
+            $this->calendar->delete($id, $childMode);
+            return new JSONResponse(['deleted' => true, 'childMode' => $childMode]);
+        } catch (\Throwable) { return new JSONResponse(['error' => 'Der Eintrag konnte nicht geloescht werden.'], Response::STATUS_BAD_REQUEST); }
     }
 
     private function save(?int $id, array $payload): JSONResponse {

@@ -32,7 +32,14 @@ Verbindliches Gruppenschema:
 - Rollen werden als eigenstaendige Nextcloud-Gruppen gepflegt: `ad-EB` und `ad-PFK`.
 - Bereiche werden separat als `ad-Bereich-<Name>` gepflegt.
 - Kombinierte Gruppen sind abgeleitete Schnittmengen, zum Beispiel Mitgliedschaft in `ad-EB` und `ad-Bereich-Nordost`; es werden keine Kombinationsgruppen dupliziert.
-- Mitglieder von `ad-EB` duerfen planen, Mitglieder von `ad-PFK` sehen den Kalender und bearbeiten eigene Eintraege.
+- `ad-EB` und `ad-PFK` sind Zielrollen im Kalender; die EB-Rolle allein verleiht keine globale Fremdbearbeitung.
+- Alle angemeldeten Nutzer*innen duerfen alle Kalenderdaten lesen; alle duerfen eigene Eintraege bearbeiten.
+- `ad-PDL` darf Eintraege von `ad-PFK` bearbeiten.
+- `ad-BL-Sued` und `ad-StvBL-Sued` duerfen `ad-Buero` und `ad-EB` im Bereich Sued bearbeiten.
+- `ad-BL-Nordost-West` darf `ad-Buero` und `ad-EB` in Nordost und West bearbeiten.
+- `ad-StvBL-Nordost` und `ad-StvBL-West` duerfen den jeweiligen Bereich bearbeiten.
+- `ad-Stab-HR` und `ad-Stab-QMB` sind sichtbare Stabsstellen; eine fremde Bearbeitungsdelegation ist noch nicht festgelegt.
+- Assistent*innen erscheinen nicht in dieser App; ihre Planung bleibt im AdPlaner.
 - Nextcloud-Admins duerfen alle Eintraege verwalten.
 
 Offene Fachentscheidungen:
@@ -43,10 +50,10 @@ Offene Fachentscheidungen:
 
 ## Rechte- und Zugriffsschutz
 
-Bis zur fachlichen Festlegung gilt deny by default:
+Es gilt deny by default fuer schreibende Zugriffe:
 
-- Sehen: nur angemeldete Nutzer*innen mit einer spaeter konfigurierten Kalender-Lesegruppe.
-- Eigene Eintraege anlegen/aendern/loeschen: nur mit expliziter eigener Bearbeitungsberechtigung.
+- Sehen: alle angemeldeten Nutzer*innen.
+- Eigene Eintraege anlegen/aendern/loeschen: alle angemeldeten Nutzer*innen.
 - Fremde Eintraege anlegen/aendern/loeschen: nur mit expliziter Planungsberechtigung.
 - Mitarbeiter*innen und Gruppenzuordnung verwalten: nur App-Administration.
 - Jeder API-Endpunkt prueft die Berechtigung serverseitig ueber einen zentralen `CalendarAccessService`.
@@ -64,6 +71,8 @@ Die Gruppenlogik wird zentral implementiert und serverseitig erzwungen.
 - Fachregeln fuer Zeitraeume, Zuordnung und Summen liegen in Services und Value Objects.
 - Persistente Kernobjekte nutzen `get(...)`, `get_all([...])`, `toArray()` und nur bei Store-Bindung `save()`.
 - Dienste und Termine werden als ein gemeinsamer Kalendereintrag mit explizitem Typ modelliert; die fachliche Darstellung eines externen Termins als Sperrtermin wird abgeleitet und nicht als widerspruechliche zweite Datenwahrheit gespeichert.
+- Termine innerhalb eines Dienstes referenzieren diesen explizit ueber `parent_entry_id`; Termine ohne Parent sind Sperrtermine.
+- Beim Loeschen eines Dienstes muss zwischen gemeinsamem Loeschen der Termine und deren Erhalt als Sperrtermine gewaehlt werden.
 - API-Zugriffe liegen im Frontend in Repositories, Daten in Modellen/ViewModels und Rendering/Eventbindung in Komponenten.
 - Die UI bleibt per Tastatur bedienbar, verwendet semantische Tabellen/Listen, sichtbare Fokuszustaende und Textkennzeichnungen zusaetzlich zu Farben.
 - Keine vorsorgliche gemeinsame Library und keine WordPress-Kompatibilitaetsschicht.

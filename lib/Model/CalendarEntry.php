@@ -22,6 +22,7 @@ final class CalendarEntry {
         private readonly DateTimeImmutable $end,
         private readonly string $type,
         private readonly string $title,
+        private readonly ?int $parentEntryId,
     ) {}
 
     public static function get(array $payload): self {
@@ -44,7 +45,11 @@ final class CalendarEntry {
             throw new InvalidArgumentException('Ein Termin benoetigt einen Titel.');
         }
 
-        return new self(isset($payload['id']) ? (int)$payload['id'] : null, $employeeUid, $start, $end, $type, $title);
+        $parentEntryId = isset($payload['parentEntryId']) && $payload['parentEntryId'] !== null ? (int)$payload['parentEntryId'] : null;
+        if ($type === self::TYPE_SHIFT && $parentEntryId !== null) {
+            throw new InvalidArgumentException('Ein Dienst darf keinen uebergeordneten Eintrag haben.');
+        }
+        return new self(isset($payload['id']) ? (int)$payload['id'] : null, $employeeUid, $start, $end, $type, $title, $parentEntryId);
     }
 
     /** @return list<self> */
@@ -69,6 +74,7 @@ final class CalendarEntry {
     public function end(): DateTimeImmutable { return $this->end; }
     public function type(): string { return $this->type; }
     public function title(): string { return $this->title; }
+    public function parentEntryId(): ?int { return $this->parentEntryId; }
 
     public function toArray(): array {
         return [
@@ -78,6 +84,7 @@ final class CalendarEntry {
             'end' => $this->end->format(DATE_ATOM),
             'type' => $this->type,
             'title' => $this->title,
+            'parentEntryId' => $this->parentEntryId,
         ];
     }
 

@@ -5,6 +5,11 @@
 .adc-navigation output { min-width: 13rem; text-align: center; font-weight: 600; }
 .adc-table-wrap { overflow-x: auto; }
 .adc-create { margin: 24px 0; }
+.adc-filters { display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 12px; margin: 20px 0; }
+.adc-filters h2, .adc-filters h3, .adc-filters .adc-search-results, .adc-filters .adc-selected-people { grid-column: 1 / -1; }
+.adc-filters fieldset { padding: 8px; border: 1px solid var(--color-border); }
+.adc-filters fieldset div { display: flex; flex-wrap: wrap; gap: 10px; }
+.adc-search-results, .adc-selected-people { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
 .adc-create form { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
 .adc-create label { display: grid; gap: 4px; }
 .adc-create small { flex-basis: 100%; }
@@ -13,7 +18,11 @@
 .adc-calendar caption { text-align: left; padding: 8px 0; }
 .adc-calendar th, .adc-calendar td { border: 1px solid var(--color-border); padding: 8px; vertical-align: top; }
 .adc-entry { margin: 2px 0; padding: 4px; border-inline-start: 4px solid var(--color-primary-element); }
+.adc-entry button { display: block; margin-top: 4px; }
+.adc-selected { outline: 3px solid var(--color-warning); outline-offset: -3px; }
 .adc-entry--appointment { border-inline-start-color: var(--color-success); }
 .adc-entry--blocked { border-inline-start-color: var(--color-error); font-weight: 600; }
 .adc-app button:focus-visible { outline: 2px solid var(--color-primary-element); outline-offset: 2px; }
-@media (max-width: 700px) { .adc-app { padding: 12px; } .adc-navigation { width: 100%; justify-content: space-between; } }
+dialog { max-width: min(38rem, calc(100vw - 32px)); padding: 20px; border: 1px solid var(--color-border); border-radius: var(--border-radius-large); }
+dialog button { display: block; width: 100%; margin-top: 10px; }
+@media (max-width: 700px) { .adc-app { padding: 12px; } .adc-navigation { width: 100%; justify-content: space-between; flex-wrap: wrap; } .adc-filters { grid-template-columns: 1fr; } }

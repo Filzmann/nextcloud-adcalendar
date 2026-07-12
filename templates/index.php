@@ -11,10 +11,22 @@ style('adcalendar', 'style');
         <nav aria-label="Kalenderwoche" class="adc-navigation">
             <button type="button" id="adc-previous-week">Vorherige Woche</button>
             <output id="adc-week-label" aria-live="polite"></output>
+            <label>KW <input id="adc-week-number" type="week"></label>
             <button type="button" id="adc-next-week">Naechste Woche</button>
+            <button type="button" id="adc-toggle-view" aria-pressed="false">Tage als Zeilen</button>
         </nav>
     </header>
     <div id="adc-notice" role="status" aria-live="polite"></div>
+    <section class="adc-filters" aria-labelledby="adc-filter-heading">
+        <h2 id="adc-filter-heading">Ansicht filtern und vergleichen</h2>
+        <fieldset><legend>Rollen</legend><div id="adc-role-filters"></div></fieldset>
+        <fieldset><legend>Bereiche</legend><div id="adc-area-filters"></div></fieldset>
+        <label for="adc-person-search">Person suchen</label>
+        <input id="adc-person-search" type="search" autocomplete="off" aria-controls="adc-search-results">
+        <ul id="adc-search-results" class="adc-search-results"></ul>
+        <h3>Ausgewaehlte Personen</h3>
+        <ul id="adc-selected-people" class="adc-selected-people"><li>Keine explizite Auswahl – Gruppenfilter gelten.</li></ul>
+    </section>
     <section class="adc-create" aria-labelledby="adc-create-heading">
         <h2 id="adc-create-heading">Eintrag anlegen</h2>
         <form id="adc-entry-form">

@@ -24,6 +24,15 @@ if ($shift->durationMinutes() !== 480 || !$appointment->isWithin($shift)) {
     throw new RuntimeException('Zeitraumvertrag ist verletzt.');
 }
 
+$linked = CalendarEntry::get(array_merge($appointment->toArray(), ['parentEntryId' => 42]));
+if ($linked->parentEntryId() !== 42) throw new RuntimeException('Explizite Dienst-Termin-Zuordnung ging verloren.');
+
+try {
+    CalendarEntry::get(array_merge($shift->toArray(), ['parentEntryId' => 42]));
+    throw new RuntimeException('Dienst mit Parent wurde akzeptiert.');
+} catch (InvalidArgumentException) {
+}
+
 try {
     CalendarEntry::get([
         'employeeUid' => 'test-person-1',

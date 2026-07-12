@@ -37,12 +37,34 @@ final class CalendarService {
 
     public function save(array $payload, ?int $id, string $actorUid): int {
         if ($id !== null) $payload['id'] = $id;
-        return $this->entries->save(CalendarEntry::get($payload), $actorUid);
+        $entry = CalendarEntry::get($payload);
+        if ($entry->type() === CalendarEntry::TYPE_APPOINTMENT) {
+            $parents = $this->entries->containingShifts($entry->employeeUid(), $entry->start(), $entry->end(), $entry->id());
+            if (count($parents) > 1) throw new InvalidArgumentException('Der Termin liegt in mehreren Diensten. Bitte Dienste zuerst korrigieren.');
+            $data = $entry->toArray();
+            $data['parentEntryId'] = $parents[0]->id() ?? null;
+            $entry = CalendarEntry::get($data);
+        }
+        return $this->entries->save($entry, $actorUid);
     }
 
     public function existing(int $id): CalendarEntry {
         return $this->entries->find($id) ?? throw new InvalidArgumentException('Kalendereintrag nicht gefunden.');
     }
 
-    public function delete(int $id): void { $this->entries->delete($id); }
+    public function deletionPreview(int $id): array {
+        $entry = $this->existing($id);
+        $children = $entry->type() === CalendarEntry::TYPE_SHIFT ? $this->entries->children($id) : [];
+        return ['entry' => $entry->toArray(), 'children' => array_map(static fn(CalendarEntry $child): array => $child->toArray(), $children)];
+    }
+
+    public function delete(int $id, string $childMode): void {
+        $entry = $this->existing($id);
+        if ($entry->type() !== CalendarEntry::TYPE_SHIFT) { $this->entries->delete($id); return; }
+        if ($this->entries->children($id) === []) { $this->entries->delete($id); return; }
+        if (!in_array($childMode, ['delete', 'detach'], true)) throw new InvalidArgumentException('Bitte Behandlung der enthaltenen Termine bestaetigen.');
+        if ($childMode === 'delete') $this->entries->deleteChildren($id);
+        else $this->entries->detachChildren($id);
+        $this->entries->delete($id);
+    }
 }
