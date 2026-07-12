@@ -20,22 +20,22 @@ final class SeedDemoCommand extends Command {
     protected function configure(): void { $this->setName('adcalendar:demo:seed')->setDescription('Erzeugt neutrale AD-Kalender-Demodaten fuer die aktuelle Woche.'); }
     protected function execute(InputInterface $input, OutputInterface $output): int {
         $users = [];
-        foreach ([CalendarAccessService::ROLE_EB, CalendarAccessService::ROLE_PFK] as $groupId) {
+        foreach ([CalendarAccessService::ROLE_OFFICE, CalendarAccessService::ROLE_EB, CalendarAccessService::ROLE_PFK, CalendarAccessService::ROLE_STAFF_HR, CalendarAccessService::ROLE_STAFF_QMB] as $groupId) {
             foreach ($this->groups->get($groupId)?->getUsers() ?? [] as $user) $users[$user->getUID()] = $user;
         }
-        if ($users === []) { $output->writeln('<comment>Keine Mitglieder in ad-EB oder ad-PFK gefunden.</comment>'); return self::SUCCESS; }
+        if ($users === []) { $output->writeln('<comment>Keine Kalender-Mitarbeiter*innen gefunden.</comment>'); return self::SUCCESS; }
         $monday = new DateTimeImmutable('monday this week 08:00', new DateTimeZone('Europe/Berlin'));
-        if ($this->entries->existsCreatedBy('demo-seed', $monday, $monday->modify('+7 days'))) {
-            $output->writeln('<comment>Demodaten fuer diese Woche existieren bereits.</comment>');
-            return self::SUCCESS;
-        }
-        foreach (array_slice(array_values($users), 0, 6) as $index => $user) {
+        $created = 0;
+        $skipped = 0;
+        foreach (array_values($users) as $index => $user) {
+            if ($this->entries->existsCreatedByForEmployee('demo-seed', $user->getUID(), $monday, $monday->modify('+7 days'))) { $skipped++; continue; }
             $day = $monday->modify('+' . ($index % 5) . ' days');
-            $this->entries->save(CalendarEntry::get(['employeeUid' => $user->getUID(), 'start' => $day->format(DATE_ATOM), 'end' => $day->modify('+8 hours')->format(DATE_ATOM), 'type' => 'shift']), 'demo-seed');
-            $this->entries->save(CalendarEntry::get(['employeeUid' => $user->getUID(), 'start' => $day->modify('+2 hours')->format(DATE_ATOM), 'end' => $day->modify('+3 hours')->format(DATE_ATOM), 'type' => 'appointment', 'title' => 'Neutraler Teamtermin']), 'demo-seed');
+            $shiftId = $this->entries->save(CalendarEntry::get(['employeeUid' => $user->getUID(), 'start' => $day->format(DATE_ATOM), 'end' => $day->modify('+8 hours')->format(DATE_ATOM), 'type' => 'shift']), 'demo-seed');
+            $this->entries->save(CalendarEntry::get(['employeeUid' => $user->getUID(), 'start' => $day->modify('+2 hours')->format(DATE_ATOM), 'end' => $day->modify('+3 hours')->format(DATE_ATOM), 'type' => 'appointment', 'title' => 'Neutraler Teamtermin', 'parentEntryId' => $shiftId]), 'demo-seed');
             $this->entries->save(CalendarEntry::get(['employeeUid' => $user->getUID(), 'start' => $day->modify('+10 hours')->format(DATE_ATOM), 'end' => $day->modify('+11 hours')->format(DATE_ATOM), 'type' => 'appointment', 'title' => 'Neutraler Sperrtermin']), 'demo-seed');
+            $created++;
         }
-        $output->writeln('<info>Demodaten wurden erzeugt.</info>');
+        $output->writeln("<info>Demodaten fuer {$created} Person(en) erzeugt; {$skipped} bereits vorhanden.</info>");
         return self::SUCCESS;
     }
 }

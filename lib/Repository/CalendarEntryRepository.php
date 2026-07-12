@@ -136,6 +136,17 @@ final class CalendarEntryRepository {
         return $qb->executeQuery()->fetchOne() !== false;
     }
 
+    public function existsCreatedByForEmployee(string $actorUid, string $employeeUid, DateTimeImmutable $start, DateTimeImmutable $end): bool {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select('id')->from('adc_entries')
+            ->where($qb->expr()->eq('created_by_uid', $qb->createNamedParameter($actorUid)))
+            ->andWhere($qb->expr()->eq('employee_uid', $qb->createNamedParameter($employeeUid)))
+            ->andWhere($qb->expr()->gte('start_at', $qb->createNamedParameter($start, IQueryBuilder::PARAM_DATETIME_IMMUTABLE)))
+            ->andWhere($qb->expr()->lt('start_at', $qb->createNamedParameter($end, IQueryBuilder::PARAM_DATETIME_IMMUTABLE)))
+            ->setMaxResults(1);
+        return $qb->executeQuery()->fetchOne() !== false;
+    }
+
     private function mapRow(array $row): array {
         return ['id' => (int)$row['id'], 'employeeUid' => $row['employee_uid'], 'start' => (string)$row['start_at'], 'end' => (string)$row['end_at'], 'type' => $row['entry_type'], 'title' => $row['title'], 'parentEntryId' => $row['parent_entry_id'] === null ? null : (int)$row['parent_entry_id']];
     }

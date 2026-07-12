@@ -21,7 +21,7 @@ final class CalendarAccessService {
     public const ROLE_STAFF_QMB = 'ad-Stab-QMB';
     public const AREA_PREFIX = 'ad-Bereich-';
 
-    public function __construct(private IGroupManager $groups, private IUserSession $session, private IUserManager $users, private CalendarPermissionPolicy $policy, private CalendarSettingsService $settings) {}
+    public function __construct(private IGroupManager $groups, private IUserSession $session, private IUserManager $users, private CalendarPermissionPolicy $policy, private CalendarSettingsService $settings, private CalendarGroupProfile $profiles) {}
 
     public function currentUser(): ?IUser { return $this->session->getUser(); }
 
@@ -52,17 +52,13 @@ final class CalendarAccessService {
         $result = [];
         foreach ($byUid as $user) {
             $ids = array_map('strval', $this->groups->getUserGroupIds($user));
-            $roles = array_values(array_intersect([self::ROLE_EB, self::ROLE_PFK, self::ROLE_OFFICE, self::ROLE_STAFF_HR, self::ROLE_STAFF_QMB], $ids));
-            $areas = array_values(array_filter($ids, static fn(string $id): bool => str_starts_with($id, self::AREA_PREFIX)));
-            $clusters = [];
-            foreach ($roles as $role) foreach ($areas ?: [''] as $area) $clusters[] = $area === '' ? $role : $role . '#' . $area;
-            $result[] = ['uid' => $user->getUID(), 'displayName' => $user->getDisplayName(), 'roles' => $roles, 'areas' => $areas, 'clusters' => $clusters, 'canManage' => $this->canManage($user->getUID())];
+            $profile = $this->profiles->get($ids);
+            $result[] = ['uid' => $user->getUID(), 'displayName' => $user->getDisplayName(), 'roles' => $profile['roles'], 'areas' => $profile['areas'], 'clusters' => $profile['clusters'], 'canManage' => $this->canManage($user->getUID())];
         }
         usort($result, static fn(array $a, array $b): int => strnatcasecmp($a['displayName'], $b['displayName']));
         return $result;
     }
 
-    private function inGroup(IUser $user, string $group): bool { return in_array($group, $this->groups->getUserGroupIds($user), true); }
     /** @return list<string> */
     private function groupIds(IUser $user): array { return array_map('strval', $this->groups->getUserGroupIds($user)); }
 }

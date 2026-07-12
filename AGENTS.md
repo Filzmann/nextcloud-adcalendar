@@ -31,6 +31,7 @@ Verbindliches Gruppenschema:
 
 - Rollen werden als eigenstaendige Nextcloud-Gruppen gepflegt: `ad-EB` und `ad-PFK`.
 - Bereiche werden separat als `ad-Bereich-<Name>` gepflegt.
+- Nur `ad-Buero` und `ad-EB` werden einem Buero-Bereich zugeordnet. `ad-PFK`, `ad-Stab-HR` und `ad-Stab-QMB` sind bereichsunabhaengig; versehentliche Bereichsmitgliedschaften duerfen ihre Kalenderdarstellung oder Rechte nicht veraendern.
 - Kombinierte Gruppen sind abgeleitete Schnittmengen, zum Beispiel Mitgliedschaft in `ad-EB` und `ad-Bereich-Nordost`; es werden keine Kombinationsgruppen dupliziert.
 - `ad-EB` und `ad-PFK` sind Zielrollen im Kalender; die EB-Rolle allein verleiht keine globale Fremdbearbeitung.
 - Alle angemeldeten Nutzer*innen duerfen alle Kalenderdaten lesen; alle duerfen eigene Eintraege bearbeiten.
@@ -108,6 +109,8 @@ Migrationen laufen beim Aktivieren der App bzw. ueber `occ upgrade`; `occ migrat
 - Berechtigungstests decken mindestens Lesen, eigene Bearbeitung, Fremdbearbeitung und direkte Deny-Aufrufe ab.
 - Bei Migration, Controller, DI oder Nextcloud-Container zusaetzlich gezielte DDEV-/`occ`-Checks.
 - Testdaten bleiben kuenstlich, neutral und datenschutzarm.
+- Authentifizierter App-/API-Smoke: `ADC_BASE_URL=... ADC_USER=... ADC_PASSWORD=... tests/http-smoke.sh`
+- Serverseitiger Rechte-Smoke: `ADC_BASE_URL=... ADC_USER=... ADC_PASSWORD=... ADC_EXPECTED='uid=true,...' tests/access-http-smoke.sh`
 
 ## Learnings
 
