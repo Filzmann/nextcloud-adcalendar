@@ -1,0 +1,19 @@
+.adc-app { padding: 24px; }
+.adc-header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: end; }
+.adc-header p { margin: 4px 0 0; color: var(--color-text-maxcontrast); }
+.adc-navigation { display: flex; gap: 8px; align-items: center; }
+.adc-navigation output { min-width: 13rem; text-align: center; font-weight: 600; }
+.adc-table-wrap { overflow-x: auto; }
+.adc-create { margin: 24px 0; }
+.adc-create form { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.adc-create label { display: grid; gap: 4px; }
+.adc-create small { flex-basis: 100%; }
+.adc-notice--error { color: var(--color-error); font-weight: 600; }
+.adc-calendar { width: 100%; border-collapse: collapse; }
+.adc-calendar caption { text-align: left; padding: 8px 0; }
+.adc-calendar th, .adc-calendar td { border: 1px solid var(--color-border); padding: 8px; vertical-align: top; }
+.adc-entry { margin: 2px 0; padding: 4px; border-inline-start: 4px solid var(--color-primary-element); }
+.adc-entry--appointment { border-inline-start-color: var(--color-success); }
+.adc-entry--blocked { border-inline-start-color: var(--color-error); font-weight: 600; }
+.adc-app button:focus-visible { outline: 2px solid var(--color-primary-element); outline-offset: 2px; }
+@media (max-width: 700px) { .adc-app { padding: 12px; } .adc-navigation { width: 100%; justify-content: space-between; } }

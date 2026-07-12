@@ -1,0 +1,97 @@
+<?php
+
+declare(strict_types=1);
+
+namespace OCA\AdCalendar\Model;
+
+use DateTimeImmutable;
+use InvalidArgumentException;
+
+/**
+ * Zweck: Repraesentiert einen Dienst oder Termin unabhaengig von Persistenz und UI.
+ * Vertrag: Ende liegt nach Beginn; Termine benoetigen einen Titel.
+ */
+final class CalendarEntry {
+    public const TYPE_SHIFT = 'shift';
+    public const TYPE_APPOINTMENT = 'appointment';
+
+    private function __construct(
+        private readonly ?int $id,
+        private readonly string $employeeUid,
+        private readonly DateTimeImmutable $start,
+        private readonly DateTimeImmutable $end,
+        private readonly string $type,
+        private readonly string $title,
+    ) {}
+
+    public static function get(array $payload): self {
+        $type = (string)($payload['type'] ?? '');
+        $title = trim((string)($payload['title'] ?? ''));
+        $employeeUid = trim((string)($payload['employeeUid'] ?? ''));
+        $start = self::date($payload['start'] ?? null, 'start');
+        $end = self::date($payload['end'] ?? null, 'end');
+
+        if (!in_array($type, [self::TYPE_SHIFT, self::TYPE_APPOINTMENT], true)) {
+            throw new InvalidArgumentException('Unbekannter Kalendereintragstyp.');
+        }
+        if ($employeeUid === '') {
+            throw new InvalidArgumentException('Eine Mitarbeiter*innen-ID ist erforderlich.');
+        }
+        if ($end <= $start) {
+            throw new InvalidArgumentException('Das Ende muss nach dem Beginn liegen.');
+        }
+        if ($type === self::TYPE_APPOINTMENT && $title === '') {
+            throw new InvalidArgumentException('Ein Termin benoetigt einen Titel.');
+        }
+
+        return new self(isset($payload['id']) ? (int)$payload['id'] : null, $employeeUid, $start, $end, $type, $title);
+    }
+
+    /** @return list<self> */
+    public static function get_all(array $payloads): array {
+        return array_map(static fn(array $payload): self => self::get($payload), $payloads);
+    }
+
+    public function isWithin(self $shift): bool {
+        return $shift->type === self::TYPE_SHIFT
+            && $this->employeeUid === $shift->employeeUid
+            && $this->start >= $shift->start
+            && $this->end <= $shift->end;
+    }
+
+    public function durationMinutes(): int {
+        return (int)(($this->end->getTimestamp() - $this->start->getTimestamp()) / 60);
+    }
+
+    public function id(): ?int { return $this->id; }
+    public function employeeUid(): string { return $this->employeeUid; }
+    public function start(): DateTimeImmutable { return $this->start; }
+    public function end(): DateTimeImmutable { return $this->end; }
+    public function type(): string { return $this->type; }
+    public function title(): string { return $this->title; }
+
+    public function toArray(): array {
+        return [
+            'id' => $this->id,
+            'employeeUid' => $this->employeeUid,
+            'start' => $this->start->format(DATE_ATOM),
+            'end' => $this->end->format(DATE_ATOM),
+            'type' => $this->type,
+            'title' => $this->title,
+        ];
+    }
+
+    private static function date(mixed $value, string $field): DateTimeImmutable {
+        if ($value instanceof DateTimeImmutable) {
+            return $value;
+        }
+        if (!is_string($value) || trim($value) === '') {
+            throw new InvalidArgumentException("Das Feld {$field} ist erforderlich.");
+        }
+        try {
+            return new DateTimeImmutable($value);
+        } catch (\Exception) {
+            throw new InvalidArgumentException("Das Feld {$field} enthaelt kein gueltiges Datum.");
+        }
+    }
+}

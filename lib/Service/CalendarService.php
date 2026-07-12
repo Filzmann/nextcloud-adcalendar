@@ -1,0 +1,48 @@
+<?php
+
+declare(strict_types=1);
+
+namespace OCA\AdCalendar\Service;
+
+use DateTimeImmutable;
+use InvalidArgumentException;
+use OCA\AdCalendar\Model\CalendarEntry;
+use OCA\AdCalendar\Repository\CalendarEntryRepository;
+
+/** Zweck: Orchestriert Wochenansicht, Summen und die Sperrtermin-Ableitung. */
+final class CalendarService {
+    public function __construct(private CalendarEntryRepository $entries) {}
+
+    public function week(DateTimeImmutable $start, array $employees): array {
+        $end = $start->modify('+7 days');
+        $entries = $this->entries->findRange($start, $end, array_column($employees, 'uid'));
+        $shifts = array_values(array_filter($entries, static fn(CalendarEntry $entry): bool => $entry->type() === CalendarEntry::TYPE_SHIFT));
+        $serialized = [];
+        foreach ($entries as $entry) {
+            $row = $entry->toArray();
+            $withinShift = false;
+            foreach ($shifts as $shift) {
+                if ($entry->isWithin($shift)) { $withinShift = true; break; }
+            }
+            $row['isBlocked'] = $entry->type() === CalendarEntry::TYPE_APPOINTMENT && !$withinShift;
+            $serialized[] = $row;
+        }
+        $summaries = [];
+        foreach ($employees as $employee) {
+            $own = array_filter($shifts, static fn(CalendarEntry $entry): bool => $entry->employeeUid() === $employee['uid']);
+            $summaries[$employee['uid']] = ['shiftCount' => count($own), 'shiftMinutes' => array_sum(array_map(static fn(CalendarEntry $entry): int => $entry->durationMinutes(), $own))];
+        }
+        return ['start' => $start->format('Y-m-d'), 'end' => $end->format('Y-m-d'), 'employees' => $employees, 'entries' => $serialized, 'summaries' => $summaries];
+    }
+
+    public function save(array $payload, ?int $id, string $actorUid): int {
+        if ($id !== null) $payload['id'] = $id;
+        return $this->entries->save(CalendarEntry::get($payload), $actorUid);
+    }
+
+    public function existing(int $id): CalendarEntry {
+        return $this->entries->find($id) ?? throw new InvalidArgumentException('Kalendereintrag nicht gefunden.');
+    }
+
+    public function delete(int $id): void { $this->entries->delete($id); }
+}

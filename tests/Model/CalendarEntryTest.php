@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/../../lib/Model/CalendarEntry.php';
+
+use OCA\AdCalendar\Model\CalendarEntry;
+
+$shift = CalendarEntry::get([
+    'employeeUid' => 'test-person-1',
+    'start' => '2026-07-13T08:00:00+02:00',
+    'end' => '2026-07-13T16:00:00+02:00',
+    'type' => CalendarEntry::TYPE_SHIFT,
+]);
+$appointment = CalendarEntry::get([
+    'employeeUid' => 'test-person-1',
+    'start' => '2026-07-13T10:00:00+02:00',
+    'end' => '2026-07-13T11:00:00+02:00',
+    'type' => CalendarEntry::TYPE_APPOINTMENT,
+    'title' => 'Neutraler Testtermin',
+]);
+
+if ($shift->durationMinutes() !== 480 || !$appointment->isWithin($shift)) {
+    throw new RuntimeException('Zeitraumvertrag ist verletzt.');
+}
+
+try {
+    CalendarEntry::get([
+        'employeeUid' => 'test-person-1',
+        'start' => '2026-07-13T10:00:00+02:00',
+        'end' => '2026-07-13T11:00:00+02:00',
+        'type' => CalendarEntry::TYPE_APPOINTMENT,
+    ]);
+    throw new RuntimeException('Termin ohne Titel wurde akzeptiert.');
+} catch (InvalidArgumentException) {
+}
+
+echo "CalendarEntryTest: OK\n";

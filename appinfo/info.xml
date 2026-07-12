@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+    <id>adcalendar</id>
+    <name>AD Kalender</name>
+    <summary>Dienst- und Terminplanung fuer Mitarbeiter*innen im Buero.</summary>
+    <description>Zeigt Dienste, darin liegende Termine, externe Sperrtermine und Dienstsummen in einer gemeinsamen Wochenuebersicht.</description>
+    <version>0.1.0</version>
+    <licence>agpl</licence>
+    <author>Simon / Codex-Prototyp</author>
+    <namespace>AdCalendar</namespace>
+    <category>organization</category>
+    <dependencies><nextcloud min-version="29" max-version="35"/></dependencies>
+    <commands>
+        <command>OCA\AdCalendar\Command\SeedDemoCommand</command>
+    </commands>
+    <navigations>
+        <navigation>
+            <name>AD Kalender</name>
+            <route>adcalendar.page.index</route>
+            <icon>app.svg</icon>
+            <order>81</order>
+        </navigation>
+    </navigations>
+</info>
