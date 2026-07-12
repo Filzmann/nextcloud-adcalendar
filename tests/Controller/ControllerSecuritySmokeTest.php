@@ -16,5 +16,10 @@ if (preg_match('/#\[NoCSRFRequired\]\s+#\[NoAdminRequired\]\s+public function (c
 foreach (['canView()', 'canManage('] as $guard) {
     if (!str_contains($source, $guard)) throw new RuntimeException("Berechtigungspruefung {$guard} fehlt.");
 }
+foreach (['settings', 'saveSettings'] as $method) {
+    if (preg_match('/#\[NoAdminRequired\]\s+public function ' . $method . '\b/s', $source)) {
+        throw new RuntimeException("Admin-Einstellung {$method} ist fuer normale Nutzer*innen freigegeben.");
+    }
+}
 
 echo "ControllerSecuritySmokeTest: OK\n";

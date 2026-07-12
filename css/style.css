@@ -14,6 +14,8 @@
 .adc-create label { display: grid; gap: 4px; }
 .adc-create small { flex-basis: 100%; }
 .adc-notice--error { color: var(--color-error); font-weight: 600; }
+.adc-settings { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--color-border); }
+.adc-settings form div { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0; }
 .adc-calendar { width: 100%; border-collapse: collapse; }
 .adc-calendar caption { text-align: left; padding: 8px 0; }
 .adc-calendar th, .adc-calendar td { border: 1px solid var(--color-border); padding: 8px; vertical-align: top; }

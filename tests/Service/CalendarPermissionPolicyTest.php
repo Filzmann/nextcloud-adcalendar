@@ -18,5 +18,8 @@ $assert(true, $policy->canManage('stv', false, ['ad-StvBL-Nordost'], 'buero', ['
 $assert(false, $policy->canManage('stv', false, ['ad-StvBL-Nordost'], 'buero', ['ad-Buero', 'ad-Bereich-West']), 'StvBL darf fremden Bereich nicht bearbeiten.');
 $assert(false, $policy->canManage('bl', false, ['ad-BL-Sued'], 'hr', ['ad-Stab-HR']), 'BL darf Stab ohne Delegation nicht bearbeiten.');
 $assert(true, $policy->canManage('admin', true, [], 'hr', ['ad-Stab-HR']), 'Admin muss alle bearbeiten duerfen.');
+$assert(false, $policy->canManage('bo-a', false, ['ad-Buero'], 'bo-b', ['ad-Buero']), 'Peer-Bearbeitung muss standardmaessig aus sein.');
+$assert(true, $policy->canManage('bo-a', false, ['ad-Buero'], 'bo-b', ['ad-Buero'], ['ad-Buero']), 'Aktivierte BO-Peers muessen einander bearbeiten duerfen.');
+$assert(false, $policy->canManage('pfk', false, ['ad-PFK'], 'bo', ['ad-Buero'], ['ad-PFK']), 'Peer-Recht darf keine andere Zielgruppe oeffnen.');
 
 echo "CalendarPermissionPolicyTest: OK\n";

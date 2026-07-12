@@ -53,4 +53,9 @@ style('adcalendar', 'style');
             </table>
         </div>
     </section>
+    <section id="adc-settings" class="adc-settings" aria-labelledby="adc-settings-heading" hidden>
+        <h2 id="adc-settings-heading">Bearbeitungsrechte innerhalb von Fachgruppen</h2>
+        <p>Ist ein Schalter aktiv, duerfen Mitglieder dieser Gruppe gegenseitig ihre Kalenderdaten bearbeiten.</p>
+        <form id="adc-settings-form"><div id="adc-peer-settings"></div><button type="submit">Einstellungen speichern</button></form>
+    </section>
 </div>

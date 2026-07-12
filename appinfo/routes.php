@@ -7,5 +7,7 @@ return [
         ['name' => 'api#create', 'url' => '/api/entries', 'verb' => 'POST'],
         ['name' => 'api#update', 'url' => '/api/entries/{id}', 'verb' => 'PUT'],
         ['name' => 'api#delete', 'url' => '/api/entries/{id}', 'verb' => 'DELETE'],
+        ['name' => 'api#settings', 'url' => '/api/settings', 'verb' => 'GET'],
+        ['name' => 'api#saveSettings', 'url' => '/api/settings', 'verb' => 'PUT'],
     ],
 ];

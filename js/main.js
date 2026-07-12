@@ -1,7 +1,7 @@
 (function () {
     'use strict';
     const root = OC.generateUrl('/apps/adcalendar');
-    const elements = Object.fromEntries(['week-label','calendar-body','calendar-head','notice','employee','entry-form','entry-id','cancel-edit','role-filters','area-filters','person-search','search-results','selected-people','week-number','toggle-view'].map(id => [id, document.getElementById(`adc-${id}`)]));
+    const elements = Object.fromEntries(['week-label','calendar-body','calendar-head','notice','employee','entry-form','entry-id','cancel-edit','role-filters','area-filters','person-search','search-results','selected-people','week-number','toggle-view','settings','settings-form','peer-settings'].map(id => [id, document.getElementById(`adc-${id}`)]));
     const state = { monday: startOfWeek(new Date()), data: null, vertical: true, selected: new Set(), roles: new Set(), areas: new Set() };
     restoreState();
 
@@ -100,6 +100,13 @@
         try { state.data = await api(`/api/week?start=${encodeURIComponent(isoDay(state.monday))}`); persistState(); renderFilters(); renderTable(); show(''); } catch (error) { show(error.message, true); }
     }
 
+    async function loadSettings() {
+        const { response, data } = await request('/api/settings');
+        if (!response.ok) return;
+        elements.settings.hidden = false;
+        elements['peer-settings'].replaceChildren(...Object.entries(data.peerEditing).map(([group, enabled]) => { const label = node('label'); const input = document.createElement('input'); input.type = 'checkbox'; input.name = group; input.checked = enabled; label.append(input, document.createTextNode(` ${group}`)); return label; }));
+    }
+
     document.getElementById('adc-previous-week').addEventListener('click', () => { state.monday.setDate(state.monday.getDate() - 7); load(); });
     document.getElementById('adc-next-week').addEventListener('click', () => { state.monday.setDate(state.monday.getDate() + 7); load(); });
     elements['toggle-view'].addEventListener('click', () => { state.vertical = !state.vertical; persistState(); renderTable(); });
@@ -107,5 +114,7 @@
     elements['person-search'].addEventListener('input', event => { const query = event.target.value.trim().toLocaleLowerCase('de-DE'); const matches = query ? state.data.employees.filter(employee => employee.displayName.toLocaleLowerCase('de-DE').includes(query) && !state.selected.has(employee.uid)).slice(0, 12) : []; elements['search-results'].replaceChildren(...matches.map(employee => { const item = node('li'); const button = node('button', `${employee.displayName} auswählen`); button.type = 'button'; button.addEventListener('click', () => { state.selected.add(employee.uid); persistState(); elements['person-search'].value = ''; elements['search-results'].replaceChildren(); renderSelected(); renderTable(); }); item.append(button); return item; })); });
     elements['cancel-edit'].addEventListener('click', resetForm);
     elements['entry-form'].addEventListener('submit', async event => { event.preventDefault(); try { const id = elements['entry-id'].value; const payload = { employeeUid: elements.employee.value, type: document.getElementById('adc-type').value, start: document.getElementById('adc-start').value, end: document.getElementById('adc-end').value, title: document.getElementById('adc-title').value }; await api(id ? `/api/entries/${id}` : '/api/entries', { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) }); show('Eintrag gespeichert.'); resetForm(); await load(); } catch (error) { show(error.message, true); } });
+    elements['settings-form'].addEventListener('submit', async event => { event.preventDefault(); const peerEditing = Object.fromEntries([...elements['peer-settings'].querySelectorAll('input')].map(input => [input.name, input.checked])); try { await api('/api/settings', { method: 'PUT', body: JSON.stringify({ peerEditing }) }); show('Bearbeitungsrechte gespeichert.'); await load(); } catch (error) { show(error.message, true); } });
     load();
+    loadSettings();
 }());

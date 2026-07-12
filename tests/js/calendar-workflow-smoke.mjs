@@ -10,6 +10,7 @@ for (const contract of [
     "params.set('areas'",
     "state.vertical = !state.vertical",
     "document.getElementById('adc-type').disabled = true",
+    "body: JSON.stringify({ peerEditing })",
 ]) {
     if (!source.includes(contract)) throw new Error(`Frontend-Vertrag fehlt: ${contract}`);
 }

@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use OCA\AdCalendar\AppInfo\Application;
 use OCA\AdCalendar\Service\CalendarAccessService;
 use OCA\AdCalendar\Service\CalendarService;
+use OCA\AdCalendar\Service\CalendarSettingsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -16,7 +17,7 @@ use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
 
 final class ApiController extends Controller {
-    public function __construct(IRequest $request, private CalendarAccessService $access, private CalendarService $calendar) { parent::__construct(Application::APP_ID, $request); }
+    public function __construct(IRequest $request, private CalendarAccessService $access, private CalendarService $calendar, private CalendarSettingsService $settingsService) { parent::__construct(Application::APP_ID, $request); }
 
     #[NoAdminRequired]
     #[NoCSRFRequired]
@@ -53,6 +54,10 @@ final class ApiController extends Controller {
             return new JSONResponse(['deleted' => true, 'childMode' => $childMode]);
         } catch (\Throwable) { return new JSONResponse(['error' => 'Der Eintrag konnte nicht geloescht werden.'], Response::STATUS_BAD_REQUEST); }
     }
+
+    public function settings(): JSONResponse { return new JSONResponse(['peerEditing' => $this->settingsService->peerEditing()]); }
+
+    public function saveSettings(array $peerEditing): JSONResponse { return new JSONResponse(['peerEditing' => $this->settingsService->savePeerEditing($peerEditing)]); }
 
     private function save(?int $id, array $payload): JSONResponse {
         if (!$this->access->canManage($payload['employeeUid'])) return $this->denied();

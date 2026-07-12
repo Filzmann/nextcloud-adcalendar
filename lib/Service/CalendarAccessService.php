@@ -21,7 +21,7 @@ final class CalendarAccessService {
     public const ROLE_STAFF_QMB = 'ad-Stab-QMB';
     public const AREA_PREFIX = 'ad-Bereich-';
 
-    public function __construct(private IGroupManager $groups, private IUserSession $session, private IUserManager $users, private CalendarPermissionPolicy $policy) {}
+    public function __construct(private IGroupManager $groups, private IUserSession $session, private IUserManager $users, private CalendarPermissionPolicy $policy, private CalendarSettingsService $settings) {}
 
     public function currentUser(): ?IUser { return $this->session->getUser(); }
 
@@ -37,7 +37,7 @@ final class CalendarAccessService {
         if ($target === null) return false;
         $actorGroups = $this->groupIds($user);
         $targetGroups = $this->groupIds($target);
-        return $this->policy->canManage($user->getUID(), $this->groups->isAdmin($user->getUID()), $actorGroups, $employeeUid, $targetGroups);
+        return $this->policy->canManage($user->getUID(), $this->groups->isAdmin($user->getUID()), $actorGroups, $employeeUid, $targetGroups, $this->settings->enabledPeerGroups());
     }
 
     /** @return list<array{uid:string,displayName:string,roles:list<string>,areas:list<string>,clusters:list<string>}> */
