@@ -9,44 +9,35 @@ use InvalidArgumentException;
 use OCA\AdCalendar\Model\CalendarEntry;
 use OCA\AdCalendar\Repository\CalendarEntryRepository;
 
-/** Zweck: Orchestriert Wochenansicht, Summen und die Sperrtermin-Ableitung. */
+/**
+ * Zweck: Orchestriert Wochenansicht, Persistenz, Dienst-Termin-Zuordnung und gemeinsame Meetingluecken.
+ * Zusammenspiel: ApiController -> CalendarService -> CalendarEntryRepository/MeetingAvailabilityService.
+ */
 final class CalendarService {
-    public function __construct(private CalendarEntryRepository $entries, private MeetingAvailabilityService $meetingAvailability) {}
+    public function __construct(
+        private CalendarEntryRepository $entries,
+        private MeetingAvailabilityService $meetingAvailability,
+    ) {}
 
     public function week(DateTimeImmutable $start, array $employees): array {
         $end = $start->modify('+7 days');
         $entries = $this->entries->findRange($start, $end, array_column($employees, 'uid'));
-        $serialized = [];
-        foreach ($entries as $entry) {
-            $row = $entry->toArray();
-            $row['isBlocked'] = $entry->type() === CalendarEntry::TYPE_APPOINTMENT && $entry->parentEntryId() === null;
-            $serialized[] = $row;
-        }
-        return ['start' => $start->format('Y-m-d'), 'end' => $end->format('Y-m-d'), 'employees' => $employees, 'entries' => $serialized];
+        return [
+            'start' => $start->format('Y-m-d'),
+            'end' => $end->format('Y-m-d'),
+            'employees' => $employees,
+            'entries' => array_map([$this, 'serializeEntry'], $entries),
+        ];
     }
 
     public function save(array $payload, ?int $id, string $actorUid): int {
         if ($id !== null) $payload['id'] = $id;
         $entry = CalendarEntry::get($payload);
-        if ($id !== null && $this->existing($id)->type() !== $entry->type()) {
-            throw new InvalidArgumentException('Der Typ eines bestehenden Eintrags kann nicht geaendert werden.');
-        }
-        if ($entry->type() === CalendarEntry::TYPE_SHIFT && $this->entries->overlappingShifts($entry->employeeUid(), $entry->start(), $entry->end(), $entry->id()) !== []) {
-            throw new InvalidArgumentException('Der Dienst ueberschneidet sich mit einem bestehenden Dienst dieser Person.');
-        }
-        if ($entry->type() === CalendarEntry::TYPE_APPOINTMENT) {
-            $parents = $this->entries->containingShifts($entry->employeeUid(), $entry->start(), $entry->end(), $entry->id());
-            if (count($parents) > 1) throw new InvalidArgumentException('Der Termin liegt in mehreren Diensten. Bitte Dienste zuerst korrigieren.');
-            $data = $entry->toArray();
-            $data['parentEntryId'] = $parents[0]->id() ?? null;
-            $entry = CalendarEntry::get($data);
-        }
+        $this->assertTypeUnchanged($entry, $id);
+        $this->assertShiftDoesNotOverlap($entry);
+        $entry = $this->assignContainingShift($entry);
         $savedId = $this->entries->save($entry, $actorUid);
-        if ($entry->type() === CalendarEntry::TYPE_SHIFT && $entry->id() !== null) {
-            foreach ($this->entries->children($savedId) as $child) {
-                if (!$child->isWithin($entry)) $this->entries->detachChild((int)$child->id());
-            }
-        }
+        $this->detachChildrenOutsideShift($entry, $savedId);
         return $savedId;
     }
 
@@ -67,9 +58,48 @@ final class CalendarService {
 
     public function delete(int $id, string $childMode): void {
         $entry = $this->existing($id);
-        if ($entry->type() !== CalendarEntry::TYPE_SHIFT) { $this->entries->delete($id); return; }
-        if ($this->entries->children($id) === []) { $this->entries->delete($id); return; }
-        if (!in_array($childMode, ['delete', 'detach'], true)) throw new InvalidArgumentException('Bitte Behandlung der enthaltenen Termine bestaetigen.');
+        if ($entry->type() !== CalendarEntry::TYPE_SHIFT || $this->entries->children($id) === []) {
+            $this->entries->delete($id);
+            return;
+        }
+        if (!in_array($childMode, ['delete', 'detach'], true)) {
+            throw new InvalidArgumentException('Bitte Behandlung der enthaltenen Termine bestaetigen.');
+        }
         $this->entries->deleteShift($id, $childMode);
+    }
+
+    private function serializeEntry(CalendarEntry $entry): array {
+        return $entry->toArray() + [
+            'isBlocked' => $entry->type() === CalendarEntry::TYPE_APPOINTMENT && $entry->parentEntryId() === null,
+        ];
+    }
+
+    private function assertTypeUnchanged(CalendarEntry $entry, ?int $id): void {
+        if ($id !== null && $this->existing($id)->type() !== $entry->type()) {
+            throw new InvalidArgumentException('Der Typ eines bestehenden Eintrags kann nicht geaendert werden.');
+        }
+    }
+
+    private function assertShiftDoesNotOverlap(CalendarEntry $entry): void {
+        if ($entry->type() !== CalendarEntry::TYPE_SHIFT) return;
+        if ($this->entries->overlappingShifts($entry->employeeUid(), $entry->start(), $entry->end(), $entry->id()) !== []) {
+            throw new InvalidArgumentException('Der Dienst ueberschneidet sich mit einem bestehenden Dienst dieser Person.');
+        }
+    }
+
+    private function assignContainingShift(CalendarEntry $entry): CalendarEntry {
+        if ($entry->type() !== CalendarEntry::TYPE_APPOINTMENT) return $entry;
+        $parents = $this->entries->containingShifts($entry->employeeUid(), $entry->start(), $entry->end(), $entry->id());
+        if (count($parents) > 1) {
+            throw new InvalidArgumentException('Der Termin liegt in mehreren Diensten. Bitte Dienste zuerst korrigieren.');
+        }
+        return CalendarEntry::get(array_replace($entry->toArray(), ['parentEntryId' => $parents[0]->id() ?? null]));
+    }
+
+    private function detachChildrenOutsideShift(CalendarEntry $entry, int $savedId): void {
+        if ($entry->type() !== CalendarEntry::TYPE_SHIFT || $entry->id() === null) return;
+        foreach ($this->entries->children($savedId) as $child) {
+            if (!$child->isWithin($entry)) $this->entries->detachChild((int)$child->id());
+        }
     }
 }
