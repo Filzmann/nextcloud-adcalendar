@@ -30,6 +30,7 @@ style('adcalendar', 'style');
     <section class="adc-create" aria-labelledby="adc-create-heading">
         <h2 id="adc-create-heading">Eintrag anlegen</h2>
         <form id="adc-entry-form">
+            <input id="adc-entry-id" type="hidden">
             <label>Mitarbeiter*in <select id="adc-employee" required></select></label>
             <label>Typ <select id="adc-type"><option value="shift">Dienst</option><option value="appointment">Termin / Sperrtermin</option></select></label>
             <label>Beginn <input id="adc-start" type="datetime-local" required></label>
@@ -37,6 +38,7 @@ style('adcalendar', 'style');
             <label>Titel <input id="adc-title" maxlength="255" aria-describedby="adc-title-help"></label>
             <small id="adc-title-help">Bei Terminen erforderlich. Termine ausserhalb eines Dienstes erscheinen als Sperrtermin.</small>
             <button type="submit">Speichern</button>
+            <button type="button" id="adc-cancel-edit" hidden>Bearbeitung abbrechen</button>
         </form>
     </section>
     <section aria-labelledby="adc-overview-heading">

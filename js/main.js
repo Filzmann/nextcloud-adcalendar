@@ -1,13 +1,16 @@
 (function () {
     'use strict';
     const root = OC.generateUrl('/apps/adcalendar');
-    const elements = Object.fromEntries(['week-label','calendar-body','calendar-head','notice','employee','entry-form','role-filters','area-filters','person-search','search-results','selected-people','week-number','toggle-view'].map(id => [id, document.getElementById(`adc-${id}`)]));
+    const elements = Object.fromEntries(['week-label','calendar-body','calendar-head','notice','employee','entry-form','entry-id','cancel-edit','role-filters','area-filters','person-search','search-results','selected-people','week-number','toggle-view'].map(id => [id, document.getElementById(`adc-${id}`)]));
     const state = { monday: startOfWeek(new Date()), data: null, vertical: true, selected: new Set(), roles: new Set(), areas: new Set() };
+    restoreState();
 
     function startOfWeek(value) { const result = new Date(value); const weekday = result.getDay() || 7; result.setDate(result.getDate() - weekday + 1); result.setHours(0, 0, 0, 0); return result; }
     function isoDay(value) { const year = value.getFullYear(); const month = String(value.getMonth() + 1).padStart(2, '0'); const day = String(value.getDate()).padStart(2, '0'); return `${year}-${month}-${day}`; }
     function node(tag, value, className) { const result = document.createElement(tag); if (value !== undefined) result.textContent = value; if (className) result.className = className; return result; }
     function show(message, error) { elements.notice.textContent = message; elements.notice.className = error ? 'adc-notice adc-notice--error' : 'adc-notice'; }
+    function restoreState() { const params = new URLSearchParams(window.location.search); if (params.get('week')) state.monday = startOfWeek(new Date(`${params.get('week')}T12:00:00`)); state.vertical = params.get('view') !== 'days'; for (const value of (params.get('people') || '').split(',').filter(Boolean)) state.selected.add(value); for (const value of (params.get('roles') || '').split(',').filter(Boolean)) state.roles.add(value); for (const value of (params.get('areas') || '').split(',').filter(Boolean)) state.areas.add(value); }
+    function persistState() { const params = new URLSearchParams(); params.set('week', isoDay(state.monday)); if (!state.vertical) params.set('view', 'days'); if (state.selected.size) params.set('people', [...state.selected].join(',')); if (state.roles.size) params.set('roles', [...state.roles].join(',')); if (state.areas.size) params.set('areas', [...state.areas].join(',')); window.history.replaceState(null, '', `${window.location.pathname}?${params}`); }
     async function request(path, options = {}) { const response = await fetch(root + path, { credentials: 'same-origin', headers: { 'Content-Type': 'application/json', requesttoken: OC.requestToken }, ...options }); const data = await response.json(); return { response, data }; }
     async function api(path, options) { const { response, data } = await request(path, options); if (!response.ok) throw new Error(data.error || 'Anfrage fehlgeschlagen.'); return data; }
 
@@ -31,22 +34,29 @@
     }
 
     function renderCheckboxes(container, values, selected) {
-        container.replaceChildren(...values.map(value => { const label = node('label'); const input = document.createElement('input'); input.type = 'checkbox'; input.checked = selected.has(value); input.addEventListener('change', () => { input.checked ? selected.add(value) : selected.delete(value); renderTable(); }); label.append(input, document.createTextNode(' ' + value.replace('ad-', '').replace('Bereich-', ''))); return label; }));
+        container.replaceChildren(...values.map(value => { const label = node('label'); const input = document.createElement('input'); input.type = 'checkbox'; input.checked = selected.has(value); input.addEventListener('change', () => { input.checked ? selected.add(value) : selected.delete(value); persistState(); renderTable(); }); label.append(input, document.createTextNode(' ' + value.replace('ad-', '').replace('Bereich-', ''))); return label; }));
     }
 
     function renderSelected() {
         const people = state.data.employees.filter(employee => state.selected.has(employee.uid));
         if (!people.length) { elements['selected-people'].replaceChildren(node('li', 'Keine explizite Auswahl – Gruppenfilter gelten.')); return; }
-        elements['selected-people'].replaceChildren(...people.map(employee => { const item = node('li'); const button = node('button', `${employee.displayName} entfernen`); button.type = 'button'; button.addEventListener('click', () => { state.selected.delete(employee.uid); renderSelected(); renderTable(); }); item.append(button); return item; }));
+        elements['selected-people'].replaceChildren(...people.map(employee => { const item = node('li'); const button = node('button', `${employee.displayName} entfernen`); button.type = 'button'; button.addEventListener('click', () => { state.selected.delete(employee.uid); persistState(); renderSelected(); renderTable(); }); item.append(button); return item; }));
     }
 
     function entryNode(entry, employee) {
         const type = entry.type === 'shift' ? 'Dienst' : entry.parentEntryId === null ? 'Sperrtermin' : 'Termin';
         const item = node('div', undefined, `adc-entry adc-entry--${type === 'Sperrtermin' ? 'blocked' : entry.type}`);
         item.append(node('span', `${type}: ${new Date(entry.start).toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'})}–${new Date(entry.end).toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'})}${entry.title ? ' · ' + entry.title : ''}`));
-        if (employee.canManage) { const remove = node('button', `${type} löschen`); remove.type = 'button'; remove.addEventListener('click', () => removeEntry(entry)); item.append(remove); }
+        if (employee.canManage) {
+            const edit = node('button', `${type} bearbeiten`); edit.type = 'button'; edit.addEventListener('click', () => editEntry(entry));
+            const remove = node('button', `${type} löschen`); remove.type = 'button'; remove.addEventListener('click', () => removeEntry(entry)); item.append(edit, remove);
+        }
         return item;
     }
+
+    function localDateTime(value) { const date = new Date(value); const shifted = new Date(date.getTime() - date.getTimezoneOffset() * 60000); return shifted.toISOString().slice(0, 16); }
+    function editEntry(entry) { elements['entry-id'].value = entry.id; elements.employee.value = entry.employeeUid; document.getElementById('adc-type').value = entry.type; document.getElementById('adc-start').value = localDateTime(entry.start); document.getElementById('adc-end').value = localDateTime(entry.end); document.getElementById('adc-title').value = entry.title; elements['cancel-edit'].hidden = false; elements['entry-form'].scrollIntoView({behavior:'smooth',block:'center'}); }
+    function resetForm() { elements['entry-form'].reset(); elements['entry-id'].value = ''; elements['cancel-edit'].hidden = true; }
 
     function cellFor(employee, day) { const cell = document.createElement('td'); state.data.entries.filter(entry => entry.employeeUid === employee.uid && entry.start.slice(0, 10) === isoDay(day)).forEach(entry => cell.append(entryNode(entry, employee))); return cell; }
 
@@ -87,14 +97,15 @@
 
     async function load() {
         const sunday = new Date(state.monday); sunday.setDate(sunday.getDate() + 6); elements['week-label'].textContent = `${state.monday.toLocaleDateString('de-DE')} – ${sunday.toLocaleDateString('de-DE')}`;
-        try { state.data = await api(`/api/week?start=${encodeURIComponent(isoDay(state.monday))}`); renderFilters(); renderTable(); show(''); } catch (error) { show(error.message, true); }
+        try { state.data = await api(`/api/week?start=${encodeURIComponent(isoDay(state.monday))}`); persistState(); renderFilters(); renderTable(); show(''); } catch (error) { show(error.message, true); }
     }
 
     document.getElementById('adc-previous-week').addEventListener('click', () => { state.monday.setDate(state.monday.getDate() - 7); load(); });
     document.getElementById('adc-next-week').addEventListener('click', () => { state.monday.setDate(state.monday.getDate() + 7); load(); });
-    elements['toggle-view'].addEventListener('click', () => { state.vertical = !state.vertical; renderTable(); });
+    elements['toggle-view'].addEventListener('click', () => { state.vertical = !state.vertical; persistState(); renderTable(); });
     elements['week-number'].addEventListener('change', event => { if (event.target.value) { const [year, week] = event.target.value.split('-W').map(Number); const januaryFourth = new Date(year, 0, 4); state.monday = startOfWeek(januaryFourth); state.monday.setDate(state.monday.getDate() + (week - 1) * 7); load(); } });
-    elements['person-search'].addEventListener('input', event => { const query = event.target.value.trim().toLocaleLowerCase('de-DE'); const matches = query ? state.data.employees.filter(employee => employee.displayName.toLocaleLowerCase('de-DE').includes(query) && !state.selected.has(employee.uid)).slice(0, 12) : []; elements['search-results'].replaceChildren(...matches.map(employee => { const item = node('li'); const button = node('button', `${employee.displayName} auswählen`); button.type = 'button'; button.addEventListener('click', () => { state.selected.add(employee.uid); elements['person-search'].value = ''; elements['search-results'].replaceChildren(); renderSelected(); renderTable(); }); item.append(button); return item; })); });
-    elements['entry-form'].addEventListener('submit', async event => { event.preventDefault(); try { await api('/api/entries', { method: 'POST', body: JSON.stringify({ employeeUid: elements.employee.value, type: document.getElementById('adc-type').value, start: document.getElementById('adc-start').value, end: document.getElementById('adc-end').value, title: document.getElementById('adc-title').value }) }); show('Eintrag gespeichert.'); event.target.reset(); await load(); } catch (error) { show(error.message, true); } });
+    elements['person-search'].addEventListener('input', event => { const query = event.target.value.trim().toLocaleLowerCase('de-DE'); const matches = query ? state.data.employees.filter(employee => employee.displayName.toLocaleLowerCase('de-DE').includes(query) && !state.selected.has(employee.uid)).slice(0, 12) : []; elements['search-results'].replaceChildren(...matches.map(employee => { const item = node('li'); const button = node('button', `${employee.displayName} auswählen`); button.type = 'button'; button.addEventListener('click', () => { state.selected.add(employee.uid); persistState(); elements['person-search'].value = ''; elements['search-results'].replaceChildren(); renderSelected(); renderTable(); }); item.append(button); return item; })); });
+    elements['cancel-edit'].addEventListener('click', resetForm);
+    elements['entry-form'].addEventListener('submit', async event => { event.preventDefault(); try { const id = elements['entry-id'].value; const payload = { employeeUid: elements.employee.value, type: document.getElementById('adc-type').value, start: document.getElementById('adc-start').value, end: document.getElementById('adc-end').value, title: document.getElementById('adc-title').value }; await api(id ? `/api/entries/${id}` : '/api/entries', { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) }); show('Eintrag gespeichert.'); resetForm(); await load(); } catch (error) { show(error.message, true); } });
     load();
 }());

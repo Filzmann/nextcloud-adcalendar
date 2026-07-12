@@ -20,11 +20,7 @@ final class CalendarService {
         $serialized = [];
         foreach ($entries as $entry) {
             $row = $entry->toArray();
-            $withinShift = false;
-            foreach ($shifts as $shift) {
-                if ($entry->isWithin($shift)) { $withinShift = true; break; }
-            }
-            $row['isBlocked'] = $entry->type() === CalendarEntry::TYPE_APPOINTMENT && !$withinShift;
+            $row['isBlocked'] = $entry->type() === CalendarEntry::TYPE_APPOINTMENT && $entry->parentEntryId() === null;
             $serialized[] = $row;
         }
         $summaries = [];
@@ -45,7 +41,13 @@ final class CalendarService {
             $data['parentEntryId'] = $parents[0]->id() ?? null;
             $entry = CalendarEntry::get($data);
         }
-        return $this->entries->save($entry, $actorUid);
+        $savedId = $this->entries->save($entry, $actorUid);
+        if ($entry->type() === CalendarEntry::TYPE_SHIFT && $entry->id() !== null) {
+            foreach ($this->entries->children($savedId) as $child) {
+                if (!$child->isWithin($entry)) $this->entries->detachChild((int)$child->id());
+            }
+        }
+        return $savedId;
     }
 
     public function existing(int $id): CalendarEntry {
@@ -63,8 +65,6 @@ final class CalendarService {
         if ($entry->type() !== CalendarEntry::TYPE_SHIFT) { $this->entries->delete($id); return; }
         if ($this->entries->children($id) === []) { $this->entries->delete($id); return; }
         if (!in_array($childMode, ['delete', 'detach'], true)) throw new InvalidArgumentException('Bitte Behandlung der enthaltenen Termine bestaetigen.');
-        if ($childMode === 'delete') $this->entries->deleteChildren($id);
-        else $this->entries->detachChildren($id);
-        $this->entries->delete($id);
+        $this->entries->deleteShift($id, $childMode);
     }
 }

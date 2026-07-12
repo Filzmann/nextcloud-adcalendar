@@ -75,9 +75,31 @@ final class CalendarEntryRepository {
             ->where($qb->expr()->eq('parent_entry_id', $qb->createNamedParameter($parentId, IQueryBuilder::PARAM_INT)))->executeStatement();
     }
 
+    public function detachChild(int $childId): void {
+        $qb = $this->db->getQueryBuilder();
+        $qb->update('adc_entries')->set('parent_entry_id', $qb->createNamedParameter(null, IQueryBuilder::PARAM_NULL))
+            ->where($qb->expr()->eq('id', $qb->createNamedParameter($childId, IQueryBuilder::PARAM_INT)))->executeStatement();
+    }
+
     public function deleteChildren(int $parentId): void {
         $qb = $this->db->getQueryBuilder();
         $qb->delete('adc_entries')->where($qb->expr()->eq('parent_entry_id', $qb->createNamedParameter($parentId, IQueryBuilder::PARAM_INT)))->executeStatement();
+    }
+
+    /**
+     * Vertrag: Kindbehandlung und Dienstloeschung sind atomar; ein Fehler laesst alles unveraendert.
+     */
+    public function deleteShift(int $shiftId, string $childMode): void {
+        $this->db->beginTransaction();
+        try {
+            if ($childMode === 'delete') $this->deleteChildren($shiftId);
+            else $this->detachChildren($shiftId);
+            $this->delete($shiftId);
+            $this->db->commit();
+        } catch (\Throwable $error) {
+            $this->db->rollBack();
+            throw $error;
+        }
     }
 
     /** @return list<CalendarEntry> */
