@@ -43,8 +43,7 @@ Verbindliches Gruppenschema:
 - Nextcloud-Admins duerfen alle Eintraege verwalten.
 
 Offene Fachentscheidungen:
-- Ob sich Dienste derselben Person ueberschneiden duerfen.
-- Ob Termine mehrere Dienste ueberschneiden duerfen und wie sie dann zugeordnet werden.
+- Dienste derselben Person duerfen sich nicht ueberschneiden; dadurch bleibt die Terminzuordnung eindeutig.
 - Welche Auswertungszeitraeume neben der Woche benoetigt werden.
 - Ob und wie Bestandsdaten aus WordPress importiert werden.
 
@@ -72,6 +71,7 @@ Die Gruppenlogik wird zentral implementiert und serverseitig erzwungen.
 - Persistente Kernobjekte nutzen `get(...)`, `get_all([...])`, `toArray()` und nur bei Store-Bindung `save()`.
 - Dienste und Termine werden als ein gemeinsamer Kalendereintrag mit explizitem Typ modelliert; die fachliche Darstellung eines externen Termins als Sperrtermin wird abgeleitet und nicht als widerspruechliche zweite Datenwahrheit gespeichert.
 - Termine innerhalb eines Dienstes referenzieren diesen explizit ueber `parent_entry_id`; Termine ohne Parent sind Sperrtermine.
+- Bestehende Eintraege duerfen ihren Typ nicht wechseln; Dienst und Termin haben unterschiedliche Folge- und Loeschvertraege.
 - Beim Loeschen eines Dienstes muss zwischen gemeinsamem Loeschen der Termine und deren Erhalt als Sperrtermine gewaehlt werden.
 - API-Zugriffe liegen im Frontend in Repositories, Daten in Modellen/ViewModels und Rendering/Eventbindung in Komponenten.
 - Die UI bleibt per Tastatur bedienbar, verwendet semantische Tabellen/Listen, sichtbare Fokuszustaende und Textkennzeichnungen zusaetzlich zu Farben.

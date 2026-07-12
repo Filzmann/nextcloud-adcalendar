@@ -55,8 +55,8 @@
     }
 
     function localDateTime(value) { const date = new Date(value); const shifted = new Date(date.getTime() - date.getTimezoneOffset() * 60000); return shifted.toISOString().slice(0, 16); }
-    function editEntry(entry) { elements['entry-id'].value = entry.id; elements.employee.value = entry.employeeUid; document.getElementById('adc-type').value = entry.type; document.getElementById('adc-start').value = localDateTime(entry.start); document.getElementById('adc-end').value = localDateTime(entry.end); document.getElementById('adc-title').value = entry.title; elements['cancel-edit'].hidden = false; elements['entry-form'].scrollIntoView({behavior:'smooth',block:'center'}); }
-    function resetForm() { elements['entry-form'].reset(); elements['entry-id'].value = ''; elements['cancel-edit'].hidden = true; }
+    function editEntry(entry) { elements['entry-id'].value = entry.id; elements.employee.value = entry.employeeUid; document.getElementById('adc-type').value = entry.type; document.getElementById('adc-type').disabled = true; document.getElementById('adc-start').value = localDateTime(entry.start); document.getElementById('adc-end').value = localDateTime(entry.end); document.getElementById('adc-title').value = entry.title; elements['cancel-edit'].hidden = false; elements['entry-form'].scrollIntoView({behavior:'smooth',block:'center'}); }
+    function resetForm() { elements['entry-form'].reset(); elements['entry-id'].value = ''; document.getElementById('adc-type').disabled = false; elements['cancel-edit'].hidden = true; }
 
     function cellFor(employee, day) { const cell = document.createElement('td'); state.data.entries.filter(entry => entry.employeeUid === employee.uid && entry.start.slice(0, 10) === isoDay(day)).forEach(entry => cell.append(entryNode(entry, employee))); return cell; }
 

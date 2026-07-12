@@ -24,6 +24,11 @@ if ($shift->durationMinutes() !== 480 || !$appointment->isWithin($shift)) {
     throw new RuntimeException('Zeitraumvertrag ist verletzt.');
 }
 
+$laterShift = CalendarEntry::get(['employeeUid' => 'test-person-1', 'start' => '2026-07-13T15:00:00+02:00', 'end' => '2026-07-13T18:00:00+02:00', 'type' => CalendarEntry::TYPE_SHIFT]);
+$touchingShift = CalendarEntry::get(['employeeUid' => 'test-person-1', 'start' => '2026-07-13T16:00:00+02:00', 'end' => '2026-07-13T18:00:00+02:00', 'type' => CalendarEntry::TYPE_SHIFT]);
+if (!$shift->overlaps($laterShift)) throw new RuntimeException('Echte Dienstueberschneidung wurde nicht erkannt.');
+if ($shift->overlaps($touchingShift)) throw new RuntimeException('Direkt anschliessende Dienste wurden als Ueberschneidung behandelt.');
+
 $linked = CalendarEntry::get(array_merge($appointment->toArray(), ['parentEntryId' => 42]));
 if ($linked->parentEntryId() !== 42) throw new RuntimeException('Explizite Dienst-Termin-Zuordnung ging verloren.');
 

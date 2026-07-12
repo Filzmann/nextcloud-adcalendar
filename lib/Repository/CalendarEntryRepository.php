@@ -114,6 +114,18 @@ final class CalendarEntryRepository {
         return CalendarEntry::get_all(array_map([$this, 'mapRow'], $qb->executeQuery()->fetchAllAssociative()));
     }
 
+    /** @return list<CalendarEntry> */
+    public function overlappingShifts(string $employeeUid, DateTimeImmutable $start, DateTimeImmutable $end, ?int $excludeId = null): array {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select('id', 'employee_uid', 'start_at', 'end_at', 'entry_type', 'title', 'parent_entry_id')->from('adc_entries')
+            ->where($qb->expr()->eq('employee_uid', $qb->createNamedParameter($employeeUid)))
+            ->andWhere($qb->expr()->eq('entry_type', $qb->createNamedParameter(CalendarEntry::TYPE_SHIFT)))
+            ->andWhere($qb->expr()->lt('start_at', $qb->createNamedParameter($end, IQueryBuilder::PARAM_DATETIME_IMMUTABLE)))
+            ->andWhere($qb->expr()->gt('end_at', $qb->createNamedParameter($start, IQueryBuilder::PARAM_DATETIME_IMMUTABLE)));
+        if ($excludeId !== null) $qb->andWhere($qb->expr()->neq('id', $qb->createNamedParameter($excludeId, IQueryBuilder::PARAM_INT)));
+        return CalendarEntry::get_all(array_map([$this, 'mapRow'], $qb->executeQuery()->fetchAllAssociative()));
+    }
+
     public function existsCreatedBy(string $actorUid, DateTimeImmutable $start, DateTimeImmutable $end): bool {
         $qb = $this->db->getQueryBuilder();
         $qb->select('id')->from('adc_entries')

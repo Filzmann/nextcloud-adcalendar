@@ -64,6 +64,12 @@ final class CalendarEntry {
             && $this->end <= $shift->end;
     }
 
+    public function overlaps(self $other): bool {
+        return $this->employeeUid === $other->employeeUid
+            && $this->start < $other->end
+            && $this->end > $other->start;
+    }
+
     public function durationMinutes(): int {
         return (int)(($this->end->getTimestamp() - $this->start->getTimestamp()) / 60);
     }

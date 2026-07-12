@@ -9,6 +9,7 @@ for (const contract of [
     "params.set('roles'",
     "params.set('areas'",
     "state.vertical = !state.vertical",
+    "document.getElementById('adc-type').disabled = true",
 ]) {
     if (!source.includes(contract)) throw new Error(`Frontend-Vertrag fehlt: ${contract}`);
 }

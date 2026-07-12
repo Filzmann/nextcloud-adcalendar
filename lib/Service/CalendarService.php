@@ -34,6 +34,12 @@ final class CalendarService {
     public function save(array $payload, ?int $id, string $actorUid): int {
         if ($id !== null) $payload['id'] = $id;
         $entry = CalendarEntry::get($payload);
+        if ($id !== null && $this->existing($id)->type() !== $entry->type()) {
+            throw new InvalidArgumentException('Der Typ eines bestehenden Eintrags kann nicht geaendert werden.');
+        }
+        if ($entry->type() === CalendarEntry::TYPE_SHIFT && $this->entries->overlappingShifts($entry->employeeUid(), $entry->start(), $entry->end(), $entry->id()) !== []) {
+            throw new InvalidArgumentException('Der Dienst ueberschneidet sich mit einem bestehenden Dienst dieser Person.');
+        }
         if ($entry->type() === CalendarEntry::TYPE_APPOINTMENT) {
             $parents = $this->entries->containingShifts($entry->employeeUid(), $entry->start(), $entry->end(), $entry->id());
             if (count($parents) > 1) throw new InvalidArgumentException('Der Termin liegt in mehreren Diensten. Bitte Dienste zuerst korrigieren.');
