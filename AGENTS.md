@@ -25,6 +25,10 @@ Kernprozess:
 - Termine ausserhalb eines Dienstes gelten fachlich als Sperrtermine und werden deutlich, nicht nur farblich, gekennzeichnet.
 - Pro Mitarbeiter*in werden Dienstanzahl und gesamte Dienstzeit fuer den sichtbaren Zeitraum ausgewiesen.
 - Filter nach Mitarbeiter*innen und Nextcloud-Gruppen sollen die Ansicht begrenzen.
+- Ohne bewusst gespeicherten Standard startet die Ansicht mit den Fachrollen und Bereichen des eingeloggten Kontos. Die aktuelle Filter-/Personen-/Ansichtskonfiguration wird nur ueber „Zum Standard machen“ als persoenlicher Nextcloud-Benutzerwert gespeichert.
+- `ad-Stab-HR`, `ad-Stab-QMB`, `ad-AsdGF-Digi`, `ad-PDL`, beide GF-Rollen und `ad-Sekretariat` werden im Rollenfilter ueber einen gemeinsamen Anzeigen-/Ausblenden-Schalter gesteuert; der Schalter ist Teil des persoenlichen Standards. Diese Personen stehen in einem gemeinsamen Block und werden entlang der GF-AS- und GF-Digi-Hierarchie sortiert.
+- Eine Meeting-Lueckensuche schneidet die Dienste der ausgewaehlten Personen innerhalb einer Kalenderwoche und zieht deren vorhandene Termine ab; die Mindestdauer ist frei waehlbar und betraegt initial 60 Minuten.
+- Jedes angemeldete Konto kann im eigenen Einstellungs-Tab Standard-Dienstzeiten je Wochentag speichern. Sie dienen als Vorschlag beim Anlegen; ein Ende vor dem Beginn bildet einen Dienst bis zum Folgetag.
 - Zeitwerte werden serverseitig eindeutig gespeichert und fuer die Anzeige in der konfigurierten Nextcloud-Zeitzone formatiert.
 
 Verbindliches Gruppenschema:
@@ -34,7 +38,9 @@ Verbindliches Gruppenschema:
 - Nur `ad-Buero` und `ad-EB` werden einem Buero-Bereich zugeordnet. `ad-PFK`, `ad-Stab-HR` und `ad-Stab-QMB` sind bereichsunabhaengig; versehentliche Bereichsmitgliedschaften duerfen ihre Kalenderdarstellung oder Rechte nicht veraendern.
 - Kombinierte Gruppen sind abgeleitete Schnittmengen, zum Beispiel Mitgliedschaft in `ad-EB` und `ad-Bereich-Nordost`; es werden keine Kombinationsgruppen dupliziert.
 - `ad-EB` und `ad-PFK` sind Zielrollen im Kalender; die EB-Rolle allein verleiht keine globale Fremdbearbeitung.
+- `ad-EB` und `ad-Bereich-*` sind derselbe kanonische Rollen-/Bereichsvertrag wie im AdPlaner; kombinierte Altgruppen wie `ad-EB-*` werden nicht als Rollenquelle verwendet.
 - Alle angemeldeten Nutzer*innen duerfen alle Kalenderdaten lesen; alle duerfen eigene Eintraege bearbeiten.
+- Alle angemeldeten Nutzer*innen duerfen aus den ohnehin sichtbaren Kalenderdaten gemeinsame Meetingluecken berechnen.
 - `ad-PDL` darf Eintraege von `ad-PFK` bearbeiten.
 - Bueroleitungen werden wie BO dynamisch aus `ad-BL` plus `ad-Bereich-*` gebildet. BL NOW ist Mitglied in `ad-BL`, `ad-Bereich-Nordost` und `ad-Bereich-West` und wird dadurch in BL-NO sowie BL-W gefunden.
 - Stellvertretungen werden aus `ad-StvBL` plus genau ihrem `ad-Bereich-*` gebildet; ihre zusaetzliche Hauptberufsrolle `ad-EB` bleibt davon getrennt.
@@ -69,6 +75,7 @@ Es gilt deny by default fuer schreibende Zugriffe:
 - Mitarbeiter*innen und Gruppenzuordnung verwalten: nur App-Administration.
 - Jeder API-Endpunkt prueft die Berechtigung serverseitig ueber einen zentralen `CalendarAccessService`.
 - UI-Ausblendungen sind Komfort und niemals die einzige Zugriffskontrolle.
+- Der Einstellungs-Tab ist fuer alle sichtbar; persönliche Dienstzeiten werden nur fuer das eigene Konto gespeichert, waehrend Gruppenbearbeitungsrechte weiterhin ausschliesslich administrativ gelesen und geaendert werden.
 - Listen werden bereits serverseitig auf den erlaubten Personenkreis eingeschraenkt.
 - Allow- und Deny-Faelle sowie direkte unberechtigte API-Aufrufe werden getestet.
 

@@ -5,6 +5,12 @@ script('localbase', 'repositories/repository');
 script('localbase', 'ui/ui');
 script('adcalendar', 'models/calendar-entry');
 script('adcalendar', 'repositories/calendar-repository');
+script('adcalendar', 'modules/calendar-state');
+script('adcalendar', 'components/calendar-cell');
+script('adcalendar', 'components/entry-dialog');
+script('adcalendar', 'components/meeting-finder');
+script('adcalendar', 'components/shift-defaults');
+script('adcalendar', 'components/week-table');
 script('adcalendar', 'main');
 style('adcalendar', 'style');
 ?>
@@ -23,7 +29,12 @@ style('adcalendar', 'style');
         </nav>
     </header>
     <div id="adc-notice" role="status" aria-live="polite"></div>
-    <details class="adc-filters">
+    <nav class="adc-tabs" role="tablist" aria-label="AD Kalender Bereiche">
+        <button type="button" id="adc-tab-calendar" role="tab" aria-controls="adc-calendar-view" aria-selected="true">Kalender</button>
+        <button type="button" id="adc-tab-settings" role="tab" aria-controls="adc-settings-view" aria-selected="false">Einstellungen</button>
+    </nav>
+    <section id="adc-calendar-view" role="tabpanel" aria-labelledby="adc-tab-calendar">
+      <details class="adc-filters">
         <summary id="adc-filter-heading">Filter und Personenvergleich <span id="adc-filter-status" class="adc-filter-status">Alle Personen</span></summary>
         <div class="adc-filter-grid" aria-labelledby="adc-filter-heading">
             <fieldset><legend>Rollen</legend><div id="adc-role-filters"></div></fieldset>
@@ -36,24 +47,14 @@ style('adcalendar', 'style');
             <div class="adc-selection-filter">
                 <strong>Ausgewaehlte Personen</strong>
                 <ul id="adc-selected-people" class="adc-selected-people"><li>Keine explizite Auswahl – Gruppenfilter gelten.</li></ul>
+                <button type="button" id="adc-open-meeting-finder" class="adc-selection-action icon-calendar-dark" aria-label="Meetinglücke finden" title="Meetinglücke finden" disabled>Meetinglücke finden</button>
+            </div>
+            <div class="adc-filter-actions">
+                <button type="button" id="adc-save-default">Zum Standard machen</button>
             </div>
         </div>
-    </details>
-    <section class="adc-create" aria-labelledby="adc-create-heading">
-        <h2 id="adc-create-heading">Eintrag anlegen</h2>
-        <form id="adc-entry-form">
-            <input id="adc-entry-id" type="hidden">
-            <label>Mitarbeiter*in <select id="adc-employee" required></select></label>
-            <label>Typ <select id="adc-type"><option value="shift">Dienst</option><option value="appointment">Termin / Sperrtermin</option></select></label>
-            <label>Beginn <input id="adc-start" type="datetime-local" required></label>
-            <label>Ende <input id="adc-end" type="datetime-local" required></label>
-            <label>Titel <input id="adc-title" maxlength="255" aria-describedby="adc-title-help"></label>
-            <small id="adc-title-help">Bei Terminen erforderlich. Termine ausserhalb eines Dienstes erscheinen als Sperrtermin.</small>
-            <button type="submit">Speichern</button>
-            <button type="button" id="adc-cancel-edit" hidden>Bearbeitung abbrechen</button>
-        </form>
-    </section>
-    <section aria-labelledby="adc-overview-heading">
+      </details>
+      <section aria-labelledby="adc-overview-heading">
         <h2 id="adc-overview-heading">Wochenplan</h2>
         <div class="adc-table-wrap">
             <table class="adc-calendar">
@@ -64,10 +65,58 @@ style('adcalendar', 'style');
                 </tbody>
             </table>
         </div>
+      </section>
     </section>
-    <section id="adc-settings" class="adc-settings" aria-labelledby="adc-settings-heading" hidden>
-        <h2 id="adc-settings-heading">Bearbeitungsrechte innerhalb von Fachgruppen</h2>
-        <p>Ist ein Schalter aktiv, duerfen Mitglieder dieser Gruppe gegenseitig ihre Kalenderdaten bearbeiten.</p>
-        <form id="adc-settings-form"><div id="adc-peer-settings"></div><button type="submit">Einstellungen speichern</button></form>
+    <section id="adc-settings-view" class="adc-settings-view" role="tabpanel" aria-labelledby="adc-tab-settings" hidden>
+        <section aria-labelledby="adc-shift-defaults-heading">
+            <h2 id="adc-shift-defaults-heading">Meine Standard-Dienstzeiten</h2>
+            <p>Diese Zeiten werden beim Anlegen eines Dienstes vorgeschlagen. Liegt das Ende vor dem Beginn, endet der Dienst am Folgetag.</p>
+            <form id="adc-shift-defaults-form"><div id="adc-shift-defaults"></div><button type="submit" class="primary">Dienstzeiten speichern</button></form>
+        </section>
+        <section id="adc-settings" class="adc-settings" aria-labelledby="adc-settings-heading" hidden>
+            <h2 id="adc-settings-heading">Bearbeitungsrechte innerhalb von Fachgruppen</h2>
+            <p>Ist ein Schalter aktiv, duerfen Mitglieder dieser Gruppe gegenseitig ihre Kalenderdaten bearbeiten.</p>
+            <form id="adc-settings-form"><div id="adc-peer-settings"></div><button type="submit">Gruppenrechte speichern</button></form>
+        </section>
     </section>
+    <dialog id="adc-entry-dialog" class="adc-dialog" aria-labelledby="adc-entry-dialog-title">
+        <form id="adc-entry-form" method="dialog">
+            <header class="adc-dialog__header">
+                <h2 id="adc-entry-dialog-title">Eintrag</h2>
+                <button type="button" id="adc-cancel-edit" class="adc-icon-button" aria-label="Dialog schließen" title="Schließen">×</button>
+            </header>
+            <input id="adc-entry-id" type="hidden">
+            <div class="adc-dialog__fields">
+                <label>Mitarbeiter*in <select id="adc-employee" required></select></label>
+                <label>Typ <select id="adc-type"><option value="shift">Dienst</option><option value="appointment">Termin / Sperrtermin</option></select></label>
+                <label>Beginn <input id="adc-start" type="datetime-local" required aria-describedby="adc-time-help"></label>
+                <label>Ende <input id="adc-end" type="datetime-local" required aria-describedby="adc-time-help"></label>
+                <label id="adc-title-field"><span id="adc-title-label">Titel</span><input id="adc-title" maxlength="255" aria-describedby="adc-title-help"></label>
+            </div>
+            <small id="adc-title-help">Titel ist bei Diensten optional.</small>
+            <p id="adc-time-help" class="adc-dialog__hint" aria-live="polite"></p>
+            <footer class="adc-dialog__actions">
+                <button type="button" id="adc-dialog-cancel">Abbrechen</button>
+                <button type="submit" class="primary">Speichern</button>
+            </footer>
+        </form>
+    </dialog>
+    <dialog id="adc-meeting-dialog" class="adc-dialog adc-meeting-dialog" aria-labelledby="adc-meeting-dialog-title">
+        <form id="adc-meeting-form">
+            <header class="adc-dialog__header">
+                <h2 id="adc-meeting-dialog-title">Meetinglücke finden</h2>
+                <button type="button" id="adc-meeting-close" class="adc-icon-button icon-close" aria-label="Dialog schließen" title="Schließen"></button>
+            </header>
+            <p id="adc-meeting-week"></p>
+            <label for="adc-meeting-search">Teilnehmende suchen</label>
+            <input id="adc-meeting-search" type="search" autocomplete="off">
+            <fieldset class="adc-meeting-people"><legend>Mindestens zwei Personen</legend><div id="adc-meeting-people"></div></fieldset>
+            <label>Dauer in Minuten <input id="adc-meeting-duration" type="number" min="15" max="480" step="15" value="60" required></label>
+            <div class="adc-dialog__actions">
+                <button type="button" id="adc-meeting-cancel">Abbrechen</button>
+                <button type="submit" class="primary">Lücken suchen</button>
+            </div>
+            <div id="adc-meeting-results" class="adc-meeting-results" aria-live="polite"></div>
+        </form>
+    </dialog>
 </div>

@@ -11,24 +11,18 @@ use OCA\AdCalendar\Repository\CalendarEntryRepository;
 
 /** Zweck: Orchestriert Wochenansicht, Summen und die Sperrtermin-Ableitung. */
 final class CalendarService {
-    public function __construct(private CalendarEntryRepository $entries) {}
+    public function __construct(private CalendarEntryRepository $entries, private MeetingAvailabilityService $meetingAvailability) {}
 
     public function week(DateTimeImmutable $start, array $employees): array {
         $end = $start->modify('+7 days');
         $entries = $this->entries->findRange($start, $end, array_column($employees, 'uid'));
-        $shifts = array_values(array_filter($entries, static fn(CalendarEntry $entry): bool => $entry->type() === CalendarEntry::TYPE_SHIFT));
         $serialized = [];
         foreach ($entries as $entry) {
             $row = $entry->toArray();
             $row['isBlocked'] = $entry->type() === CalendarEntry::TYPE_APPOINTMENT && $entry->parentEntryId() === null;
             $serialized[] = $row;
         }
-        $summaries = [];
-        foreach ($employees as $employee) {
-            $own = array_filter($shifts, static fn(CalendarEntry $entry): bool => $entry->employeeUid() === $employee['uid']);
-            $summaries[$employee['uid']] = ['shiftCount' => count($own), 'shiftMinutes' => array_sum(array_map(static fn(CalendarEntry $entry): int => $entry->durationWithin($start, $end), $own))];
-        }
-        return ['start' => $start->format('Y-m-d'), 'end' => $end->format('Y-m-d'), 'employees' => $employees, 'entries' => $serialized, 'summaries' => $summaries];
+        return ['start' => $start->format('Y-m-d'), 'end' => $end->format('Y-m-d'), 'employees' => $employees, 'entries' => $serialized];
     }
 
     public function save(array $payload, ?int $id, string $actorUid): int {
@@ -58,6 +52,11 @@ final class CalendarService {
 
     public function existing(int $id): CalendarEntry {
         return $this->entries->find($id) ?? throw new InvalidArgumentException('Kalendereintrag nicht gefunden.');
+    }
+
+    public function meetingGaps(DateTimeImmutable $start, array $employeeUids, int $durationMinutes): array {
+        $end = $start->modify('+7 days');
+        return $this->meetingAvailability->find($this->entries->findRange($start, $end, $employeeUids), $employeeUids, $start, $end, $durationMinutes);
     }
 
     public function deletionPreview(int $id): array {

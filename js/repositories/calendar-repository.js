@@ -30,6 +30,21 @@
         saveSettings(peerEditing) {
             return this.request('/api/settings', { method: 'PUT', body: JSON.stringify({ peerEditing }) });
         }
+
+        savePreferences(filters) {
+            return this.request('/api/preferences', { method: 'PUT', body: JSON.stringify({ filters }) });
+        }
+
+        saveShiftDefaults(shiftDefaults) {
+            return this.request('/api/preferences/shifts', { method: 'PUT', body: JSON.stringify({ shiftDefaults }) });
+        }
+
+        meetingGaps(start, employeeUids, durationMinutes) {
+            return this.request('/api/meeting-gaps', {
+                method: 'POST',
+                body: JSON.stringify({ start, employeeUids, durationMinutes }),
+            });
+        }
     }
 
     window.AdCalendar = window.AdCalendar || {};

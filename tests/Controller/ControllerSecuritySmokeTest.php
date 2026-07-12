@@ -21,5 +21,13 @@ foreach (['settings', 'saveSettings'] as $method) {
         throw new RuntimeException("Admin-Einstellung {$method} ist fuer normale Nutzer*innen freigegeben.");
     }
 }
+foreach (['preferences', 'savePreferences', 'saveShiftDefaults', 'meetingGaps'] as $method) {
+    if (!preg_match('/#\[NoAdminRequired\]\s+public function ' . $method . '\b/s', $source)) {
+        throw new RuntimeException("Angemeldeter API-Pfad {$method} fehlt.");
+    }
+}
+if (preg_match('/#\[NoCSRFRequired\]\s+#\[NoAdminRequired\]\s+public function (savePreferences|saveShiftDefaults|meetingGaps)\b/s', $source)) {
+    throw new RuntimeException('Neue schreibende API-Pfade umgehen den CSRF-Schutz.');
+}
 
 echo "ControllerSecuritySmokeTest: OK\n";

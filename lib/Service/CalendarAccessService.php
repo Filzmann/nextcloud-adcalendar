@@ -40,6 +40,13 @@ final class CalendarAccessService {
         return $this->policy->canManage($user->getUID(), $this->groups->isAdmin($user->getUID()), $actorGroups, $employeeUid, $targetGroups, $this->settings->enabledPeerGroups());
     }
 
+    /** Liefert nur die fuer Filter und Darstellung freigegebenen Fachgruppen des aktuellen Kontos. */
+    public function currentProfile(): array {
+        $user = $this->currentUser();
+        if ($user === null) return ['roles' => [], 'areas' => [], 'clusters' => []];
+        return $this->profiles->get($this->groupIds($user));
+    }
+
     /** @return list<array{uid:string,displayName:string,roles:list<string>,areas:list<string>,clusters:list<string>}> */
     public function visibleEmployees(): array {
         if (!$this->canView()) return [];
