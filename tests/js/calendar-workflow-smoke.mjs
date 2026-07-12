@@ -15,6 +15,8 @@ for (const contract of [
     "adc-group-heading",
     "isoWeekValue",
     "new Date(entry.start) < dayEnd && new Date(entry.end) > day",
+    "return date.toISOString()",
+    "dialog.addEventListener('cancel'",
 ]) {
     if (!source.includes(contract)) throw new Error(`Frontend-Vertrag fehlt: ${contract}`);
 }
