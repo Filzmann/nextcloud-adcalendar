@@ -8,7 +8,7 @@ if ($template === false || $css === false) throw new RuntimeException('UI-Dateie
 foreach (['<details class="adc-filters">', 'id="adc-filter-status"'] as $contract) {
     if (!str_contains($template, $contract)) throw new RuntimeException("Kompakter Filtervertrag fehlt: {$contract}");
 }
-foreach (['height: 100%', 'overflow: auto', 'background: var(--color-main-background)', '.adc-filter-grid'] as $contract) {
+foreach (['height: 100%', 'min-height: 0', 'overflow-y: auto', 'overflow-x: hidden', 'background: var(--color-main-background)', '.adc-table-wrap { overflow-x: auto', '.adc-filter-grid'] as $contract) {
     if (!str_contains($css, $contract)) throw new RuntimeException("Scroll-/Layoutvertrag fehlt: {$contract}");
 }
 echo "LayoutSmokeTest: OK\n";

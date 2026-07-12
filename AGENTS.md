@@ -40,7 +40,7 @@ Verbindliches Gruppenschema:
 - `ad-BL-Nordost-West` darf `ad-Buero` und `ad-EB` in Nordost und West bearbeiten.
 - `ad-StvBL-Nordost` und `ad-StvBL-West` duerfen den jeweiligen Bereich bearbeiten.
 - `ad-Stab-HR` und `ad-Stab-QMB` sind sichtbare Stabsstellen; gegenseitige Bearbeitung innerhalb der jeweiligen Gruppe wird ueber den Peer-Schalter gesteuert.
-- Peer-Bearbeitung kann in den App-Einstellungen getrennt fuer `ad-Buero`, `ad-PFK`, `ad-EB`, `ad-Stab-HR` und `ad-Stab-QMB` aktiviert werden. Sie ist standardmaessig aus.
+- Peer-Bearbeitung kann in den App-Einstellungen getrennt fuer `ad-Buero`, `ad-PFK`, `ad-EB`, `ad-Stab-HR` und `ad-Stab-QMB` aktiviert werden. Sie ist standardmaessig aus. Bei BO und EB gilt sie nur innerhalb mindestens eines gemeinsamen Buerobereichs; PFK und Stabsstellen bleiben mangels Buerobereich innerhalb ihrer Fachgruppe berechtigt.
 - Assistent*innen erscheinen nicht in dieser App; ihre Planung bleibt im AdPlaner.
 - Nextcloud-Admins duerfen alle Eintraege verwalten.
 
