@@ -17,16 +17,22 @@ style('adcalendar', 'style');
         </nav>
     </header>
     <div id="adc-notice" role="status" aria-live="polite"></div>
-    <section class="adc-filters" aria-labelledby="adc-filter-heading">
-        <h2 id="adc-filter-heading">Ansicht filtern und vergleichen</h2>
-        <fieldset><legend>Rollen</legend><div id="adc-role-filters"></div></fieldset>
-        <fieldset><legend>Bereiche</legend><div id="adc-area-filters"></div></fieldset>
-        <label for="adc-person-search">Person suchen</label>
-        <input id="adc-person-search" type="search" autocomplete="off" aria-controls="adc-search-results">
-        <ul id="adc-search-results" class="adc-search-results"></ul>
-        <h3>Ausgewaehlte Personen</h3>
-        <ul id="adc-selected-people" class="adc-selected-people"><li>Keine explizite Auswahl – Gruppenfilter gelten.</li></ul>
-    </section>
+    <details class="adc-filters">
+        <summary id="adc-filter-heading">Filter und Personenvergleich <span id="adc-filter-status" class="adc-filter-status">Alle Personen</span></summary>
+        <div class="adc-filter-grid" aria-labelledby="adc-filter-heading">
+            <fieldset><legend>Rollen</legend><div id="adc-role-filters"></div></fieldset>
+            <fieldset><legend>Bereiche</legend><div id="adc-area-filters"></div></fieldset>
+            <div class="adc-person-filter">
+                <label for="adc-person-search">Person suchen</label>
+                <input id="adc-person-search" type="search" autocomplete="off" aria-controls="adc-search-results">
+                <ul id="adc-search-results" class="adc-search-results"></ul>
+            </div>
+            <div class="adc-selection-filter">
+                <strong>Ausgewaehlte Personen</strong>
+                <ul id="adc-selected-people" class="adc-selected-people"><li>Keine explizite Auswahl – Gruppenfilter gelten.</li></ul>
+            </div>
+        </div>
+    </details>
     <section class="adc-create" aria-labelledby="adc-create-heading">
         <h2 id="adc-create-heading">Eintrag anlegen</h2>
         <form id="adc-entry-form">

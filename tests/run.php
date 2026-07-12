@@ -7,6 +7,7 @@ $tests = array_merge(
     glob(__DIR__ . '/Controller/*Test.php') ?: [],
     glob(__DIR__ . '/Service/*Test.php') ?: [],
     glob(__DIR__ . '/Command/*Test.php') ?: [],
+    glob(__DIR__ . '/Ui/*Test.php') ?: [],
 );
 foreach ($tests as $test) {
     require $test;

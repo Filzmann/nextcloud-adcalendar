@@ -1,7 +1,7 @@
 (function () {
     'use strict';
     const root = OC.generateUrl('/apps/adcalendar');
-    const elements = Object.fromEntries(['week-label','calendar-body','calendar-head','notice','employee','entry-form','entry-id','cancel-edit','role-filters','area-filters','person-search','search-results','selected-people','week-number','toggle-view','settings','settings-form','peer-settings'].map(id => [id, document.getElementById(`adc-${id}`)]));
+    const elements = Object.fromEntries(['week-label','calendar-body','calendar-head','notice','employee','entry-form','entry-id','cancel-edit','role-filters','area-filters','person-search','search-results','selected-people','filter-status','week-number','toggle-view','settings','settings-form','peer-settings'].map(id => [id, document.getElementById(`adc-${id}`)]));
     const state = { monday: startOfWeek(new Date()), data: null, vertical: true, selected: new Set(), roles: new Set(), areas: new Set() };
     restoreState();
 
@@ -63,6 +63,7 @@
 
     function renderTable() {
         const employees = availableEmployees();
+        elements['filter-status'].textContent = state.selected.size ? `${employees.length} ausgewaehlt` : state.roles.size || state.areas.size ? `${employees.length} gefiltert` : 'Alle Personen';
         if (state.vertical) renderVertical(employees); else renderHorizontal(employees);
         elements['toggle-view'].textContent = state.vertical ? 'Tage als Zeilen' : 'Personen als Zeilen';
         elements['toggle-view'].setAttribute('aria-pressed', String(!state.vertical));
