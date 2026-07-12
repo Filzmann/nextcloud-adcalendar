@@ -8,6 +8,9 @@ if ($template === false || $css === false) throw new RuntimeException('UI-Dateie
 foreach (['<details class="adc-filters">', 'id="adc-filter-status"'] as $contract) {
     if (!str_contains($template, $contract)) throw new RuntimeException("Kompakter Filtervertrag fehlt: {$contract}");
 }
+foreach (["script('localbase', 'api/api-client')", "script('localbase', 'models/model')", "script('localbase', 'repositories/repository')", "script('localbase', 'ui/ui')"] as $contract) {
+    if (!str_contains($template, $contract)) throw new RuntimeException("LocalBase-UI-Vertrag fehlt: {$contract}");
+}
 foreach (['height: 100%', 'min-height: 0', 'overflow-y: auto', 'overflow-x: hidden', 'background: var(--color-main-background)', '.adc-table-wrap { overflow-x: auto', '.adc-filter-grid'] as $contract) {
     if (!str_contains($css, $contract)) throw new RuntimeException("Scroll-/Layoutvertrag fehlt: {$contract}");
 }

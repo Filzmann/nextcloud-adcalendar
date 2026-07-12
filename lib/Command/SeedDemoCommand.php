@@ -20,7 +20,7 @@ final class SeedDemoCommand extends Command {
     protected function configure(): void { $this->setName('adcalendar:demo:seed')->setDescription('Erzeugt neutrale AD-Kalender-Demodaten fuer die aktuelle Woche.'); }
     protected function execute(InputInterface $input, OutputInterface $output): int {
         $users = [];
-        foreach ([CalendarAccessService::ROLE_OFFICE, CalendarAccessService::ROLE_EB, CalendarAccessService::ROLE_PFK, CalendarAccessService::ROLE_STAFF_HR, CalendarAccessService::ROLE_STAFF_QMB] as $groupId) {
+        foreach (CalendarAccessService::CALENDAR_GROUPS as $groupId) {
             foreach ($this->groups->get($groupId)?->getUsers() ?? [] as $user) $users[$user->getUID()] = $user;
         }
         if ($users === []) { $output->writeln('<comment>Keine Kalender-Mitarbeiter*innen gefunden.</comment>'); return self::SUCCESS; }

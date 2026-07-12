@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../../lib/Service/CalendarAccessService.php';
+require_once __DIR__ . '/../../lib/Service/CalendarHierarchyPolicy.php';
 require_once __DIR__ . '/../../lib/Service/CalendarGroupProfile.php';
 
 use OCA\AdCalendar\Service\CalendarGroupProfile;
@@ -16,5 +17,7 @@ $office = $profiles->get(['ad-Buero', 'ad-Bereich-Nordost']);
 if ($office['areas'] !== ['ad-Bereich-Nordost'] || $office['clusters'] !== ['ad-Buero#ad-Bereich-Nordost']) throw new RuntimeException('BO-Bereich wurde nicht dynamisch kombiniert.');
 $eb = $profiles->get(['ad-EB', 'ad-Bereich-West']);
 if ($eb['areas'] !== ['ad-Bereich-West']) throw new RuntimeException('EB-Bereich wurde nicht uebernommen.');
+$blNow = $profiles->get(['ad-BL', 'ad-Bereich-Nordost', 'ad-Bereich-West']);
+if ($blNow['roles'] !== ['ad-BL'] || $blNow['clusters'] !== ['ad-BL#ad-Bereich-Nordost', 'ad-BL#ad-Bereich-West']) throw new RuntimeException('BL NOW muss dynamisch in BL-NO und BL-W gefunden werden.');
 
 echo "CalendarGroupProfileTest: OK\n";

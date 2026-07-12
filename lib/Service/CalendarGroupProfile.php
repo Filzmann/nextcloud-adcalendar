@@ -13,8 +13,18 @@ final class CalendarGroupProfile {
             CalendarAccessService::ROLE_OFFICE,
             CalendarAccessService::ROLE_STAFF_HR,
             CalendarAccessService::ROLE_STAFF_QMB,
+            CalendarHierarchyPolicy::GF_AS,
+            CalendarHierarchyPolicy::GF_DIGI,
+            CalendarHierarchyPolicy::ASSISTANT_GF_DIGI,
+            CalendarHierarchyPolicy::FINANCE_LEAD,
+            CalendarHierarchyPolicy::FINANCE,
+            CalendarHierarchyPolicy::IT,
+            CalendarHierarchyPolicy::SECRETARIAT,
+            CalendarHierarchyPolicy::PDL,
+            CalendarHierarchyPolicy::BL,
+            CalendarHierarchyPolicy::DEPUT_BL,
         ], $groupIds));
-        $hasAreaRole = array_intersect([CalendarAccessService::ROLE_EB, CalendarAccessService::ROLE_OFFICE], $roles) !== [];
+        $hasAreaRole = array_intersect([CalendarAccessService::ROLE_EB, CalendarAccessService::ROLE_OFFICE, CalendarHierarchyPolicy::BL, CalendarHierarchyPolicy::DEPUT_BL], $roles) !== [];
         $areas = $hasAreaRole
             ? array_values(array_filter($groupIds, static fn(string $id): bool => str_starts_with($id, CalendarAccessService::AREA_PREFIX)))
             : [];

@@ -36,13 +36,23 @@ Verbindliches Gruppenschema:
 - `ad-EB` und `ad-PFK` sind Zielrollen im Kalender; die EB-Rolle allein verleiht keine globale Fremdbearbeitung.
 - Alle angemeldeten Nutzer*innen duerfen alle Kalenderdaten lesen; alle duerfen eigene Eintraege bearbeiten.
 - `ad-PDL` darf Eintraege von `ad-PFK` bearbeiten.
-- `ad-BL-Sued` und `ad-StvBL-Sued` duerfen `ad-Buero` und `ad-EB` im Bereich Sued bearbeiten.
-- `ad-BL-Nordost-West` darf `ad-Buero` und `ad-EB` in Nordost und West bearbeiten.
-- `ad-StvBL-Nordost` und `ad-StvBL-West` duerfen den jeweiligen Bereich bearbeiten.
+- Bueroleitungen werden wie BO dynamisch aus `ad-BL` plus `ad-Bereich-*` gebildet. BL NOW ist Mitglied in `ad-BL`, `ad-Bereich-Nordost` und `ad-Bereich-West` und wird dadurch in BL-NO sowie BL-W gefunden.
+- Stellvertretungen werden aus `ad-StvBL` plus genau ihrem `ad-Bereich-*` gebildet; ihre zusaetzliche Hauptberufsrolle `ad-EB` bleibt davon getrennt.
 - `ad-Stab-HR` und `ad-Stab-QMB` sind sichtbare Stabsstellen; gegenseitige Bearbeitung innerhalb der jeweiligen Gruppe wird ueber den Peer-Schalter gesteuert.
 - Peer-Bearbeitung kann in den App-Einstellungen getrennt fuer `ad-Buero`, `ad-PFK`, `ad-EB`, `ad-Stab-HR` und `ad-Stab-QMB` aktiviert werden. Sie ist standardmaessig aus. Bei BO und EB gilt sie nur innerhalb mindestens eines gemeinsamen Buerobereichs; PFK und Stabsstellen bleiben mangels Buerobereich innerhalb ihrer Fachgruppe berechtigt.
 - Assistent*innen erscheinen nicht in dieser App; ihre Planung bleibt im AdPlaner.
 - Nextcloud-Admins duerfen alle Eintraege verwalten.
+
+Hierarchie fuer Fremdbearbeitung:
+
+- `ad-GF-AS` fuehrt PDL, beide Bueroleitungen, deren Stellvertretungen, PFK, BO, EB, HR, QMB und das Sekretariat direkt oder indirekt.
+- `ad-GF-Digi` fuehrt `ad-AsdGF-Digi`, `ad-Leitung-Finanzen-Lohn`, `ad-Finanzen-Lohn`, IT und das Sekretariat direkt oder indirekt.
+- `ad-AsdGF-Digi` fuehrt `ad-IT`; `ad-Leitung-Finanzen-Lohn` fuehrt `ad-Finanzen-Lohn`.
+- `ad-PDL` fuehrt `ad-PFK`.
+- Bueroleitungen und ihre bereichsbezogenen Stellvertretungen fuehren ausschliesslich BO und EB im passenden Buerobereich, nicht PFK.
+- `ad-Sekretariat` ist beiden Geschaeftsfuehrungen direkt zugeordnet.
+- Leitungsrollen schuetzen immer vor Peer-Bearbeitung durch unterstellte Hauptberufsgruppen. Eine StvBL kann zum Beispiel zugleich EB sein, darf aber niemals durch normale EBs bearbeitet werden.
+- Vorgesetzte duerfen Kalenderdaten aller direkt und indirekt unterstellten Personen bearbeiten; Untergebene duerfen keine uebergeordneten Rollen bearbeiten.
 
 Offene Fachentscheidungen:
 - Dienste derselben Person duerfen sich nicht ueberschneiden; dadurch bleibt die Terminzuordnung eindeutig.
@@ -76,6 +86,7 @@ Die Gruppenlogik wird zentral implementiert und serverseitig erzwungen.
 - Bestehende Eintraege duerfen ihren Typ nicht wechseln; Dienst und Termin haben unterschiedliche Folge- und Loeschvertraege.
 - Beim Loeschen eines Dienstes muss zwischen gemeinsamem Loeschen der Termine und deren Erhalt als Sperrtermine gewaehlt werden.
 - API-Zugriffe liegen im Frontend in Repositories, Daten in Modellen/ViewModels und Rendering/Eventbindung in Komponenten.
+- Der Frontend-Unterbau nutzt die vorhandenen LocalBase-Vertraege `ApiClient`, `Repository`, `Model` und `Notice`; AD-Kalender-spezifische API-Pfade, Modelle und Renderinglogik bleiben in diesem Repo.
 - Die UI bleibt per Tastatur bedienbar, verwendet semantische Tabellen/Listen, sichtbare Fokuszustaende und Textkennzeichnungen zusaetzlich zu Farben.
 - Keine vorsorgliche gemeinsame Library und keine WordPress-Kompatibilitaetsschicht.
 

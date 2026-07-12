@@ -44,7 +44,7 @@ final class CalendarAccessService {
     public function visibleEmployees(): array {
         if (!$this->canView()) return [];
         $byUid = [];
-        foreach ([self::ROLE_EB, self::ROLE_PFK, self::ROLE_OFFICE, self::ROLE_STAFF_HR, self::ROLE_STAFF_QMB] as $role) {
+        foreach (self::CALENDAR_GROUPS as $role) {
             $group = $this->groups->get($role);
             if ($group === null) continue;
             foreach ($group->getUsers() as $user) $byUid[$user->getUID()] = $user;
@@ -61,4 +61,12 @@ final class CalendarAccessService {
 
     /** @return list<string> */
     private function groupIds(IUser $user): array { return array_map('strval', $this->groups->getUserGroupIds($user)); }
+
+    public const CALENDAR_GROUPS = [
+        self::ROLE_EB, self::ROLE_PFK, self::ROLE_OFFICE, self::ROLE_STAFF_HR, self::ROLE_STAFF_QMB,
+        CalendarHierarchyPolicy::GF_AS, CalendarHierarchyPolicy::GF_DIGI, CalendarHierarchyPolicy::ASSISTANT_GF_DIGI,
+        CalendarHierarchyPolicy::FINANCE_LEAD, CalendarHierarchyPolicy::FINANCE, CalendarHierarchyPolicy::IT,
+        CalendarHierarchyPolicy::SECRETARIAT, CalendarHierarchyPolicy::PDL, CalendarHierarchyPolicy::BL,
+        CalendarHierarchyPolicy::DEPUT_BL,
+    ];
 }

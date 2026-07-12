@@ -1,6 +1,12 @@
 (function () {
     'use strict';
-    const root = OC.generateUrl('/apps/adcalendar');
+    const apiClient = new window.LocalBase.api.ApiClient({
+        appId: 'adcalendar',
+        errorMessage: (data, status) => data?.error || data?.message || `HTTP ${status}`,
+    });
+    const repository = new window.AdCalendar.repositories.CalendarRepository(apiClient);
+    const notice = new window.LocalBase.ui.Notice('adc-notice', { baseClass: 'adc-notice', typeClassPrefix: 'adc-notice--' });
+    const EntryModel = window.AdCalendar.models.CalendarEntry;
     const elements = Object.fromEntries(['week-label','calendar-body','calendar-head','notice','employee','entry-form','entry-id','cancel-edit','role-filters','area-filters','person-search','search-results','selected-people','filter-status','week-number','toggle-view','settings','settings-form','peer-settings'].map(id => [id, document.getElementById(`adc-${id}`)]));
     const state = { monday: startOfWeek(new Date()), data: null, vertical: true, selected: new Set(), roles: new Set(), areas: new Set() };
     restoreState();
@@ -8,12 +14,9 @@
     function startOfWeek(value) { const result = new Date(value); const weekday = result.getDay() || 7; result.setDate(result.getDate() - weekday + 1); result.setHours(0, 0, 0, 0); return result; }
     function isoDay(value) { const year = value.getFullYear(); const month = String(value.getMonth() + 1).padStart(2, '0'); const day = String(value.getDate()).padStart(2, '0'); return `${year}-${month}-${day}`; }
     function node(tag, value, className) { const result = document.createElement(tag); if (value !== undefined) result.textContent = value; if (className) result.className = className; return result; }
-    function show(message, error) { elements.notice.textContent = message; elements.notice.className = error ? 'adc-notice adc-notice--error' : 'adc-notice'; }
+    function show(message, error) { if (error) notice.error(message); else if (message) notice.success(message); else notice.clear(); }
     function restoreState() { const params = new URLSearchParams(window.location.search); if (params.get('week')) state.monday = startOfWeek(new Date(`${params.get('week')}T12:00:00`)); state.vertical = params.get('view') !== 'days'; for (const value of (params.get('people') || '').split(',').filter(Boolean)) state.selected.add(value); for (const value of (params.get('roles') || '').split(',').filter(Boolean)) state.roles.add(value); for (const value of (params.get('areas') || '').split(',').filter(Boolean)) state.areas.add(value); }
     function persistState() { const params = new URLSearchParams(); params.set('week', isoDay(state.monday)); if (!state.vertical) params.set('view', 'days'); if (state.selected.size) params.set('people', [...state.selected].join(',')); if (state.roles.size) params.set('roles', [...state.roles].join(',')); if (state.areas.size) params.set('areas', [...state.areas].join(',')); window.history.replaceState(null, '', `${window.location.pathname}?${params}`); }
-    async function request(path, options = {}) { const response = await fetch(root + path, { credentials: 'same-origin', headers: { 'Content-Type': 'application/json', requesttoken: OC.requestToken }, ...options }); const data = await response.json(); return { response, data }; }
-    async function api(path, options) { const { response, data } = await request(path, options); if (!response.ok) throw new Error(data.error || 'Anfrage fehlgeschlagen.'); return data; }
-
     function availableEmployees() {
         if (!state.data) return [];
         return state.data.employees.filter(employee => {
@@ -94,13 +97,14 @@
     async function removeEntry(entry) {
         let mode = '';
         if (entry.type === 'shift') {
-            const first = await request(`/api/entries/${entry.id}`, { method: 'DELETE', body: JSON.stringify({ childMode: '' }) });
-            if (first.response.ok) { show('Dienst gelöscht.'); await load(); return; }
-            if (!first.data.confirmationRequired) { show(first.data.error || 'Löschen fehlgeschlagen.', true); return; }
-            mode = await deletionChoice(first.data.children.length);
+            try { await repository.remove(entry.id); show('Dienst gelöscht.'); await load(); return; }
+            catch (error) {
+                if (error.status !== 409 || !error.data?.confirmationRequired) { show(error, true); return; }
+                mode = await deletionChoice(error.data.children.length);
+            }
             if (mode === null) return;
         } else if (!window.confirm('Termin wirklich löschen?')) return;
-        await api(`/api/entries/${entry.id}`, { method: 'DELETE', body: JSON.stringify({ childMode: mode }) }); show(mode === 'detach' ? 'Dienst gelöscht; Termine sind jetzt Sperrtermine.' : 'Eintrag gelöscht.'); await load();
+        await repository.remove(entry.id, mode); show(mode === 'detach' ? 'Dienst gelöscht; Termine sind jetzt Sperrtermine.' : 'Eintrag gelöscht.'); await load();
     }
 
     function deletionChoice(count) {
@@ -109,12 +113,11 @@
 
     async function load() {
         const sunday = new Date(state.monday); sunday.setDate(sunday.getDate() + 6); elements['week-label'].textContent = `${state.monday.toLocaleDateString('de-DE')} – ${sunday.toLocaleDateString('de-DE')}`; elements['week-number'].value = isoWeekValue(state.monday);
-        try { state.data = await api(`/api/week?start=${encodeURIComponent(isoDay(state.monday))}`); persistState(); renderFilters(); renderTable(); show(''); } catch (error) { show(error.message, true); }
+        try { state.data = await repository.week(isoDay(state.monday)); state.data.entries = EntryModel.get_all(state.data.entries); persistState(); renderFilters(); renderTable(); show(''); } catch (error) { show(error, true); }
     }
 
     async function loadSettings() {
-        const { response, data } = await request('/api/settings');
-        if (!response.ok) return;
+        let data; try { data = await repository.settings(); } catch (_) { return; }
         elements.settings.hidden = false;
         elements['peer-settings'].replaceChildren(...Object.entries(data.peerEditing).map(([group, enabled]) => { const label = node('label'); const input = document.createElement('input'); input.type = 'checkbox'; input.name = group; input.checked = enabled; label.append(input, document.createTextNode(` ${group}`)); return label; }));
     }
@@ -125,8 +128,8 @@
     elements['week-number'].addEventListener('change', event => { if (event.target.value) { const [year, week] = event.target.value.split('-W').map(Number); const januaryFourth = new Date(year, 0, 4); state.monday = startOfWeek(januaryFourth); state.monday.setDate(state.monday.getDate() + (week - 1) * 7); load(); } });
     elements['person-search'].addEventListener('input', event => { const query = event.target.value.trim().toLocaleLowerCase('de-DE'); const matches = query ? state.data.employees.filter(employee => employee.displayName.toLocaleLowerCase('de-DE').includes(query) && !state.selected.has(employee.uid)).slice(0, 12) : []; elements['search-results'].replaceChildren(...matches.map(employee => { const item = node('li'); const button = node('button', `${employee.displayName} auswählen`); button.type = 'button'; button.addEventListener('click', () => { state.selected.add(employee.uid); persistState(); elements['person-search'].value = ''; elements['search-results'].replaceChildren(); renderSelected(); renderTable(); }); item.append(button); return item; })); });
     elements['cancel-edit'].addEventListener('click', resetForm);
-    elements['entry-form'].addEventListener('submit', async event => { event.preventDefault(); try { const id = elements['entry-id'].value; const payload = { employeeUid: elements.employee.value, type: document.getElementById('adc-type').value, start: utcDateTime(document.getElementById('adc-start').value), end: utcDateTime(document.getElementById('adc-end').value), title: document.getElementById('adc-title').value }; await api(id ? `/api/entries/${id}` : '/api/entries', { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) }); show('Eintrag gespeichert.'); resetForm(); await load(); } catch (error) { show(error.message, true); } });
-    elements['settings-form'].addEventListener('submit', async event => { event.preventDefault(); const peerEditing = Object.fromEntries([...elements['peer-settings'].querySelectorAll('input')].map(input => [input.name, input.checked])); try { await api('/api/settings', { method: 'PUT', body: JSON.stringify({ peerEditing }) }); show('Bearbeitungsrechte gespeichert.'); await load(); } catch (error) { show(error.message, true); } });
+    elements['entry-form'].addEventListener('submit', async event => { event.preventDefault(); try { const id = elements['entry-id'].value; const payload = { employeeUid: elements.employee.value, type: document.getElementById('adc-type').value, start: utcDateTime(document.getElementById('adc-start').value), end: utcDateTime(document.getElementById('adc-end').value), title: document.getElementById('adc-title').value }; await repository.save(payload, id || null); show('Eintrag gespeichert.'); resetForm(); await load(); } catch (error) { show(error, true); } });
+    elements['settings-form'].addEventListener('submit', async event => { event.preventDefault(); const peerEditing = Object.fromEntries([...elements['peer-settings'].querySelectorAll('input')].map(input => [input.name, input.checked])); try { await repository.saveSettings(peerEditing); show('Bearbeitungsrechte gespeichert.'); await load(); } catch (error) { show(error, true); } });
     load();
     loadSettings();
 }());

@@ -15,6 +15,9 @@ final class CalendarSettingsService {
         CalendarAccessService::ROLE_EB,
         CalendarAccessService::ROLE_STAFF_HR,
         CalendarAccessService::ROLE_STAFF_QMB,
+        CalendarHierarchyPolicy::FINANCE,
+        CalendarHierarchyPolicy::IT,
+        CalendarHierarchyPolicy::SECRETARIAT,
     ];
 
     public function __construct(private IAppConfig $config) {}

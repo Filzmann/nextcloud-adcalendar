@@ -1,4 +1,10 @@
 <?php
+script('localbase', 'api/api-client');
+script('localbase', 'models/model');
+script('localbase', 'repositories/repository');
+script('localbase', 'ui/ui');
+script('adcalendar', 'models/calendar-entry');
+script('adcalendar', 'repositories/calendar-repository');
 script('adcalendar', 'main');
 style('adcalendar', 'style');
 ?>
