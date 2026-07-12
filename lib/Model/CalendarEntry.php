@@ -74,6 +74,12 @@ final class CalendarEntry {
         return (int)(($this->end->getTimestamp() - $this->start->getTimestamp()) / 60);
     }
 
+    public function durationWithin(DateTimeImmutable $rangeStart, DateTimeImmutable $rangeEnd): int {
+        $start = max($this->start->getTimestamp(), $rangeStart->getTimestamp());
+        $end = min($this->end->getTimestamp(), $rangeEnd->getTimestamp());
+        return max(0, (int)(($end - $start) / 60));
+    }
+
     public function id(): ?int { return $this->id; }
     public function employeeUid(): string { return $this->employeeUid; }
     public function start(): DateTimeImmutable { return $this->start; }

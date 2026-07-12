@@ -28,6 +28,8 @@ $laterShift = CalendarEntry::get(['employeeUid' => 'test-person-1', 'start' => '
 $touchingShift = CalendarEntry::get(['employeeUid' => 'test-person-1', 'start' => '2026-07-13T16:00:00+02:00', 'end' => '2026-07-13T18:00:00+02:00', 'type' => CalendarEntry::TYPE_SHIFT]);
 if (!$shift->overlaps($laterShift)) throw new RuntimeException('Echte Dienstueberschneidung wurde nicht erkannt.');
 if ($shift->overlaps($touchingShift)) throw new RuntimeException('Direkt anschliessende Dienste wurden als Ueberschneidung behandelt.');
+$overnight = CalendarEntry::get(['employeeUid' => 'test-person-1', 'start' => '2026-07-12T22:00:00+02:00', 'end' => '2026-07-13T06:00:00+02:00', 'type' => CalendarEntry::TYPE_SHIFT]);
+if ($overnight->durationWithin(new DateTimeImmutable('2026-07-13T00:00:00+02:00'), new DateTimeImmutable('2026-07-20T00:00:00+02:00')) !== 360) throw new RuntimeException('Wochenanteil eines Nachtdiensts ist falsch.');
 
 $linked = CalendarEntry::get(array_merge($appointment->toArray(), ['parentEntryId' => 42]));
 if ($linked->parentEntryId() !== 42) throw new RuntimeException('Explizite Dienst-Termin-Zuordnung ging verloren.');

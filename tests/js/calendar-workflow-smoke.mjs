@@ -14,6 +14,7 @@ for (const contract of [
     "if (state.selected.size) return state.selected.has(employee.uid)",
     "adc-group-heading",
     "isoWeekValue",
+    "new Date(entry.start) < dayEnd && new Date(entry.end) > day",
 ]) {
     if (!source.includes(contract)) throw new Error(`Frontend-Vertrag fehlt: ${contract}`);
 }

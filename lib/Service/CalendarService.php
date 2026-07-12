@@ -26,7 +26,7 @@ final class CalendarService {
         $summaries = [];
         foreach ($employees as $employee) {
             $own = array_filter($shifts, static fn(CalendarEntry $entry): bool => $entry->employeeUid() === $employee['uid']);
-            $summaries[$employee['uid']] = ['shiftCount' => count($own), 'shiftMinutes' => array_sum(array_map(static fn(CalendarEntry $entry): int => $entry->durationMinutes(), $own))];
+            $summaries[$employee['uid']] = ['shiftCount' => count($own), 'shiftMinutes' => array_sum(array_map(static fn(CalendarEntry $entry): int => $entry->durationWithin($start, $end), $own))];
         }
         return ['start' => $start->format('Y-m-d'), 'end' => $end->format('Y-m-d'), 'employees' => $employees, 'entries' => $serialized, 'summaries' => $summaries];
     }
