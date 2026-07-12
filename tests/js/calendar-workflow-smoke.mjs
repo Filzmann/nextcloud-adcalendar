@@ -11,6 +11,9 @@ for (const contract of [
     "state.vertical = !state.vertical",
     "document.getElementById('adc-type').disabled = true",
     "body: JSON.stringify({ peerEditing })",
+    "if (state.selected.size) return state.selected.has(employee.uid)",
+    "adc-group-heading",
+    "isoWeekValue",
 ]) {
     if (!source.includes(contract)) throw new Error(`Frontend-Vertrag fehlt: ${contract}`);
 }

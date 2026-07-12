@@ -17,7 +17,7 @@
     function availableEmployees() {
         if (!state.data) return [];
         return state.data.employees.filter(employee => {
-            if (state.selected.size && !state.selected.has(employee.uid)) return false;
+            if (state.selected.size) return state.selected.has(employee.uid);
             if (state.roles.size && !employee.roles.some(role => state.roles.has(role))) return false;
             if (state.areas.size && !employee.areas.some(area => state.areas.has(area))) return false;
             return true;
@@ -71,8 +71,18 @@
         const header = document.createElement('tr'); header.append(node('th', 'Mitarbeiter*in'));
         for (let offset = 0; offset < 7; offset++) { const day = new Date(state.monday); day.setDate(day.getDate() + offset); header.append(node('th', day.toLocaleDateString('de-DE', {weekday:'short',day:'2-digit',month:'2-digit'}))); }
         header.append(node('th', 'Gesamt')); elements['calendar-head'].replaceChildren(header);
-        elements['calendar-body'].replaceChildren(...employees.map(employee => { const row = document.createElement('tr'); const name = node('th', employee.displayName, state.selected.has(employee.uid) ? 'adc-selected' : ''); name.scope = 'row'; row.append(name); for (let offset = 0; offset < 7; offset++) { const day = new Date(state.monday); day.setDate(day.getDate() + offset); row.append(cellFor(employee, day)); } const summary = state.data.summaries[employee.uid]; row.append(node('td', `${summary.shiftCount} Dienste · ${(summary.shiftMinutes / 60).toLocaleString('de-DE')} Std.`)); return row; }));
+        const rows = []; let previousCluster = null;
+        for (const employee of employees.slice().sort((a, b) => clusterLabel(a).localeCompare(clusterLabel(b), 'de') || a.displayName.localeCompare(b.displayName, 'de'))) {
+            const cluster = clusterLabel(employee);
+            if (!state.selected.size && cluster !== previousCluster) { const groupRow = document.createElement('tr'); const groupCell = node('th', cluster, 'adc-group-heading'); groupCell.colSpan = 9; groupRow.append(groupCell); rows.push(groupRow); previousCluster = cluster; }
+            const row = document.createElement('tr'); const name = node('th', employee.displayName, state.selected.has(employee.uid) ? 'adc-selected' : ''); name.scope = 'row'; row.append(name); for (let offset = 0; offset < 7; offset++) { const day = new Date(state.monday); day.setDate(day.getDate() + offset); row.append(cellFor(employee, day)); } const summary = state.data.summaries[employee.uid]; row.append(node('td', `${summary.shiftCount} Dienste · ${(summary.shiftMinutes / 60).toLocaleString('de-DE')} Std.`)); rows.push(row);
+        }
+        elements['calendar-body'].replaceChildren(...rows);
     }
+
+    function clusterLabel(employee) { const roles = employee.roles.map(value => value.replace('ad-', '').replace('Stab-', 'Stab ')).join(', ') || 'Ohne Fachrolle'; const areas = employee.areas.map(value => value.replace('ad-Bereich-', '')).join(', '); return areas ? `${roles} · ${areas}` : roles; }
+
+    function isoWeekValue(date) { const value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())); const day = value.getUTCDay() || 7; value.setUTCDate(value.getUTCDate() + 4 - day); const yearStart = new Date(Date.UTC(value.getUTCFullYear(), 0, 1)); const week = Math.ceil((((value - yearStart) / 86400000) + 1) / 7); return `${value.getUTCFullYear()}-W${String(week).padStart(2, '0')}`; }
 
     function renderHorizontal(employees) {
         const header = document.createElement('tr'); header.append(node('th', 'Tag')); employees.forEach(employee => header.append(node('th', employee.displayName, state.selected.has(employee.uid) ? 'adc-selected' : ''))); elements['calendar-head'].replaceChildren(header);
@@ -96,7 +106,7 @@
     }
 
     async function load() {
-        const sunday = new Date(state.monday); sunday.setDate(sunday.getDate() + 6); elements['week-label'].textContent = `${state.monday.toLocaleDateString('de-DE')} – ${sunday.toLocaleDateString('de-DE')}`;
+        const sunday = new Date(state.monday); sunday.setDate(sunday.getDate() + 6); elements['week-label'].textContent = `${state.monday.toLocaleDateString('de-DE')} – ${sunday.toLocaleDateString('de-DE')}`; elements['week-number'].value = isoWeekValue(state.monday);
         try { state.data = await api(`/api/week?start=${encodeURIComponent(isoDay(state.monday))}`); persistState(); renderFilters(); renderTable(); show(''); } catch (error) { show(error.message, true); }
     }
 
