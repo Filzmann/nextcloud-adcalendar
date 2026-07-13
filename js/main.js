@@ -10,7 +10,7 @@
     const OrganizationModel = window.AdCalendar.models.Organization;
     const leadershipStaffRoles = new Set();
     let organization = new OrganizationModel({});
-    const elements = Object.fromEntries(['week-label','calendar-body','calendar-head','notice','role-filters','area-filters','person-search','search-results','selected-people','filter-status','week-number','toggle-view'].map(id => [id, document.getElementById(`adc-${id}`)]));
+    const elements = Object.fromEntries(['week-label','calendar-body','calendar-head','notice','role-filters','area-filters','person-search','search-results','selected-people','reset-selection','filter-status','week-number','toggle-view'].map(id => [id, document.getElementById(`adc-${id}`)]));
     const state = new window.AdCalendar.modules.CalendarState(leadershipStaffRoles).restore();
     const tabs = new window.AdCalendar.components.TabNavigation({
         calendarButton: document.getElementById('adc-tab-calendar'),
@@ -74,6 +74,7 @@
 
     function renderSelected() {
         const people = state.data.employees.filter(employee => state.selected.has(employee.uid));
+        elements['reset-selection'].hidden = people.length === 0;
         if (!people.length) { elements['selected-people'].replaceChildren(node('li', 'Keine explizite Auswahl – Gruppenfilter gelten.')); return; }
         elements['selected-people'].replaceChildren(...people.map(employee => { const item = node('li'); const button = node('button', `${employee.displayName} entfernen`); button.type = 'button'; button.addEventListener('click', () => { state.emptyOwnProfile = false; state.selected.delete(employee.uid); state.persist(); renderSelected(); renderTable(); }); item.append(button); return item; }));
     }
@@ -170,6 +171,15 @@
     document.getElementById('adc-previous-week').addEventListener('click', () => { state.monday.setDate(state.monday.getDate() - 7); load(); });
     document.getElementById('adc-next-week').addEventListener('click', () => { state.monday.setDate(state.monday.getDate() + 7); load(); });
     document.getElementById('adc-open-meeting-finder').addEventListener('click', () => meetingFinder.open(isoDay(state.monday), state.data.employees, [...state.selected]));
+    elements['reset-selection'].addEventListener('click', () => {
+        state.emptyOwnProfile = false;
+        state.selected.clear();
+        state.persist();
+        elements['person-search'].value = '';
+        elements['search-results'].replaceChildren();
+        renderSelected();
+        renderTable();
+    });
     document.getElementById('adc-save-default').addEventListener('click', async () => {
         try {
             await repository.savePreferences(state.toPreference());

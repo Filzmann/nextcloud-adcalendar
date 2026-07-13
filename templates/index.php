@@ -45,7 +45,10 @@ style('orgsuite', 'suite-navigation');
             <div class="adc-selection-filter">
                 <strong>Ausgewählte Personen</strong>
                 <ul id="adc-selected-people" class="adc-selected-people"><li>Keine explizite Auswahl – Gruppenfilter gelten.</li></ul>
-                <button type="button" id="adc-open-meeting-finder" class="adc-selection-action" disabled><span class="adc-button-icon icon-calendar-dark" aria-hidden="true"></span><span>Meetinglücke finden</span></button>
+                <div class="adc-selection-actions">
+                    <button type="button" id="adc-reset-selection" hidden><span class="adc-button-icon icon-close" aria-hidden="true"></span><span>Auswahl zurücksetzen</span></button>
+                    <button type="button" id="adc-open-meeting-finder" disabled><span class="adc-button-icon icon-calendar-dark" aria-hidden="true"></span><span>Meetinglücke finden</span></button>
+                </div>
             </div>
             <div class="adc-filter-actions">
                 <button type="button" id="adc-save-default">Zum Standard machen</button>

@@ -30,6 +30,8 @@ for (const contract of [
     'applyMeetingCapabilities()',
     'repository.updateMeeting(existing.meetingUid',
     'repository.removeMeeting(entry.meetingUid)',
+    "elements['reset-selection'].addEventListener('click'",
+    'state.selected.clear()',
 ]) {
     if (!source.includes(contract)) throw new Error(`Frontend-Vertrag fehlt: ${contract}`);
 }
