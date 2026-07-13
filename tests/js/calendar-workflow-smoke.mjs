@@ -12,6 +12,7 @@ const meetingFinder = readFileSync(new URL('../../js/components/meeting-finder.j
 const shiftDefaults = readFileSync(new URL('../../js/components/shift-defaults.js', import.meta.url), 'utf8');
 const stateSource = readFileSync(new URL('../../js/modules/calendar-state.js', import.meta.url), 'utf8');
 const entryWorkflow = readFileSync(new URL('../../js/modules/entry-workflow.js', import.meta.url), 'utf8');
+const meetingCapabilities = readFileSync(new URL('../../js/modules/meeting-capabilities.js', import.meta.url), 'utf8');
 const weekTable = readFileSync(new URL('../../js/components/week-table.js', import.meta.url), 'utf8');
 const weekNavigation = readFileSync(new URL('../../js/components/week-navigation.js', import.meta.url), 'utf8');
 const tabNavigation = readFileSync(new URL('../../js/components/tab-navigation.js', import.meta.url), 'utf8');
@@ -24,7 +25,7 @@ for (const contract of [
     'shiftDefaults.set(state.data.shiftDefaults || {})',
     'repository.saveShiftDefaults(defaults)',
     'meetingFinder.open(isoDay(state.monday)',
-    'applyMeetingCapabilities()',
+    'meetingCapabilities.apply(state.data.entries, state.data.employees)',
 ]) {
     if (!source.includes(contract)) throw new Error(`Frontend-Vertrag fehlt: ${contract}`);
 }
@@ -40,6 +41,15 @@ workflow.show = (error, isError) => { if (isError) deletionError = error; };
 workflow.reload = async () => {};
 await workflow.remove({ id: 7, type: 'appointment', meetingUid: null });
 if (deletionError?.message !== 'Löschen fehlgeschlagen') throw new Error('Fehler beim abschließenden Löschen wird nicht angezeigt.');
+const capabilitiesContext = { window: {}, Map };
+runInNewContext(meetingCapabilities, capabilitiesContext);
+const capabilities = new capabilitiesContext.window.AdCalendar.modules.MeetingCapabilities();
+const mixedMeeting = [{ employeeUid: 'a', meetingUid: 'meeting-1' }, { employeeUid: 'b', meetingUid: 'meeting-1' }];
+capabilities.apply(mixedMeeting, [{ uid: 'a', canManage: true }, { uid: 'b', canManage: false }]);
+if (mixedMeeting.some(entry => entry.canManageMeeting !== false)) throw new Error('Meeting mit nicht bearbeitbarer Person wurde in der UI freigegeben.');
+const manageableMeeting = [{ employeeUid: 'a', meetingUid: 'meeting-2' }, { employeeUid: 'b', meetingUid: 'meeting-2' }];
+capabilities.apply(manageableMeeting, [{ uid: 'a', canManage: true }, { uid: 'b', canManage: true }]);
+if (manageableMeeting.some(entry => entry.canManageMeeting !== true)) throw new Error('Vollständig bearbeitbares Meeting wurde in der UI gesperrt.');
 for (const contract of ['class CalendarFilters', 'this.renderLeadershipStaffCheckbox()', 'this.state.selected.clear()', 'this.state.persist()', 'this.onChange()', 'Keine explizite Auswahl – Gruppenfilter gelten.', 'this.organization().staffBlockLabel']) {
     if (!calendarFilters.includes(contract)) throw new Error(`Kalenderfilter-Komponentenvertrag fehlt: ${contract}`);
 }

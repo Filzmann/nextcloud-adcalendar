@@ -12,6 +12,7 @@
     let organization = new OrganizationModel({});
     const elements = Object.fromEntries(['calendar-body','calendar-head','filter-status'].map(id => [id, document.getElementById(`adc-${id}`)]));
     const state = new window.AdCalendar.modules.CalendarState(leadershipStaffRoles).restore();
+    const meetingCapabilities = new window.AdCalendar.modules.MeetingCapabilities();
     const tabs = new window.AdCalendar.components.TabNavigation({
         calendarButton: document.getElementById('adc-tab-calendar'),
         settingsButton: document.getElementById('adc-tab-settings'),
@@ -91,21 +92,7 @@
 
     async function load() {
         weekNavigation.render();
-        try { state.data = await repository.week(isoDay(state.monday)); state.data.entries = EntryModel.get_all(state.data.entries); applyMeetingCapabilities(); applyOrganization(state.data.organization); state.applyInitialFilters(); renderFilters(); renderTable(); tabs.show(state.activeTab, false); show(''); } catch (error) { show(error, true); }
-    }
-
-    function applyMeetingCapabilities() {
-        const employees = new Map(state.data.employees.map(employee => [employee.uid, employee]));
-        const meetings = new Map();
-        for (const entry of state.data.entries) {
-            if (!entry.meetingUid) continue;
-            if (!meetings.has(entry.meetingUid)) meetings.set(entry.meetingUid, []);
-            meetings.get(entry.meetingUid).push(entry);
-        }
-        for (const entries of meetings.values()) {
-            const canManage = entries.every(entry => employees.get(entry.employeeUid)?.canManage === true);
-            for (const entry of entries) entry.canManageMeeting = canManage;
-        }
+        try { state.data = await repository.week(isoDay(state.monday)); state.data.entries = EntryModel.get_all(state.data.entries); meetingCapabilities.apply(state.data.entries, state.data.employees); applyOrganization(state.data.organization); state.applyInitialFilters(); renderFilters(); renderTable(); tabs.show(state.activeTab, false); show(''); } catch (error) { show(error, true); }
     }
 
     document.getElementById('adc-open-meeting-finder').addEventListener('click', () => meetingFinder.open(isoDay(state.monday), state.data.employees, [...state.selected]));
