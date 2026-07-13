@@ -32,6 +32,7 @@ Kernprozess:
 - Bewusst gespeicherte Standard-Dienstzeiten werden beim Aufruf einer Woche als normale Dienste materialisiert. Individuell bearbeitete Vorkommen bleiben einmalige Abweichungen; ein geloeschtes Vorkommen bleibt fuer genau dieses Datum dauerhaft unterdrueckt.
 - Zeitwerte werden serverseitig eindeutig gespeichert und fuer die Anzeige in der konfigurierten Nextcloud-Zeitzone formatiert.
 - `adcalendar:demo:seed` synchronisiert neutrale, benannte Demokonten fuer jede Kalenderrolle und jeden Buerobereich. Namen tragen die fachliche Demo-Zuordnung in Klammern; Mehrfachrollen werden auch in Gruppentiteln als Hauptrolle mit weiteren Rollen in Klammern dargestellt.
+- Ist `adurlaub` aktiviert, erscheinen geplante Urlaube read-only als `U?` ohne Blockade. Genehmigte Urlaube erscheinen als `U`, blockieren neue Dienste/Termine, verhindern Standarddienst-Materialisierung und werden aus Meetingluecken entfernt. Genehmigungen mit bestehenden Eintraegen werden ueber einen read-only Konfliktvertrag bereits in `adurlaub` abgelehnt.
 
 Verbindliches Gruppenschema:
 

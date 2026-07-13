@@ -36,7 +36,7 @@
                 const row = document.createElement('tr');
                 const name = this.node('th', employee.displayName, state.selected.has(employee.uid) ? 'adc-selected' : '');
                 name.scope = 'row'; row.append(name);
-                for (const day of this.days(state.monday)) row.append(this.cellFor(employee, day, state.data.entries));
+                for (const day of this.days(state.monday)) row.append(this.cellFor(employee, day, state.data.entries, state.data.absences || []));
                 rows.push(row);
             }
             this.body.replaceChildren(...rows);
@@ -50,19 +50,20 @@
                 const row = document.createElement('tr');
                 const label = this.node('th', day.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit' }));
                 label.scope = 'row'; row.append(label);
-                for (const employee of employees) row.append(this.cellFor(employee, day, state.data.entries));
+                for (const employee of employees) row.append(this.cellFor(employee, day, state.data.entries, state.data.absences || []));
                 return row;
             });
             this.body.replaceChildren(...rows);
         }
 
-        cellFor(employee, day, allEntries) {
+        cellFor(employee, day, allEntries, allAbsences) {
             const cell = document.createElement('td');
             const dayEnd = new Date(day); dayEnd.setDate(dayEnd.getDate() + 1);
             const entries = allEntries.filter(entry => entry.employeeUid === employee.uid && new Date(entry.start) < dayEnd && new Date(entry.end) > day);
+            const absences = allAbsences.filter(absence => absence.employeeUid === employee.uid && new Date(absence.start) < dayEnd && new Date(absence.end) > day);
             cell.dataset.employeeUid = employee.uid;
             cell.dataset.day = this.isoDay(day);
-            cell.innerHTML = this.calendarCell.render(entries, employee);
+            cell.innerHTML = this.calendarCell.render(entries, employee, absences);
             return cell;
         }
 

@@ -32,7 +32,7 @@ for (const contract of [
 for (const contract of ['class TabNavigation', "addEventListener('click'", "this.show('settings')", "this.onChange(active)"]) {
     if (!tabNavigation.includes(contract)) throw new Error(`Tab-Komponentenvertrag fehlt: ${contract}`);
 }
-for (const contract of ['class WeekTable', 'adc-group-heading', 'this.calendarCell.render(entries, employee)', "return 'Geschäftsführung, PDL und Stabsstellen'", 'groupCell.colSpan = 8', 'this.staffRank(a) - this.staffRank(b)', 'roleNames.slice(1)', "join(' / ')"]) {
+for (const contract of ['class WeekTable', 'adc-group-heading', 'this.calendarCell.render(entries, employee, absences)', "return 'Geschäftsführung, PDL und Stabsstellen'", 'groupCell.colSpan = 8', 'this.staffRank(a) - this.staffRank(b)', 'roleNames.slice(1)', "join(' / ')"]) {
     if (!weekTable.includes(contract)) throw new Error(`Wochenmatrix-Komponentenvertrag fehlt: ${contract}`);
 }
 const tableContext = { window: {}, document: {}, Date, Number };

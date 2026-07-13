@@ -13,7 +13,7 @@ use OCA\AdCalendar\Model\CalendarEntry;
  */
 final class MeetingAvailabilityService {
     /** @param list<CalendarEntry> $entries @param list<string> $employeeUids */
-    public function find(array $entries, array $employeeUids, DateTimeImmutable $rangeStart, DateTimeImmutable $rangeEnd, int $durationMinutes): array {
+    public function find(array $entries, array $employeeUids, DateTimeImmutable $rangeStart, DateTimeImmutable $rangeEnd, int $durationMinutes, array $absences = []): array {
         $availability = [];
         foreach ($employeeUids as $uid) {
             $shifts = [];
@@ -25,6 +25,7 @@ final class MeetingAvailabilityService {
                 if ($entry->type() === CalendarEntry::TYPE_SHIFT) $shifts[] = $interval;
                 else $appointments[] = $interval;
             }
+            foreach ($absences as $absence) if ($absence->employeeUid() === $uid && $absence->approved()) $appointments[] = [max($absence->start()->getTimestamp(), $rangeStart->getTimestamp()), min($absence->end()->getTimestamp(), $rangeEnd->getTimestamp())];
             $free = $this->merge($shifts);
             foreach ($appointments as $busy) $free = $this->subtract($free, $busy);
             $availability[] = $free;

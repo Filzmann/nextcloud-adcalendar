@@ -1,0 +1,18 @@
+<?php
+
+declare(strict_types=1);
+
+namespace OCA\AdCalendar\Service;
+
+use DateTimeImmutable;
+use OCA\LocalBase\Calendar\AbsenceInterval;
+use OCA\LocalBase\Calendar\AbsenceQueryEvent;
+use OCP\EventDispatcher\IEventDispatcher;
+
+/** Zweck: Kapselt die optionale read-only Abwesenheitsabfrage hinter dem neutralen LocalBase-Event. */
+final class AbsenceService {
+    public function __construct(private IEventDispatcher $events) {}
+    /** @return list<AbsenceInterval> */
+    public function query(DateTimeImmutable $start, DateTimeImmutable $end, array $employeeUids): array { $event = new AbsenceQueryEvent($start,$end,$employeeUids); $this->events->dispatchTyped($event); return $event->absences(); }
+    public function assertWritable(string $employeeUid, DateTimeImmutable $start, DateTimeImmutable $end): void { foreach ($this->query($start,$end,[$employeeUid]) as $absence) if ($absence->approved() && $absence->overlaps($start,$end)) throw new \InvalidArgumentException('Genehmigter Urlaub (U) blockiert diesen Zeitraum.'); }
+}

@@ -8,16 +8,18 @@
      * Zusammenspiel: main.js liefert Tagesdaten und bindet die delegierten data-action-Ereignisse.
      */
     class CalendarCell {
-        render(entries, employee) {
+        render(entries, employee, absences = []) {
             const shifts = entries.filter(entry => entry.type === 'shift');
             const standalone = entries.filter(entry => entry.type === 'appointment' && entry.parentEntryId === null);
-            const actions = employee.canManage ? `
+            const approved = absences.some(absence => absence.blocks);
+            const actions = employee.canManage && !approved ? `
                 <div class="adc-cell-actions" aria-label="Eintrag anlegen">
                     <button type="button" class="adc-quick-add adc-icon-button icon-add" data-action="add-entry" data-entry-type="shift" data-tooltip="Dienst anlegen" aria-label="Dienst anlegen" title="Dienst anlegen"></button>
                     <button type="button" class="adc-quick-add adc-icon-button icon-calendar-dark" data-action="add-entry" data-entry-type="appointment" data-tooltip="Termin anlegen" aria-label="Termin anlegen" title="Termin anlegen"></button>
                 </div>` : '';
 
-            return `${actions}<div class="adc-cell-entries">${shifts.map(shift => this.shift(shift, entries, employee.canManage)).join('')}${standalone.map(entry => this.entry(entry, 'blocked', employee.canManage)).join('')}</div>`;
+            const markers = absences.map(absence => `<div class="adc-absence adc-absence--${esc(absence.status)}" title="${absence.blocks ? 'Genehmigter Urlaub – Einträge sind gesperrt' : 'Geplanter Urlaub – Hinweis ohne Sperre'}"><strong>${esc(absence.marker)}</strong> ${absence.blocks ? 'Genehmigter Urlaub' : 'Urlaub geplant'}</div>`).join('');
+            return `${markers}${actions}<div class="adc-cell-entries">${shifts.map(shift => this.shift(shift, entries, employee.canManage && !approved)).join('')}${standalone.map(entry => this.entry(entry, 'blocked', employee.canManage && !approved)).join('')}</div>`;
         }
 
         shift(shift, entries, canManage) {

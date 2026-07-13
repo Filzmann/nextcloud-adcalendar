@@ -59,6 +59,9 @@
 .adc-group-heading { padding-block: 3px !important; background: var(--color-background-dark); text-align: left; font-weight: 700; }
 .adc-entry--appointment { border-inline-start-color: var(--color-success); }
 .adc-entry--blocked { border-inline-start-color: var(--color-error); font-weight: 600; }
+.adc-absence { padding: 3px 6px; margin-bottom: 3px; border: 1px solid currentColor; border-radius: var(--border-radius); font-size: var(--font-size-small); }
+.adc-absence--planned { color: var(--color-warning-text); background: var(--color-warning-light); }
+.adc-absence--approved { color: var(--color-success-text); background: var(--color-success-light); }
 .adc-app button:focus-visible { outline: 2px solid var(--color-primary-element); outline-offset: 2px; }
 .adc-dialog { width: min(34rem, calc(100vw - 24px)); max-width: 34rem; padding: 14px; border: 1px solid var(--color-border); border-radius: var(--border-radius-large); background: var(--color-main-background); color: var(--color-main-text); box-shadow: 0 8px 32px rgba(0, 0, 0, .28); }
 .adc-dialog:not([open]) { display: none !important; }

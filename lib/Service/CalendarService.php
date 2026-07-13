@@ -18,17 +18,20 @@ final class CalendarService {
         private CalendarEntryRepository $entries,
         private MeetingAvailabilityService $meetingAvailability,
         private DefaultShiftMaterializer $defaultShifts,
+        private AbsenceService $absences,
     ) {}
 
     public function week(DateTimeImmutable $start, array $employees): array {
         $end = $start->modify('+7 days');
-        $this->defaultShifts->syncWeek($start, array_column($employees, 'uid'));
+        $absences = $this->absences->query($start, $end, array_column($employees, 'uid'));
+        $this->defaultShifts->syncWeek($start, array_column($employees, 'uid'), $absences);
         $entries = $this->entries->findRange($start, $end, array_column($employees, 'uid'));
         return [
             'start' => $start->format('Y-m-d'),
             'end' => $end->format('Y-m-d'),
             'employees' => $employees,
             'entries' => array_map([$this, 'serializeEntry'], $entries),
+            'absences' => array_map(static fn($absence): array => $absence->toArray(), $absences),
         ];
     }
 
@@ -44,6 +47,7 @@ final class CalendarService {
             $payload['id'] = $id;
         }
         $entry = CalendarEntry::get($payload);
+        $this->absences->assertWritable($entry->employeeUid(), $entry->start(), $entry->end());
         $this->assertTypeUnchanged($entry, $id);
         $this->assertShiftDoesNotOverlap($entry);
         $entry = $this->assignContainingShift($entry);
@@ -58,8 +62,9 @@ final class CalendarService {
 
     public function meetingGaps(DateTimeImmutable $start, array $employeeUids, int $durationMinutes): array {
         $end = $start->modify('+7 days');
-        $this->defaultShifts->syncWeek($start, $employeeUids);
-        return $this->meetingAvailability->find($this->entries->findRange($start, $end, $employeeUids), $employeeUids, $start, $end, $durationMinutes);
+        $absences = $this->absences->query($start, $end, $employeeUids);
+        $this->defaultShifts->syncWeek($start, $employeeUids, $absences);
+        return $this->meetingAvailability->find($this->entries->findRange($start, $end, $employeeUids), $employeeUids, $start, $end, $durationMinutes, $absences);
     }
 
     public function deletionPreview(int $id): array {

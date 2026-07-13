@@ -23,7 +23,7 @@ final class DefaultShiftMaterializer {
     ) {}
 
     /** @param list<string> $employeeUids */
-    public function syncWeek(DateTimeImmutable $weekStart, array $employeeUids): void {
+    public function syncWeek(DateTimeImmutable $weekStart, array $employeeUids, array $absences = []): void {
         foreach (array_values(array_unique($employeeUids)) as $employeeUid) {
             $defaults = $this->preferences->storedShiftDefaults($employeeUid);
             if ($defaults === null) continue;
@@ -31,12 +31,12 @@ final class DefaultShiftMaterializer {
             for ($offset = 0; $offset < 7; $offset++) {
                 $date = $weekStart->modify("+{$offset} days")->format('Y-m-d');
                 $weekday = (string)(new DateTimeImmutable($date, $timezone))->format('N');
-                $this->syncOccurrence($employeeUid, $date, $defaults[$weekday], $timezone);
+                $this->syncOccurrence($employeeUid, $date, $defaults[$weekday], $timezone, $absences);
             }
         }
     }
 
-    private function syncOccurrence(string $employeeUid, string $date, array $rule, DateTimeZone $timezone): void {
+    private function syncOccurrence(string $employeeUid, string $date, array $rule, DateTimeZone $timezone, array $absences): void {
         $existing = $this->entries->findDefaultOccurrence($employeeUid, $date);
         if ($existing?->defaultDeleted() || $existing?->defaultModified()) return;
         if (!$rule['enabled']) {
@@ -45,6 +45,7 @@ final class DefaultShiftMaterializer {
         }
 
         $occurrence = $this->factory->create($employeeUid, $date, $rule, $timezone, $existing?->id());
+        foreach ($absences as $absence) if ($absence->employeeUid() === $employeeUid && $absence->approved() && $absence->overlaps($occurrence->start(), $occurrence->end())) { if ($existing !== null) $this->entries->removeGeneratedDefault((int)$existing->id()); return; }
         if ($this->entries->overlappingShifts($employeeUid, $occurrence->start(), $occurrence->end(), $existing?->id()) !== []) return;
         if ($existing !== null && $existing->start() == $occurrence->start() && $existing->end() == $occurrence->end()) return;
         $id = $this->entries->save($occurrence, $employeeUid);

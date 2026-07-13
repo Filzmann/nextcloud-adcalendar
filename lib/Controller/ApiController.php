@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\AdCalendar\Controller;
 
 use DateTimeImmutable;
+use InvalidArgumentException;
 use OCA\AdCalendar\AppInfo\Application;
 use OCA\AdCalendar\Service\CalendarAccessService;
 use OCA\AdCalendar\Service\CalendarService;
@@ -135,6 +136,8 @@ final class ApiController extends Controller {
         try {
             $user = $this->access->currentUser();
             return new JSONResponse(['id' => $this->calendar->save($payload, $id, $user?->getUID() ?? '')]);
+        } catch (InvalidArgumentException $error) {
+            return new JSONResponse(['error' => $error->getMessage()], Http::STATUS_BAD_REQUEST);
         } catch (\Throwable) {
             return new JSONResponse(['error' => 'Der Kalendereintrag ist ungueltig.'], Http::STATUS_BAD_REQUEST);
         }
