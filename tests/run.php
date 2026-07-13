@@ -2,17 +2,14 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../../localbase/lib/Organization/AdOrganizationDefinition.php';
-require_once __DIR__ . '/../../localbase/lib/Organization/AdOrganizationHierarchy.php';
-require_once __DIR__ . '/../../localbase/lib/Organization/AdOrganizationPermissionPolicy.php';
+require_once __DIR__ . '/../../localbase/tests/Support/PhpTestRunner.php';
 
-$tests = array_merge(
-    glob(__DIR__ . '/Model/*Test.php') ?: [],
-    glob(__DIR__ . '/Controller/*Test.php') ?: [],
-    glob(__DIR__ . '/Service/*Test.php') ?: [],
-    glob(__DIR__ . '/Command/*Test.php') ?: [],
-    glob(__DIR__ . '/Ui/*Test.php') ?: [],
+use OCA\LocalBase\Tests\Support\PhpTestRunner;
+
+PhpTestRunner::run(
+    root: dirname(__DIR__),
+    lintDirectories: ['appinfo', 'lib', 'templates', 'tests'],
+    testDirectories: ['tests/Model', 'tests/Controller', 'tests/Service', 'tests/Command', 'tests/Ui', 'tests/Migration'],
+    testSuffixes: ['Test.php'],
+    successMessage: 'AD Kalender PHP tests passed',
 );
-foreach ($tests as $test) {
-    require $test;
-}

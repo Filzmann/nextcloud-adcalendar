@@ -13,7 +13,6 @@ script('adcalendar', 'components/entry-dialog');
 script('adcalendar', 'components/meeting-finder');
 script('adcalendar', 'components/shift-defaults');
 script('adcalendar', 'components/tab-navigation');
-script('adcalendar', 'components/organization-settings');
 script('adcalendar', 'components/week-table');
 script('adcalendar', 'main');
 style('adcalendar', 'style');
@@ -81,15 +80,6 @@ style('orgsuite', 'suite-navigation');
             <p>Diese Zeiten erscheinen als feste Dienste im Kalender und werden beim Anlegen vorgeschlagen. Individuell bearbeitete oder gelöschte Tage bleiben Einzelabweichungen. Liegt das Ende vor dem Beginn, endet der Dienst am Folgetag.</p>
             <form id="adc-shift-defaults-form"><div id="adc-shift-defaults"></div><button type="submit" class="primary">Dienstzeiten speichern</button></form>
         </section>
-        <section id="adc-settings" class="adc-settings" aria-labelledby="adc-settings-heading" hidden>
-            <h2 id="adc-settings-heading">AD-Organisation</h2>
-            <p>Diese gemeinsame Konfiguration steuert Gruppen, sichtbare Namen, Bereiche, Hierarchie und Teamansichten in AD Kalender, AD Urlaub und AdPlaner.</p>
-            <p><strong>Wichtig:</strong> Änderungen an Gruppen-IDs verschieben keine bestehenden Nextcloud-Mitgliedschaften. Lege die Zielgruppen und Mitgliedschaften vor der Umstellung in Nextcloud an.</p>
-            <form id="adc-organization-form"><div id="adc-organization-settings"></div><button type="submit" class="primary">Organisation speichern</button></form>
-            <h3>Bearbeitungsrechte innerhalb von Fachgruppen</h3>
-            <p>Ist ein Schalter aktiv, dürfen Mitglieder dieser Gruppe gegenseitig ihre Kalenderdaten bearbeiten.</p>
-            <form id="adc-settings-form"><div id="adc-peer-settings"></div><button type="submit">Gruppenrechte speichern</button></form>
-        </section>
     </section>
     <dialog id="adc-entry-dialog" class="adc-dialog" aria-labelledby="adc-entry-dialog-title">
         <form id="adc-entry-form" method="dialog">
@@ -124,6 +114,7 @@ style('orgsuite', 'suite-navigation');
             <input id="adc-meeting-search" type="search" autocomplete="off">
             <fieldset class="adc-meeting-people"><legend>Mindestens zwei Personen</legend><div id="adc-meeting-people"></div></fieldset>
             <label>Dauer in Minuten <input id="adc-meeting-duration" type="number" min="15" max="480" step="15" value="60" required></label>
+            <label>Titel für die Blockierung <input id="adc-meeting-title" maxlength="255" placeholder="z. B. Teamsitzung"></label>
             <div class="adc-dialog__actions">
                 <button type="button" id="adc-meeting-cancel">Abbrechen</button>
                 <button type="submit" class="primary">Lücken suchen</button>

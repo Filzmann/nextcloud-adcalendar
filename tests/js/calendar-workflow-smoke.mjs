@@ -12,7 +12,6 @@ const shiftDefaults = readFileSync(new URL('../../js/components/shift-defaults.j
 const stateSource = readFileSync(new URL('../../js/modules/calendar-state.js', import.meta.url), 'utf8');
 const weekTable = readFileSync(new URL('../../js/components/week-table.js', import.meta.url), 'utf8');
 const tabNavigation = readFileSync(new URL('../../js/components/tab-navigation.js', import.meta.url), 'utf8');
-const organizationSettings = readFileSync(new URL('../../js/components/organization-settings.js', import.meta.url), 'utf8');
 for (const contract of [
     "['delete','Dienst und Termine löschen']",
     "['detach','Nur Dienst löschen; Termine als Sperrtermine behalten']",
@@ -28,6 +27,9 @@ for (const contract of [
     'shiftDefaults.set(state.data.shiftDefaults || {})',
     'repository.saveShiftDefaults(defaults)',
     'meetingFinder.open(isoDay(state.monday)',
+    'applyMeetingCapabilities()',
+    'repository.updateMeeting(existing.meetingUid',
+    'repository.removeMeeting(entry.meetingUid)',
 ]) {
     if (!source.includes(contract)) throw new Error(`Frontend-Vertrag fehlt: ${contract}`);
 }
@@ -49,28 +51,25 @@ for (const contract of ["params.set('people'", "params.set('roles'", "params.set
 }
 if (weekTable.includes("header.append(this.node('th', 'Gesamt'))")) throw new Error('Entfernte Gesamtspalte wird noch gerendert.');
 if (source.includes('state.data.summaries')) throw new Error('Entfernter Gesamt-Payload wird noch verwendet.');
-for (const contract of ['extends BaseRepository', 'saveSettings(peerEditing)', 'saveOrganizationSettings(organization)', '/api/settings/organization', 'savePreferences(filters)', 'saveShiftDefaults(shiftDefaults)', 'meetingGaps(start, employeeUids, durationMinutes)', "method: id == null ? 'POST' : 'PUT'"]) {
+for (const contract of ['extends BaseRepository', 'savePreferences(filters)', 'saveShiftDefaults(shiftDefaults)', 'meetingGaps(start, employeeUids, durationMinutes)', 'blockMeeting(start, end, employeeUids, title)', 'updateMeeting(meetingUid, start, end, title)', 'removeMeeting(meetingUid)', "method: id == null ? 'POST' : 'PUT'"]) {
     if (!repository.includes(contract)) throw new Error(`Repository-Vertrag fehlt: ${contract}`);
 }
 for (const contract of ['class Organization extends BaseModel', 'roleLabel(groupId)', 'areaLabel(groupId)', 'staffRoleGroups()', 'roleOrder(groupId)', 'toArray()']) {
     if (!organizationModel.includes(contract)) throw new Error(`Organisationsmodell-Vertrag fehlt: ${contract}`);
 }
-for (const contract of ['class OrganizationSettings', 'Direkte Hierarchie', 'Fachrollen und Nextcloud-Gruppen', 'organizationTeams', 'selectedOptions', 'this.onSave(this.collect())', 'addOrganizationTeam()', 'remove-organization-team', 'data-organization-teams']) {
-    if (!organizationSettings.includes(contract)) throw new Error(`Organisationseinstellungs-Vertrag fehlt: ${contract}`);
-}
-for (const contract of ['window.LocalBase.models.Model', 'extends BaseModel', 'toArray()', 'this.defaultDate', 'this.defaultModified', 'this.defaultDeleted']) {
+for (const contract of ['window.LocalBase.models.Model', 'extends BaseModel', 'toArray()', 'this.defaultDate', 'this.defaultModified', 'this.defaultDeleted', 'this.meetingUid', 'this.canManageMeeting']) {
     if (!model.includes(contract)) throw new Error(`Modell-Vertrag fehlt: ${contract}`);
 }
-for (const contract of ['class CalendarCell', 'adc-cell-actions', 'adc-entry__children', 'entry.parentEntryId === shift.id', "data-action=\"add-entry\"", 'data-tooltip="Dienst anlegen"', 'icon-calendar-dark']) {
+for (const contract of ['class CalendarCell', 'adc-cell-actions', 'adc-entry__children', 'entry.parentEntryId === shift.id', 'entry.canManageMeeting !== false', 'adc-entry__blocked-marker', 'aria-hidden="true">🔒', "data-action=\"add-entry\"", 'data-tooltip="Dienst anlegen"', 'icon-calendar-dark']) {
     if (!calendarCell.includes(contract)) throw new Error(`Kalenderzellen-Vertrag fehlt: ${contract}`);
 }
-for (const contract of ['class MeetingFinder', 'this.selected = new Set(selected)', 'employeeUids.length < 2', 'this.repository.meetingGaps', 'renderResults(gaps)']) {
+for (const contract of ['class MeetingFinder', 'this.selected = new Set(selected)', 'employeeUids.length < 2', 'this.repository.meetingGaps', 'renderResults(gaps, canBlockAll)', 'In der nächsten Woche suchen', 'abwählen', 'this.repository.blockMeeting', 'Number(this.duration.value)']) {
     if (!meetingFinder.includes(contract)) throw new Error(`Meeting-Finder-Vertrag fehlt: ${contract}`);
 }
 for (const contract of ['class ShiftDefaults', 'Array.from({ length: 7 }', 'data-field="enabled"', 'this.onSave(this.collect())']) {
     if (!shiftDefaults.includes(contract)) throw new Error(`Dienstzeiten-Komponentenvertrag fehlt: ${contract}`);
 }
-for (const contract of ['class EntryDialog', 'this.dialog.showModal()', 'this.updateType()', 'this.nextFreeShift', 'setCustomValidity(message)', "entry.type === 'shift'", 'start < new Date(entry.end)', 'end > new Date(entry.start)']) {
+for (const contract of ['class EntryDialog', 'this.dialog.showModal()', 'this.updateType()', 'this.nextFreeShift', 'setCustomValidity(message)', 'Boolean(entry?.meetingUid)', "entry.type === 'shift'", 'start < new Date(entry.end)', 'end > new Date(entry.start)']) {
     if (!entryDialog.includes(contract)) throw new Error(`Eintragsdialog-Vertrag fehlt: ${contract}`);
 }
 
@@ -88,6 +87,10 @@ if (!cellHtml.includes('adc-entry__children') || cellHtml.indexOf('Teamtermin') 
     throw new Error('Termin wurde nicht sichtbar innerhalb des Dienstes gerendert.');
 }
 if ((cellHtml.match(/Teamtermin/g) || []).length !== 1) throw new Error('Enthaltener Termin wurde mehrfach gerendert.');
+const blockedHtml = cell.render([
+    { id: 3, type: 'appointment', start: '2026-07-06T18:00:00Z', end: '2026-07-06T19:00:00Z', title: 'Blockiert', parentEntryId: null },
+], { canManage: true });
+if (!blockedHtml.includes('adc-entry--blocked') || !blockedHtml.includes('adc-entry__blocked-marker') || !blockedHtml.includes('Sperrtermin')) throw new Error('Sperrtermin wird nicht kräftig und textlich als Sperre gekennzeichnet.');
 
 const tabContext = { window: {} };
 runInNewContext(tabNavigation, tabContext);

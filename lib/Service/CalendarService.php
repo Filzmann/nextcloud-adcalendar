@@ -10,13 +10,12 @@ use OCA\AdCalendar\Model\CalendarEntry;
 use OCA\AdCalendar\Repository\CalendarEntryRepository;
 
 /**
- * Zweck: Orchestriert Wochenansicht, Persistenz, Dienst-Termin-Zuordnung und gemeinsame Meetingluecken.
- * Zusammenspiel: ApiController -> CalendarService -> DefaultShiftMaterializer/CalendarEntryRepository/MeetingAvailabilityService.
+ * Zweck: Orchestriert Wochenansicht, Persistenz und Dienst-Termin-Zuordnung einzelner Kalendereinträge.
+ * Zusammenspiel: ApiController -> CalendarService -> DefaultShiftMaterializer/CalendarEntryRepository.
  */
 final class CalendarService {
     public function __construct(
         private CalendarEntryRepository $entries,
-        private MeetingAvailabilityService $meetingAvailability,
         private DefaultShiftMaterializer $defaultShifts,
         private AbsenceService $absences,
     ) {}
@@ -38,6 +37,9 @@ final class CalendarService {
     public function save(array $payload, ?int $id, string $actorUid): int {
         if ($id !== null) {
             $existing = $this->existing($id);
+            if ($existing->meetingUid() !== null) {
+                throw new InvalidArgumentException('Gemeinsame Meetings werden zusammen bearbeitet.');
+            }
             if ($existing->defaultDate() !== null) {
                 if ($existing->employeeUid() !== (string)($payload['employeeUid'] ?? '')) {
                     throw new InvalidArgumentException('Ein Standarddienst kann nicht einer anderen Person zugeordnet werden.');
@@ -60,13 +62,6 @@ final class CalendarService {
         return $this->entries->find($id) ?? throw new InvalidArgumentException('Kalendereintrag nicht gefunden.');
     }
 
-    public function meetingGaps(DateTimeImmutable $start, array $employeeUids, int $durationMinutes): array {
-        $end = $start->modify('+7 days');
-        $absences = $this->absences->query($start, $end, $employeeUids);
-        $this->defaultShifts->syncWeek($start, $employeeUids, $absences);
-        return $this->meetingAvailability->find($this->entries->findRange($start, $end, $employeeUids), $employeeUids, $start, $end, $durationMinutes, $absences);
-    }
-
     public function deletionPreview(int $id): array {
         $entry = $this->existing($id);
         $children = $entry->type() === CalendarEntry::TYPE_SHIFT ? $this->entries->children($id) : [];
@@ -75,6 +70,9 @@ final class CalendarService {
 
     public function delete(int $id, string $childMode): void {
         $entry = $this->existing($id);
+        if ($entry->meetingUid() !== null) {
+            throw new InvalidArgumentException('Gemeinsame Meetings werden zusammen gelöscht.');
+        }
         $children = $entry->type() === CalendarEntry::TYPE_SHIFT ? $this->entries->children($id) : [];
         if ($entry->type() !== CalendarEntry::TYPE_SHIFT) {
             $this->entries->delete($id);
@@ -125,4 +123,5 @@ final class CalendarService {
             if (!$child->isWithin($entry)) $this->entries->detachChild((int)$child->id());
         }
     }
+
 }

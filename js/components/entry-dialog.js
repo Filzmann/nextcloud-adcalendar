@@ -34,10 +34,12 @@
 
         open({ employee, day, type, entry = null }) {
             this.form.reset();
+            this.fields.employee.disabled = false;
             this.fields['entry-id'].value = entry?.id || '';
             this.fields.employee.value = entry?.employeeUid || employee.uid;
             this.fields.type.value = entry?.type || type;
             this.fields.type.disabled = Boolean(entry);
+            this.fields.employee.disabled = Boolean(entry?.meetingUid);
             if (entry) {
                 this.fields.start.value = this.localDateTime(entry.start);
                 this.fields.end.value = this.localDateTime(entry.end);
@@ -58,6 +60,7 @@
             this.form.reset();
             this.fields['entry-id'].value = '';
             this.fields.type.disabled = false;
+            this.fields.employee.disabled = false;
         }
 
         updateType() {

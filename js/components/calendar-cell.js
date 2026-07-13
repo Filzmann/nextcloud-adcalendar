@@ -26,22 +26,24 @@
             const children = entries.filter(entry => entry.type === 'appointment' && entry.parentEntryId === shift.id);
             return `<article class="adc-entry adc-entry--shift" data-entry-id="${esc(shift.id)}">
                 ${this.header(shift, 'Dienst', canManage)}
-                ${children.length ? `<div class="adc-entry__children" aria-label="Termine innerhalb des Dienstes">${children.map(entry => this.entry(entry, 'appointment', canManage)).join('')}</div>` : ''}
+                ${children.length ? `<div class="adc-entry__children" aria-label="Termine innerhalb des Dienstes">${children.map(entry => this.entry(entry, 'appointment', canManage && (!entry.meetingUid || entry.canManageMeeting !== false))).join('')}</div>` : ''}
             </article>`;
         }
 
         entry(entry, kind, canManage) {
             const label = kind === 'blocked' ? 'Sperrtermin' : 'Termin';
-            return `<article class="adc-entry adc-entry--${kind}" data-entry-id="${esc(entry.id)}">${this.header(entry, label, canManage)}</article>`;
+            const manageable = canManage && (!entry.meetingUid || entry.canManageMeeting !== false);
+            return `<article class="adc-entry adc-entry--${kind}" data-entry-id="${esc(entry.id)}">${this.header(entry, label, manageable)}</article>`;
         }
 
         header(entry, label, canManage) {
             const title = entry.title ? `<span class="adc-entry__title">${esc(entry.title)}</span>` : '';
+            const blockedMarker = label === 'Sperrtermin' ? '<span class="adc-entry__blocked-marker" aria-hidden="true">🔒</span>' : '';
             const controls = canManage ? `<span class="adc-entry__actions">
                 <button type="button" class="adc-icon-button icon-rename" data-action="edit-entry" data-entry-id="${esc(entry.id)}" aria-label="${esc(label)} bearbeiten" title="Bearbeiten"></button>
                 <button type="button" class="adc-icon-button icon-delete" data-action="delete-entry" data-entry-id="${esc(entry.id)}" aria-label="${esc(label)} löschen" title="Löschen"></button>
             </span>` : '';
-            return `<header class="adc-entry__header"><span><strong>${esc(label)}</strong> ${esc(this.time(entry.start))}–${esc(this.time(entry.end))}</span>${controls}</header>${title}`;
+            return `<header class="adc-entry__header"><span>${blockedMarker}<strong>${esc(label)}</strong> ${esc(this.time(entry.start))}–${esc(this.time(entry.end))}</span>${controls}</header>${title}`;
         }
 
         time(value) {

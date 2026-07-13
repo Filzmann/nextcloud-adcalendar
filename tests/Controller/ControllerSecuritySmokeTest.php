@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 $source = file_get_contents(__DIR__ . '/../../lib/Controller/ApiController.php');
-if ($source === false) throw new RuntimeException('ApiController konnte nicht gelesen werden.');
+$meetingSource = file_get_contents(__DIR__ . '/../../lib/Controller/MeetingController.php');
+$routes = file_get_contents(__DIR__ . '/../../appinfo/routes.php');
+if ($source === false || $meetingSource === false || $routes === false) throw new RuntimeException('Controllervertrag konnte nicht gelesen werden.');
+if (!str_contains($source, 'use DateTimeImmutable;') || !str_contains($source, 'new DateTimeImmutable($start)')) throw new RuntimeException('Wochencontroller löst DateTimeImmutable nicht aus dem globalen Namespace auf.');
 
 foreach (['create', 'update', 'delete'] as $method) {
     if (!preg_match('/#\[NoAdminRequired\]\s+public function ' . $method . '\b/s', $source)) {
@@ -16,19 +19,20 @@ if (preg_match('/#\[NoCSRFRequired\]\s+#\[NoAdminRequired\]\s+public function (c
 foreach (['canView()', 'canManage('] as $guard) {
     if (!str_contains($source, $guard)) throw new RuntimeException("Berechtigungspruefung {$guard} fehlt.");
 }
-foreach (['settings', 'saveSettings', 'saveOrganizationSettings'] as $method) {
-    if (preg_match('/#\[NoAdminRequired\]\s+public function ' . $method . '\b/s', $source)) {
-        throw new RuntimeException("Admin-Einstellung {$method} ist fuer normale Nutzer*innen freigegeben.");
-    }
-}
-foreach (['preferences', 'savePreferences', 'saveShiftDefaults', 'meetingGaps'] as $method) {
+foreach (['saveSettings', 'saveOrganizationSettings'] as $method) if (str_contains($source, "function {$method}")) throw new RuntimeException("Organisationsweite Einstellung {$method} liegt noch in der Fachapp.");
+foreach (['preferences', 'savePreferences', 'saveShiftDefaults'] as $method) {
     if (!preg_match('/#\[NoAdminRequired\]\s+public function ' . $method . '\b/s', $source)) {
         throw new RuntimeException("Angemeldeter API-Pfad {$method} fehlt.");
     }
 }
-if (preg_match('/#\[NoCSRFRequired\]\s+#\[NoAdminRequired\]\s+public function (savePreferences|saveShiftDefaults|meetingGaps)\b/s', $source)) {
+if (preg_match('/#\[NoCSRFRequired\]\s+#\[NoAdminRequired\]\s+public function (savePreferences|saveShiftDefaults)\b/s', $source)) {
     throw new RuntimeException('Neue schreibende API-Pfade umgehen den CSRF-Schutz.');
 }
+foreach (['gaps', 'block', 'update', 'delete'] as $method) if (!preg_match('/#\[NoAdminRequired\]\s+public function ' . $method . '\b/s', $meetingSource)) throw new RuntimeException("Meeting-API {$method} fehlt.");
+if (str_contains($meetingSource, 'NoCSRFRequired') || !str_contains($meetingSource, 'foreach ($uids as $uid) if (!$this->access->canManage($uid))') || substr_count($meetingSource, 'foreach ($entries as $entry) if (!$this->access->canManage($entry->employeeUid()))') < 2) throw new RuntimeException('Meeting-API umgeht CSRF oder prüft nicht jeden Zielkalender.');
+foreach (["'meeting#gaps'", "'meeting#block'", "'meeting#update'", "'meeting#delete'"] as $route) if (!str_contains($routes, $route)) throw new RuntimeException("Meetingroute fehlt: {$route}");
+foreach (['meetingGaps', 'blockMeeting'] as $removed) if (str_contains($source, "function {$removed}")) throw new RuntimeException("Meetinglogik liegt noch im allgemeinen ApiController: {$removed}");
+if (substr_count($source, 'Gemeinsame Meetings werden zusammen') < 2) throw new RuntimeException('Einzel-API blockiert keine isolierte Bearbeitung verknüpfter Meetings.');
 if (str_contains($source, 'Response::STATUS_') || !str_contains($source, 'Http::STATUS_BAD_REQUEST')) {
     throw new RuntimeException('Controller verwendet nicht den Nextcloud-HTTP-Statusvertrag.');
 }

@@ -34,6 +34,11 @@ if ($overnight->durationWithin(new DateTimeImmutable('2026-07-13T00:00:00+02:00'
 $linked = CalendarEntry::get(array_merge($appointment->toArray(), ['parentEntryId' => 42]));
 if ($linked->parentEntryId() !== 42) throw new RuntimeException('Explizite Dienst-Termin-Zuordnung ging verloren.');
 
+$meeting = CalendarEntry::get(array_merge($appointment->toArray(), ['meetingUid' => 'meeting_2026-07-13_demo']));
+if ($meeting->meetingUid() !== 'meeting_2026-07-13_demo' || $meeting->toArray()['meetingUid'] !== 'meeting_2026-07-13_demo') {
+    throw new RuntimeException('Gemeinsame Meeting-Referenz ging bei Hydration oder Serialisierung verloren.');
+}
+
 $defaultShift = CalendarEntry::get(array_merge($shift->toArray(), ['defaultDate' => '2026-07-13']));
 if ($defaultShift->defaultDate() !== '2026-07-13' || $defaultShift->defaultModified() || $defaultShift->defaultDeleted()) {
     throw new RuntimeException('Standarddienst-Metadaten wurden nicht stabil hydratisiert.');
@@ -42,6 +47,12 @@ if ($defaultShift->defaultDate() !== '2026-07-13' || $defaultShift->defaultModif
 try {
     CalendarEntry::get(array_merge($shift->toArray(), ['parentEntryId' => 42]));
     throw new RuntimeException('Dienst mit Parent wurde akzeptiert.');
+} catch (InvalidArgumentException) {
+}
+
+try {
+    CalendarEntry::get(array_merge($shift->toArray(), ['meetingUid' => 'unzulässig']));
+    throw new RuntimeException('Dienst oder ungültige Meeting-Kennung wurde akzeptiert.');
 } catch (InvalidArgumentException) {
 }
 

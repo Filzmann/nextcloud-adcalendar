@@ -23,6 +23,7 @@ final class CalendarEntry {
         private readonly string $type,
         private readonly string $title,
         private readonly ?int $parentEntryId,
+        private readonly ?string $meetingUid,
         private readonly ?string $defaultDate,
         private readonly bool $defaultModified,
         private readonly bool $defaultDeleted,
@@ -52,6 +53,11 @@ final class CalendarEntry {
         if ($type === self::TYPE_SHIFT && $parentEntryId !== null) {
             throw new InvalidArgumentException('Ein Dienst darf keinen übergeordneten Eintrag haben.');
         }
+        $meetingUid = isset($payload['meetingUid']) && $payload['meetingUid'] !== null ? trim((string)$payload['meetingUid']) : null;
+        if ($meetingUid === '') $meetingUid = null;
+        if ($meetingUid !== null && ($type !== self::TYPE_APPOINTMENT || preg_match('/^[a-zA-Z0-9_-]{1,64}$/', $meetingUid) !== 1)) {
+            throw new InvalidArgumentException('Eine Meeting-Referenz benötigt einen Termin und eine gültige Kennung.');
+        }
         $defaultDate = isset($payload['defaultDate']) && $payload['defaultDate'] !== null ? (string)$payload['defaultDate'] : null;
         if ($defaultDate !== null && ($type !== self::TYPE_SHIFT || preg_match('/^\d{4}-\d{2}-\d{2}$/', $defaultDate) !== 1)) {
             throw new InvalidArgumentException('Eine Standarddienst-Referenz benötigt einen Dienst und ein gültiges Datum.');
@@ -64,6 +70,7 @@ final class CalendarEntry {
             $type,
             $title,
             $parentEntryId,
+            $meetingUid,
             $defaultDate,
             filter_var($payload['defaultModified'] ?? false, FILTER_VALIDATE_BOOL),
             filter_var($payload['defaultDeleted'] ?? false, FILTER_VALIDATE_BOOL),
@@ -105,6 +112,7 @@ final class CalendarEntry {
     public function type(): string { return $this->type; }
     public function title(): string { return $this->title; }
     public function parentEntryId(): ?int { return $this->parentEntryId; }
+    public function meetingUid(): ?string { return $this->meetingUid; }
     public function defaultDate(): ?string { return $this->defaultDate; }
     public function defaultModified(): bool { return $this->defaultModified; }
     public function defaultDeleted(): bool { return $this->defaultDeleted; }
@@ -118,6 +126,7 @@ final class CalendarEntry {
             'type' => $this->type,
             'title' => $this->title,
             'parentEntryId' => $this->parentEntryId,
+            'meetingUid' => $this->meetingUid,
             'defaultDate' => $this->defaultDate,
             'defaultModified' => $this->defaultModified,
             'defaultDeleted' => $this->defaultDeleted,

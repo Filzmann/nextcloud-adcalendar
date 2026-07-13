@@ -23,18 +23,6 @@
             });
         }
 
-        settings() {
-            return this.request('/api/settings');
-        }
-
-        saveSettings(peerEditing) {
-            return this.request('/api/settings', { method: 'PUT', body: JSON.stringify({ peerEditing }) });
-        }
-
-        saveOrganizationSettings(organization) {
-            return this.request('/api/settings/organization', { method: 'PUT', body: JSON.stringify({ organization }) });
-        }
-
         savePreferences(filters) {
             return this.request('/api/preferences', { method: 'PUT', body: JSON.stringify({ filters }) });
         }
@@ -48,6 +36,24 @@
                 method: 'POST',
                 body: JSON.stringify({ start, employeeUids, durationMinutes }),
             });
+        }
+
+        blockMeeting(start, end, employeeUids, title) {
+            return this.request('/api/meetings', {
+                method: 'POST',
+                body: JSON.stringify({ start, end, employeeUids, title }),
+            });
+        }
+
+        updateMeeting(meetingUid, start, end, title) {
+            return this.request(`/api/meetings/${this.encode(meetingUid)}`, {
+                method: 'PUT',
+                body: JSON.stringify({ start, end, title }),
+            });
+        }
+
+        removeMeeting(meetingUid) {
+            return this.request(`/api/meetings/${this.encode(meetingUid)}`, { method: 'DELETE' });
         }
     }
 

@@ -61,6 +61,9 @@ final class ApiController extends Controller {
         if (!$this->access->canManage($existing->employeeUid()) || !$this->access->canManage($employeeUid)) {
             return $this->denied();
         }
+        if ($existing->meetingUid() !== null) {
+            return new JSONResponse(['error' => 'Gemeinsame Meetings werden zusammen bearbeitet.'], Http::STATUS_CONFLICT);
+        }
         return $this->save($id, compact('employeeUid', 'start', 'end', 'type', 'title'));
     }
 
@@ -72,6 +75,9 @@ final class ApiController extends Controller {
             return new JSONResponse(['error' => 'Nicht gefunden.'], Http::STATUS_NOT_FOUND);
         }
         if (!$this->access->canManage($entry->employeeUid())) return $this->denied();
+        if ($entry->meetingUid() !== null) {
+            return new JSONResponse(['error' => 'Gemeinsame Meetings werden zusammen gelöscht.'], Http::STATUS_CONFLICT);
+        }
         try {
             $preview = $this->calendar->deletionPreview($id);
             if ($entry->type() === 'shift' && $preview['children'] !== [] && $childMode === '') {
@@ -81,25 +87,6 @@ final class ApiController extends Controller {
             return new JSONResponse(['deleted' => true, 'childMode' => $childMode]);
         } catch (\Throwable) {
             return new JSONResponse(['error' => 'Der Eintrag konnte nicht gelöscht werden.'], Http::STATUS_BAD_REQUEST);
-        }
-    }
-
-    public function settings(): JSONResponse {
-        return new JSONResponse(['peerEditing' => $this->settingsService->peerEditing(), 'peerOptions' => $this->settingsService->peerOptions(), 'organization' => $this->settingsService->organization()]);
-    }
-
-    public function saveSettings(array $peerEditing): JSONResponse {
-        return new JSONResponse(['peerEditing' => $this->settingsService->savePeerEditing($peerEditing)]);
-    }
-
-    public function saveOrganizationSettings(array $organization): JSONResponse {
-        try {
-            return new JSONResponse(['organization' => $this->settingsService->saveOrganization($organization)]);
-        } catch (InvalidArgumentException $error) {
-            return new JSONResponse(['error' => $error->getMessage()], Http::STATUS_BAD_REQUEST);
-        } catch (\Throwable $error) {
-            $this->logger->error('Organisationseinstellungen konnten nicht gespeichert werden.', ['exception' => $error]);
-            return new JSONResponse(['error' => 'Die Organisationseinstellungen konnten nicht gespeichert werden.'], Http::STATUS_BAD_REQUEST);
         }
     }
 
@@ -124,21 +111,6 @@ final class ApiController extends Controller {
         $user = $this->access->currentUser();
         if ($user === null) return $this->denied();
         return new JSONResponse(['shiftDefaults' => $this->preferences->saveShiftDefaults($user->getUID(), $shiftDefaults)]);
-    }
-
-    #[NoAdminRequired]
-    public function meetingGaps(string $start, array $employeeUids, int $durationMinutes = 60): JSONResponse {
-        if (!$this->access->canView()) return $this->denied();
-        try {
-            $uids = array_values(array_unique(array_map('strval', $employeeUids)));
-            $visible = array_fill_keys(array_column($this->access->visibleEmployees(), 'uid'), true);
-            if (!$this->validMeetingRequest($uids, $durationMinutes, $visible)) {
-                throw new \InvalidArgumentException();
-            }
-            return new JSONResponse(['gaps' => $this->calendar->meetingGaps(new DateTimeImmutable($start), $uids, $durationMinutes)]);
-        } catch (\Throwable) {
-            return new JSONResponse(['error' => 'Teilnehmende, Kalenderwoche oder Dauer sind ungültig.'], Http::STATUS_BAD_REQUEST);
-        }
     }
 
     private function save(?int $id, array $payload): JSONResponse {
@@ -174,13 +146,4 @@ final class ApiController extends Controller {
         ];
     }
 
-    private function validMeetingRequest(array $uids, int $durationMinutes, array $visible): bool {
-        if (count($uids) < 2 || count($uids) > 20 || $durationMinutes < 15 || $durationMinutes > 480) {
-            return false;
-        }
-        foreach ($uids as $uid) {
-            if (!isset($visible[$uid])) return false;
-        }
-        return true;
-    }
 }

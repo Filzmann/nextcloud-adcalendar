@@ -4,8 +4,8 @@
     <id>adcalendar</id>
     <name>AD Kalender</name>
     <summary>Dienst- und Terminplanung für Mitarbeiter*innen im Büro.</summary>
-    <description>Zeigt Dienste, darin liegende Termine, externe Sperrtermine und Dienstsummen in einer gemeinsamen Wochenuebersicht.</description>
-    <version>0.7.1</version>
+    <description>Zeigt Dienste, darin liegende Termine, externe Sperrtermine und Dienstsummen in einer gemeinsamen Wochenübersicht.</description>
+    <version>0.10.2</version>
     <licence>agpl</licence>
     <author>Simon / Codex-Prototyp</author>
     <namespace>AdCalendar</namespace>

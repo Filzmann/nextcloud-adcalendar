@@ -22,7 +22,7 @@ done
 week_start="$(date -d 'monday this week' +%F)"
 curl --fail --silent --show-error --insecure --user "$ADC_USER:$ADC_PASSWORD" \
     "$ADC_BASE_URL/index.php/apps/adcalendar/api/week?start=$week_start" --output "$api_response"
-for contract in '"employees"' '"entries"' '"summaries"'; do
+for contract in '"employees"' '"entries"' '"organization"' '"currentUserProfile"'; do
     if ! grep -q "$contract" "$api_response"; then
         echo "API-Vertrag fehlt: $contract" >&2
         exit 1

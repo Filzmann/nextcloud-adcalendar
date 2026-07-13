@@ -14,7 +14,7 @@ use OCP\IDBConnection;
 final class CalendarEntryRepository {
     private const COLUMNS = [
         'id', 'employee_uid', 'start_at', 'end_at', 'entry_type', 'title', 'parent_entry_id',
-        'default_date', 'default_modified', 'default_deleted',
+        'meeting_uid', 'default_date', 'default_modified', 'default_deleted',
     ];
 
     public function __construct(private IDBConnection $db) {}
@@ -50,19 +50,29 @@ final class CalendarEntryRepository {
         return $row === false ? null : CalendarEntry::get($this->mapRow($row));
     }
 
+    /** @return list<CalendarEntry> */
+    public function findMeeting(string $meetingUid): array {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select(...self::COLUMNS)->from('adc_entries')
+            ->where($qb->expr()->eq('meeting_uid', $qb->createNamedParameter($meetingUid)))
+            ->andWhere($qb->expr()->eq('default_deleted', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)))
+            ->orderBy('employee_uid', 'ASC');
+        return CalendarEntry::get_all(array_map([$this, 'mapRow'], $qb->executeQuery()->fetchAllAssociative()));
+    }
+
     public function save(CalendarEntry $entry, string $actorUid): int {
         $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
         $values = [
             'employee_uid' => $entry->employeeUid(), 'start_at' => $entry->start(), 'end_at' => $entry->end(),
             'entry_type' => $entry->type(), 'title' => $entry->title(), 'parent_entry_id' => $entry->parentEntryId(),
-            'default_date' => $entry->defaultDate(), 'default_modified' => $entry->defaultModified(),
+            'meeting_uid' => $entry->meetingUid(), 'default_date' => $entry->defaultDate(), 'default_modified' => $entry->defaultModified(),
             'default_deleted' => $entry->defaultDeleted(), 'updated_at' => $now,
         ];
         $types = [
             'employee_uid' => IQueryBuilder::PARAM_STR, 'start_at' => IQueryBuilder::PARAM_DATETIME_IMMUTABLE,
             'end_at' => IQueryBuilder::PARAM_DATETIME_IMMUTABLE, 'entry_type' => IQueryBuilder::PARAM_STR,
             'title' => IQueryBuilder::PARAM_STR, 'parent_entry_id' => IQueryBuilder::PARAM_INT,
-            'default_date' => IQueryBuilder::PARAM_STR, 'default_modified' => IQueryBuilder::PARAM_BOOL,
+            'meeting_uid' => IQueryBuilder::PARAM_STR, 'default_date' => IQueryBuilder::PARAM_STR, 'default_modified' => IQueryBuilder::PARAM_BOOL,
             'default_deleted' => IQueryBuilder::PARAM_BOOL, 'updated_at' => IQueryBuilder::PARAM_DATETIME_IMMUTABLE,
         ];
         $qb = $this->db->getQueryBuilder();
@@ -83,9 +93,29 @@ final class CalendarEntryRepository {
         return $entry->id() ?? (int)$this->db->lastInsertId('adc_entries');
     }
 
+    /** Vertrag: Gemeinsame Meetingtermine werden vollständig oder gar nicht gespeichert. */
+    public function saveMany(array $entries, string $actorUid): array {
+        $this->db->beginTransaction();
+        try {
+            $ids = array_map(fn(CalendarEntry $entry): int => $this->save($entry, $actorUid), $entries);
+            $this->db->commit();
+            return $ids;
+        } catch (\Throwable $error) {
+            $this->db->rollBack();
+            throw $error;
+        }
+    }
+
     public function delete(int $id): void {
         $qb = $this->db->getQueryBuilder();
         $qb->delete('adc_entries')->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))->executeStatement();
+    }
+
+    public function deleteMeeting(string $meetingUid): void {
+        $qb = $this->db->getQueryBuilder();
+        $qb->delete('adc_entries')
+            ->where($qb->expr()->eq('meeting_uid', $qb->createNamedParameter($meetingUid)))
+            ->executeStatement();
     }
 
     /** @return list<CalendarEntry> */
@@ -226,6 +256,7 @@ final class CalendarEntryRepository {
             'id' => (int)$row['id'], 'employeeUid' => $row['employee_uid'], 'start' => (string)$row['start_at'],
             'end' => (string)$row['end_at'], 'type' => $row['entry_type'], 'title' => $row['title'],
             'parentEntryId' => $row['parent_entry_id'] === null ? null : (int)$row['parent_entry_id'],
+            'meetingUid' => $row['meeting_uid'] === null ? null : (string)$row['meeting_uid'],
             'defaultDate' => $row['default_date'] === null ? null : (string)$row['default_date'],
             'defaultModified' => (bool)$row['default_modified'], 'defaultDeleted' => (bool)$row['default_deleted'],
         ];

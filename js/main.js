@@ -10,7 +10,7 @@
     const OrganizationModel = window.AdCalendar.models.Organization;
     const leadershipStaffRoles = new Set();
     let organization = new OrganizationModel({});
-    const elements = Object.fromEntries(['week-label','calendar-body','calendar-head','notice','role-filters','area-filters','person-search','search-results','selected-people','filter-status','week-number','toggle-view','settings','settings-form','peer-settings','organization-form','organization-settings'].map(id => [id, document.getElementById(`adc-${id}`)]));
+    const elements = Object.fromEntries(['week-label','calendar-body','calendar-head','notice','role-filters','area-filters','person-search','search-results','selected-people','filter-status','week-number','toggle-view'].map(id => [id, document.getElementById(`adc-${id}`)]));
     const state = new window.AdCalendar.modules.CalendarState(leadershipStaffRoles).restore();
     const tabs = new window.AdCalendar.components.TabNavigation({
         calendarButton: document.getElementById('adc-tab-calendar'),
@@ -30,11 +30,12 @@
         shiftDefaults: () => state.data?.shiftDefaults || {},
         onSubmit: saveEntry,
     });
-    const meetingFinder = new window.AdCalendar.components.MeetingFinder({ repository, onError: error => show(error, true) });
-    const shiftDefaults = new window.AdCalendar.components.ShiftDefaults({ onSave: saveShiftDefaults });
-    const organizationSettings = new window.AdCalendar.components.OrganizationSettings({
-        container: elements['organization-settings'], form: elements['organization-form'], onSave: saveOrganization,
+    const meetingFinder = new window.AdCalendar.components.MeetingFinder({
+        repository,
+        onError: error => show(error, true),
+        onBlocked: async () => { await load(); show('Meeting wurde für alle ausgewählten Personen blockiert.'); },
     });
+    const shiftDefaults = new window.AdCalendar.components.ShiftDefaults({ onSave: saveShiftDefaults });
 
     function startOfWeek(value) { const result = new Date(value); const weekday = result.getDay() || 7; result.setDate(result.getDate() - weekday + 1); result.setHours(0, 0, 0, 0); return result; }
     function isoDay(value) { const year = value.getFullYear(); const month = String(value.getMonth() + 1).padStart(2, '0'); const day = String(value.getDate()).padStart(2, '0'); return `${year}-${month}-${day}`; }
@@ -79,9 +80,15 @@
 
     async function saveEntry(data) {
         try {
-            await repository.save({ employeeUid: data.employeeUid, type: data.type, start: data.start, end: data.end, title: data.title }, data.id);
+            const existing = state.data.entries.find(entry => entry.id === Number(data.id));
+            if (existing?.meetingUid) {
+                if (!existing.canManageMeeting) throw new Error('Das gemeinsame Meeting darf nur bearbeitet werden, wenn alle beteiligten Kalender bearbeitet werden dürfen.');
+                await repository.updateMeeting(existing.meetingUid, data.start, data.end, data.title);
+            } else {
+                await repository.save({ employeeUid: data.employeeUid, type: data.type, start: data.start, end: data.end, title: data.title }, data.id);
+            }
             entryDialog.close();
-            show('Eintrag gespeichert.');
+            show(existing?.meetingUid ? 'Meeting für alle Beteiligten gespeichert.' : 'Eintrag gespeichert.');
             await load();
         } catch (error) {
             show(error, true);
@@ -95,17 +102,6 @@
             shiftDefaults.set(response.shiftDefaults);
             await load();
             show('Persönliche Standard-Dienstzeiten gespeichert.');
-        } catch (error) { show(error, true); }
-    }
-
-    async function saveOrganization(data) {
-        try {
-            const response = await repository.saveOrganizationSettings(data);
-            applyOrganization(response.organization);
-            organizationSettings.set(organization);
-            await load();
-            await loadSettings();
-            show('Organisationseinstellungen gespeichert.');
         } catch (error) { show(error, true); }
     }
 
@@ -126,6 +122,16 @@
     function isoWeekValue(date) { const value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())); const day = value.getUTCDay() || 7; value.setUTCDate(value.getUTCDate() + 4 - day); const yearStart = new Date(Date.UTC(value.getUTCFullYear(), 0, 1)); const week = Math.ceil((((value - yearStart) / 86400000) + 1) / 7); return `${value.getUTCFullYear()}-W${String(week).padStart(2, '0')}`; }
 
     async function removeEntry(entry) {
+        if (entry.meetingUid) {
+            if (!entry.canManageMeeting) { show('Das gemeinsame Meeting darf nur gelöscht werden, wenn alle beteiligten Kalender bearbeitet werden dürfen.', true); return; }
+            if (!window.confirm('Meeting wirklich für alle Beteiligten löschen?')) return;
+            try {
+                await repository.removeMeeting(entry.meetingUid);
+                show('Meeting für alle Beteiligten gelöscht.');
+                await load();
+            } catch (error) { show(error, true); }
+            return;
+        }
         let mode = '';
         if (entry.type === 'shift') {
             try { await repository.remove(entry.id); show('Dienst gelöscht.'); await load(); return; }
@@ -144,16 +150,21 @@
 
     async function load() {
         const sunday = new Date(state.monday); sunday.setDate(sunday.getDate() + 6); elements['week-label'].textContent = `${state.monday.toLocaleDateString('de-DE')} – ${sunday.toLocaleDateString('de-DE')}`; elements['week-number'].value = isoWeekValue(state.monday);
-        try { state.data = await repository.week(isoDay(state.monday)); state.data.entries = EntryModel.get_all(state.data.entries); applyOrganization(state.data.organization); state.applyInitialFilters(); renderFilters(); renderTable(); tabs.show(state.activeTab, false); show(''); } catch (error) { show(error, true); }
+        try { state.data = await repository.week(isoDay(state.monday)); state.data.entries = EntryModel.get_all(state.data.entries); applyMeetingCapabilities(); applyOrganization(state.data.organization); state.applyInitialFilters(); renderFilters(); renderTable(); tabs.show(state.activeTab, false); show(''); } catch (error) { show(error, true); }
     }
 
-    async function loadSettings() {
-        let data; try { data = await repository.settings(); } catch (_) { return; }
-        elements.settings.hidden = false;
-        applyOrganization(data.organization);
-        organizationSettings.set(organization);
-        const labels = new Map((data.peerOptions || []).map(option => [option.groupId, option.label]));
-        elements['peer-settings'].replaceChildren(...Object.entries(data.peerEditing).map(([group, enabled]) => { const label = node('label'); const input = document.createElement('input'); input.type = 'checkbox'; input.name = group; input.checked = enabled; label.append(input, document.createTextNode(` ${labels.get(group) || organization.roleLabel(group)}`)); return label; }));
+    function applyMeetingCapabilities() {
+        const employees = new Map(state.data.employees.map(employee => [employee.uid, employee]));
+        const meetings = new Map();
+        for (const entry of state.data.entries) {
+            if (!entry.meetingUid) continue;
+            if (!meetings.has(entry.meetingUid)) meetings.set(entry.meetingUid, []);
+            meetings.get(entry.meetingUid).push(entry);
+        }
+        for (const entries of meetings.values()) {
+            const canManage = entries.every(entry => employees.get(entry.employeeUid)?.canManage === true);
+            for (const entry of entries) entry.canManageMeeting = canManage;
+        }
     }
 
     document.getElementById('adc-previous-week').addEventListener('click', () => { state.monday.setDate(state.monday.getDate() - 7); load(); });
@@ -184,7 +195,5 @@
         if (button.dataset.action === 'edit-entry') entryDialog.open({ employee, day: new Date(entry.start), type: entry.type, entry });
         if (button.dataset.action === 'delete-entry') removeEntry(entry);
     });
-    elements['settings-form'].addEventListener('submit', async event => { event.preventDefault(); const peerEditing = Object.fromEntries([...elements['peer-settings'].querySelectorAll('input')].map(input => [input.name, input.checked])); try { await repository.saveSettings(peerEditing); show('Bearbeitungsrechte gespeichert.'); await load(); } catch (error) { show(error, true); } });
     load();
-    loadSettings();
 }());

@@ -17,6 +17,8 @@
             this.type = String(data.type || '');
             this.title = String(data.title || '');
             this.parentEntryId = data.parentEntryId == null ? null : Number(data.parentEntryId);
+            this.meetingUid = data.meetingUid == null ? null : String(data.meetingUid);
+            this.canManageMeeting = data.canManageMeeting !== false;
             this.isBlocked = Boolean(data.isBlocked);
             this.defaultDate = data.defaultDate == null ? null : String(data.defaultDate);
             this.defaultModified = Boolean(data.defaultModified);
@@ -32,6 +34,7 @@
                 type: this.type,
                 title: this.title,
                 parentEntryId: this.parentEntryId,
+                meetingUid: this.meetingUid,
                 isBlocked: this.isBlocked,
                 defaultDate: this.defaultDate,
                 defaultModified: this.defaultModified,
