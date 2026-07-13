@@ -20,12 +20,15 @@ for (const contract of [
     'weekTable.render(employees, state)',
     'entryWorkflow.save(data)',
     'repository.savePreferences(state.toPreference())',
-    'applyOrganization(state.data.organization)',
+    'applyOrganization(data.organization)',
     'tabs.show(state.activeTab, false)',
     'shiftDefaults.set(state.data.shiftDefaults || {})',
     'repository.saveShiftDefaults(defaults)',
     'meetingFinder.open(isoDay(state.monday)',
-    'meetingCapabilities.apply(state.data.entries, state.data.employees)',
+    'meetingCapabilities.apply(data.entries, data.employees)',
+    'const sequence = ++loadSequence',
+    'if (sequence !== loadSequence) return;',
+    'if (sequence === loadSequence) show(error, true)',
 ]) {
     if (!source.includes(contract)) throw new Error(`Frontend-Vertrag fehlt: ${contract}`);
 }

@@ -9,6 +9,7 @@
     const EntryModel = window.AdCalendar.models.CalendarEntry;
     const OrganizationModel = window.AdCalendar.models.Organization;
     const leadershipStaffRoles = new Set();
+    let loadSequence = 0;
     let organization = new OrganizationModel({});
     const elements = Object.fromEntries(['calendar-body','calendar-head','filter-status'].map(id => [id, document.getElementById(`adc-${id}`)]));
     const state = new window.AdCalendar.modules.CalendarState(leadershipStaffRoles).restore();
@@ -91,8 +92,24 @@
     }
 
     async function load() {
+        const sequence = ++loadSequence;
+        const week = isoDay(state.monday);
         weekNavigation.render();
-        try { state.data = await repository.week(isoDay(state.monday)); state.data.entries = EntryModel.get_all(state.data.entries); meetingCapabilities.apply(state.data.entries, state.data.employees); applyOrganization(state.data.organization); state.applyInitialFilters(); renderFilters(); renderTable(); tabs.show(state.activeTab, false); show(''); } catch (error) { show(error, true); }
+        try {
+            const data = await repository.week(week);
+            if (sequence !== loadSequence) return;
+            data.entries = EntryModel.get_all(data.entries);
+            meetingCapabilities.apply(data.entries, data.employees);
+            state.data = data;
+            applyOrganization(data.organization);
+            state.applyInitialFilters();
+            renderFilters();
+            renderTable();
+            tabs.show(state.activeTab, false);
+            show('');
+        } catch (error) {
+            if (sequence === loadSequence) show(error, true);
+        }
     }
 
     document.getElementById('adc-open-meeting-finder').addEventListener('click', () => meetingFinder.open(isoDay(state.monday), state.data.employees, [...state.selected]));
