@@ -3,6 +3,7 @@ script('localbase', 'api/api-client');
 script('localbase', 'models/model');
 script('localbase', 'repositories/repository');
 script('localbase', 'ui/ui');
+script('orgsuite', 'suite-navigation');
 script('adcalendar', 'models/calendar-entry');
 script('adcalendar', 'repositories/calendar-repository');
 script('adcalendar', 'modules/calendar-state');
@@ -14,8 +15,10 @@ script('adcalendar', 'components/tab-navigation');
 script('adcalendar', 'components/week-table');
 script('adcalendar', 'main');
 style('adcalendar', 'style');
+style('orgsuite', 'suite-navigation');
 ?>
 <div id="adcalendar-app" class="adc-app">
+    <div class="orgsuite-host" data-orgsuite data-suite="ad" data-current-app="adcalendar"></div>
     <header class="adc-header">
         <div>
             <h1>AD Kalender</h1>

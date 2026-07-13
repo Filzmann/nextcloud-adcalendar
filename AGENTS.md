@@ -136,6 +136,12 @@ Migrationen laufen beim Aktivieren der App bzw. ueber `occ upgrade`; `occ migrat
 
 ## Learnings
 
+### Gemeinsame Suite-Navigation
+
+- AD Kalender besitzt keinen eigenen Nextcloud-Hauptnavigationseintrag. `orgsuite` stellt den gemeinsamen Einstieg `AD` bereit.
+- Das Template bindet das zentrale OrgSuite-Menue mit `data-suite="ad"` und `data-current-app="adcalendar"` ein.
+- Fachliche Lese- und Bearbeitungsrechte bleiben ausschliesslich serverseitig im AD Kalender; Menuesichtbarkeit ist keine Berechtigung.
+
 - Wiederverwendbare app-spezifische Learnings werden Simon zuerst im Standardformat vorgeschlagen.
 - Dauerhafte Ergaenzungen dieser Datei erfolgen nur nach ausdruecklicher Freigabe.
 - App-uebergreifende Regeln gehoeren in die Parent-`AGENTS.md`.
