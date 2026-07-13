@@ -99,9 +99,20 @@ filterState.data = {
     ],
 };
 filterState.applyInitialFilters();
-if (filterState.availableEmployees().map(employee => employee.uid).join(',') !== 'bo') throw new Error('Eigengruppen-Standard wurde beim Refactoring verändert.');
-filterState.showLeadershipStaff = false; filterState.roles.clear(); filterState.persist();
-if (filterState.availableEmployees().some(employee => employee.uid === 'pdl') || !historyCalls.length) throw new Error('Stabsfilter oder URL-Persistenz wurde beim Refactoring verändert.');
+if (filterState.showLeadershipStaff || filterState.availableEmployees().map(employee => employee.uid).join(',') !== 'bo') throw new Error('Eigengruppen-Standard wurde beim Refactoring verändert.');
+filterState.showLeadershipStaff = true; filterState.persist();
+if (filterState.availableEmployees().map(employee => employee.uid).join(',') !== 'bo,pdl' || !historyCalls.at(-1)[2].includes('staff=visible')) throw new Error('Der gemeinsame Stabs-/GF-Block wird nicht unabhängig zugeschaltet oder in der URL persistiert.');
+filterState.showLeadershipStaff = false; filterState.persist();
+if (filterState.availableEmployees().some(employee => employee.uid === 'pdl') || !historyCalls.at(-1)[2].includes('staff=hidden')) throw new Error('Stabsfilter oder URL-Persistenz wurde beim Refactoring verändert.');
+
+const staffDefaultState = new CalendarState(new Set(['ad-PDL']), { search: '', pathname: '/apps/adcalendar/' }, { replaceState() {} }).restore();
+staffDefaultState.data = {
+    defaultFilters: null,
+    currentUserProfile: { roles: ['ad-PDL'], areas: [] },
+    employees: filterState.data.employees,
+};
+staffDefaultState.applyInitialFilters();
+if (!staffDefaultState.showLeadershipStaff || staffDefaultState.availableEmployees().map(employee => employee.uid).join(',') !== 'pdl') throw new Error('Mitglieder des gemeinsamen Leitungs-/Stabsblocks erhalten nicht ihren passenden Erststandard.');
 
 const dialogContext = { window: {}, document: {}, Date };
 runInNewContext(entryDialog, dialogContext);

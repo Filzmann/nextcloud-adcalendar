@@ -40,7 +40,7 @@
             const params = new URLSearchParams();
             params.set('week', this.isoDay(this.monday));
             if (!this.vertical) params.set('view', 'days');
-            if (!this.showLeadershipStaff) params.set('staff', 'hidden');
+            params.set('staff', this.showLeadershipStaff ? 'visible' : 'hidden');
             if (this.activeTab === 'settings') params.set('tab', 'settings');
             if (this.selected.size) params.set('people', [...this.selected].join(','));
             if (this.roles.size) params.set('roles', [...this.roles].join(','));
@@ -56,11 +56,14 @@
                     people: [], roles: this.data.currentUserProfile?.roles || [],
                     areas: this.data.currentUserProfile?.areas || [], vertical: true,
                 };
+                const filterRoles = filters.roles || [];
                 this.selected = new Set(filters.people || []);
-                this.roles = new Set(filters.roles || []);
+                this.roles = new Set(filterRoles.filter(role => !this.leadershipStaffRoles.has(role)));
                 this.areas = new Set(filters.areas || []);
                 this.vertical = filters.vertical !== false;
-                this.showLeadershipStaff = filters.showLeadershipStaff !== false;
+                this.showLeadershipStaff = usesOwnProfile
+                    ? filterRoles.some(role => this.leadershipStaffRoles.has(role))
+                    : filters.showLeadershipStaff !== false;
                 this.emptyOwnProfile = filters.empty === true || (usesOwnProfile && this.roles.size === 0 && this.areas.size === 0);
             }
             this.filtersInitialized = true;
@@ -69,9 +72,10 @@
         availableEmployees() {
             if (!this.data) return [];
             return this.data.employees.filter(employee => {
+                const isLeadershipStaff = employee.roles.some(role => this.leadershipStaffRoles.has(role));
+                if (this.selected.size) return this.selected.has(employee.uid) && (!isLeadershipStaff || this.showLeadershipStaff);
+                if (isLeadershipStaff) return this.showLeadershipStaff;
                 if (this.emptyOwnProfile) return false;
-                if (!this.showLeadershipStaff && employee.roles.some(role => this.leadershipStaffRoles.has(role))) return false;
-                if (this.selected.size) return this.selected.has(employee.uid);
                 if (this.roles.size && !employee.roles.some(role => this.roles.has(role))) return false;
                 if (this.areas.size && !employee.areas.some(area => this.areas.has(area))) return false;
                 return true;

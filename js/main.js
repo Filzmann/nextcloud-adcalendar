@@ -58,7 +58,6 @@
         input.type = 'checkbox';
         input.checked = state.showLeadershipStaff;
         input.addEventListener('change', () => {
-            state.emptyOwnProfile = false;
             state.showLeadershipStaff = input.checked;
             if (!input.checked) for (const role of LEADERSHIP_STAFF_ROLES) state.roles.delete(role);
             state.persist(); renderTable();
