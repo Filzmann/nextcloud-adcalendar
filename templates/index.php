@@ -1,28 +1,28 @@
 <?php
-script('localbase', 'api/api-client');
-script('localbase', 'models/model');
-script('localbase', 'repositories/repository');
-script('localbase', 'ui/ui');
-script('orgsuite', 'suite-navigation');
-script('adcalendar', 'models/calendar-entry');
-script('adcalendar', 'models/organization');
-script('adcalendar', 'repositories/calendar-repository');
-script('adcalendar', 'modules/calendar-date');
-script('adcalendar', 'modules/calendar-state');
-script('adcalendar', 'modules/calendar-timeline');
-script('adcalendar', 'modules/entry-workflow');
-script('adcalendar', 'modules/meeting-capabilities');
-script('adcalendar', 'components/calendar-filters');
-script('adcalendar', 'components/calendar-cell');
-script('adcalendar', 'components/entry-dialog');
-script('adcalendar', 'components/meeting-finder');
-script('adcalendar', 'components/shift-defaults');
-script('adcalendar', 'components/tab-navigation');
-script('adcalendar', 'components/week-navigation');
-script('adcalendar', 'components/week-table');
-script('adcalendar', 'main');
-style('adcalendar', 'style');
-style('orgsuite', 'suite-navigation');
+\OCP\Util::addScript('localbase', 'api/api-client');
+\OCP\Util::addScript('localbase', 'models/model');
+\OCP\Util::addScript('localbase', 'repositories/repository');
+\OCP\Util::addScript('localbase', 'ui/ui');
+\OCP\Util::addScript('orgsuite', 'suite-navigation');
+\OCP\Util::addScript('adcalendar', 'models/calendar-entry');
+\OCP\Util::addScript('adcalendar', 'models/organization');
+\OCP\Util::addScript('adcalendar', 'repositories/calendar-repository');
+\OCP\Util::addScript('adcalendar', 'modules/calendar-date');
+\OCP\Util::addScript('adcalendar', 'modules/calendar-state');
+\OCP\Util::addScript('adcalendar', 'modules/calendar-timeline');
+\OCP\Util::addScript('adcalendar', 'modules/entry-workflow');
+\OCP\Util::addScript('adcalendar', 'modules/meeting-capabilities');
+\OCP\Util::addScript('adcalendar', 'components/calendar-filters');
+\OCP\Util::addScript('adcalendar', 'components/calendar-cell');
+\OCP\Util::addScript('adcalendar', 'components/entry-dialog');
+\OCP\Util::addScript('adcalendar', 'components/meeting-finder');
+\OCP\Util::addScript('adcalendar', 'components/shift-defaults');
+\OCP\Util::addScript('adcalendar', 'components/tab-navigation');
+\OCP\Util::addScript('adcalendar', 'components/week-navigation');
+\OCP\Util::addScript('adcalendar', 'components/week-table');
+\OCP\Util::addScript('adcalendar', 'main');
+\OCP\Util::addStyle('adcalendar', 'style');
+\OCP\Util::addStyle('orgsuite', 'suite-navigation');
 ?>
 <div id="adcalendar-app" class="adc-app">
     <div class="orgsuite-host" data-orgsuite data-suite="ad" data-current-app="adcalendar"></div>
