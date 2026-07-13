@@ -6,6 +6,7 @@ const repository = readFileSync(new URL('../../js/repositories/calendar-reposito
 const model = readFileSync(new URL('../../js/models/calendar-entry.js', import.meta.url), 'utf8');
 const organizationModel = readFileSync(new URL('../../js/models/organization.js', import.meta.url), 'utf8');
 const calendarCell = readFileSync(new URL('../../js/components/calendar-cell.js', import.meta.url), 'utf8');
+const calendarFilters = readFileSync(new URL('../../js/components/calendar-filters.js', import.meta.url), 'utf8');
 const entryDialog = readFileSync(new URL('../../js/components/entry-dialog.js', import.meta.url), 'utf8');
 const meetingFinder = readFileSync(new URL('../../js/components/meeting-finder.js', import.meta.url), 'utf8');
 const shiftDefaults = readFileSync(new URL('../../js/components/shift-defaults.js', import.meta.url), 'utf8');
@@ -22,7 +23,6 @@ for (const contract of [
     "dialog.addEventListener('cancel'",
     'repository.savePreferences(state.toPreference())',
     'applyOrganization(state.data.organization)',
-    'organization.staffBlockLabel',
     'tabs.show(state.activeTab, false)',
     'shiftDefaults.set(state.data.shiftDefaults || {})',
     'repository.saveShiftDefaults(defaults)',
@@ -30,10 +30,11 @@ for (const contract of [
     'applyMeetingCapabilities()',
     'repository.updateMeeting(existing.meetingUid',
     'repository.removeMeeting(entry.meetingUid)',
-    "elements['reset-selection'].addEventListener('click'",
-    'state.selected.clear()',
 ]) {
     if (!source.includes(contract)) throw new Error(`Frontend-Vertrag fehlt: ${contract}`);
+}
+for (const contract of ['class CalendarFilters', 'this.renderLeadershipStaffCheckbox()', 'this.state.selected.clear()', 'this.state.persist()', 'this.onChange()', 'Keine explizite Auswahl – Gruppenfilter gelten.', 'this.organization().staffBlockLabel']) {
+    if (!calendarFilters.includes(contract)) throw new Error(`Kalenderfilter-Komponentenvertrag fehlt: ${contract}`);
 }
 for (const contract of ['class TabNavigation', "addEventListener('click'", "this.show('settings')", "this.onChange(active)"]) {
     if (!tabNavigation.includes(contract)) throw new Error(`Tab-Komponentenvertrag fehlt: ${contract}`);

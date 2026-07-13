@@ -10,7 +10,7 @@
     const OrganizationModel = window.AdCalendar.models.Organization;
     const leadershipStaffRoles = new Set();
     let organization = new OrganizationModel({});
-    const elements = Object.fromEntries(['week-label','calendar-body','calendar-head','notice','role-filters','area-filters','person-search','search-results','selected-people','reset-selection','filter-status','week-number','toggle-view'].map(id => [id, document.getElementById(`adc-${id}`)]));
+    const elements = Object.fromEntries(['week-label','calendar-body','calendar-head','notice','filter-status','week-number','toggle-view'].map(id => [id, document.getElementById(`adc-${id}`)]));
     const state = new window.AdCalendar.modules.CalendarState(leadershipStaffRoles).restore();
     const tabs = new window.AdCalendar.components.TabNavigation({
         calendarButton: document.getElementById('adc-tab-calendar'),
@@ -36,6 +36,12 @@
         onBlocked: async () => { await load(); show('Meeting wurde für alle ausgewählten Personen blockiert.'); },
     });
     const shiftDefaults = new window.AdCalendar.components.ShiftDefaults({ onSave: saveShiftDefaults });
+    const calendarFilters = new window.AdCalendar.components.CalendarFilters({
+        state,
+        organization: () => organization,
+        leadershipStaffRoles,
+        onChange: renderTable,
+    });
 
     function startOfWeek(value) { const result = new Date(value); const weekday = result.getDay() || 7; result.setDate(result.getDate() - weekday + 1); result.setHours(0, 0, 0, 0); return result; }
     function isoDay(value) { const year = value.getFullYear(); const month = String(value.getMonth() + 1).padStart(2, '0'); const day = String(value.getDate()).padStart(2, '0'); return `${year}-${month}-${day}`; }
@@ -43,40 +49,10 @@
     function show(message, error) { if (error) notice.error(message); else if (message) notice.success(message); else notice.clear(); }
 
     function renderFilters() {
-        const roles = [...new Set(state.data.employees.flatMap(employee => employee.roles))].filter(role => !leadershipStaffRoles.has(role)).sort((a, b) => organization.roleOrder(a) - organization.roleOrder(b));
-        const areas = [...new Set(state.data.employees.flatMap(employee => employee.areas))].sort((a, b) => organization.areaLabel(a).localeCompare(organization.areaLabel(b), 'de'));
-        renderCheckboxes(elements['role-filters'], roles, state.roles);
-        renderLeadershipStaffCheckbox();
-        renderCheckboxes(elements['area-filters'], areas, state.areas);
+        calendarFilters.render();
         entryDialog.setEmployees(state.data.employees.filter(employee => employee.canManage));
         shiftDefaults.set(state.data.shiftDefaults || {});
         document.getElementById('adc-open-meeting-finder').disabled = false;
-        renderSelected();
-    }
-
-    function renderLeadershipStaffCheckbox() {
-        const label = node('label');
-        const input = document.createElement('input');
-        input.type = 'checkbox';
-        input.checked = state.showLeadershipStaff;
-        input.addEventListener('change', () => {
-            state.showLeadershipStaff = input.checked;
-            if (!input.checked) for (const role of leadershipStaffRoles) state.roles.delete(role);
-            state.persist(); renderTable();
-        });
-        label.append(input, document.createTextNode(` ${organization.staffBlockLabel} anzeigen`));
-        elements['role-filters'].append(label);
-    }
-
-    function renderCheckboxes(container, values, selected) {
-        container.replaceChildren(...values.map(value => { const label = node('label'); const input = document.createElement('input'); input.type = 'checkbox'; input.checked = selected.has(value); input.addEventListener('change', () => { state.emptyOwnProfile = false; input.checked ? selected.add(value) : selected.delete(value); state.persist(); renderTable(); }); const text = state.data.employees.some(employee => employee.roles.includes(value)) ? organization.roleLabel(value) : organization.areaLabel(value); label.append(input, document.createTextNode(' ' + text)); return label; }));
-    }
-
-    function renderSelected() {
-        const people = state.data.employees.filter(employee => state.selected.has(employee.uid));
-        elements['reset-selection'].hidden = people.length === 0;
-        if (!people.length) { elements['selected-people'].replaceChildren(node('li', 'Keine explizite Auswahl – Gruppenfilter gelten.')); return; }
-        elements['selected-people'].replaceChildren(...people.map(employee => { const item = node('li'); const button = node('button', `${employee.displayName} entfernen`); button.type = 'button'; button.addEventListener('click', () => { state.emptyOwnProfile = false; state.selected.delete(employee.uid); state.persist(); renderSelected(); renderTable(); }); item.append(button); return item; }));
     }
 
     async function saveEntry(data) {
@@ -171,15 +147,6 @@
     document.getElementById('adc-previous-week').addEventListener('click', () => { state.monday.setDate(state.monday.getDate() - 7); load(); });
     document.getElementById('adc-next-week').addEventListener('click', () => { state.monday.setDate(state.monday.getDate() + 7); load(); });
     document.getElementById('adc-open-meeting-finder').addEventListener('click', () => meetingFinder.open(isoDay(state.monday), state.data.employees, [...state.selected]));
-    elements['reset-selection'].addEventListener('click', () => {
-        state.emptyOwnProfile = false;
-        state.selected.clear();
-        state.persist();
-        elements['person-search'].value = '';
-        elements['search-results'].replaceChildren();
-        renderSelected();
-        renderTable();
-    });
     document.getElementById('adc-save-default').addEventListener('click', async () => {
         try {
             await repository.savePreferences(state.toPreference());
@@ -188,7 +155,6 @@
     });
     elements['toggle-view'].addEventListener('click', () => { state.vertical = !state.vertical; state.persist(); renderTable(); });
     elements['week-number'].addEventListener('change', event => { if (event.target.value) { const [year, week] = event.target.value.split('-W').map(Number); const januaryFourth = new Date(year, 0, 4); state.monday = startOfWeek(januaryFourth); state.monday.setDate(state.monday.getDate() + (week - 1) * 7); load(); } });
-    elements['person-search'].addEventListener('input', event => { const query = event.target.value.trim().toLocaleLowerCase('de-DE'); const matches = query ? state.data.employees.filter(employee => employee.displayName.toLocaleLowerCase('de-DE').includes(query) && !state.selected.has(employee.uid)).slice(0, 12) : []; elements['search-results'].replaceChildren(...matches.map(employee => { const item = node('li'); const button = node('button', `${employee.displayName} auswählen`); button.type = 'button'; button.addEventListener('click', () => { state.emptyOwnProfile = false; state.selected.add(employee.uid); state.persist(); elements['person-search'].value = ''; elements['search-results'].replaceChildren(); renderSelected(); renderTable(); }); item.append(button); return item; })); });
     elements['calendar-body'].addEventListener('click', event => {
         const button = event.target instanceof Element ? event.target.closest('button[data-action]') : null;
         if (!button) return;
