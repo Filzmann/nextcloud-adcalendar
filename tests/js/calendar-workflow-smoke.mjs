@@ -12,12 +12,11 @@ const meetingFinder = readFileSync(new URL('../../js/components/meeting-finder.j
 const shiftDefaults = readFileSync(new URL('../../js/components/shift-defaults.js', import.meta.url), 'utf8');
 const stateSource = readFileSync(new URL('../../js/modules/calendar-state.js', import.meta.url), 'utf8');
 const weekTable = readFileSync(new URL('../../js/components/week-table.js', import.meta.url), 'utf8');
+const weekNavigation = readFileSync(new URL('../../js/components/week-navigation.js', import.meta.url), 'utf8');
 const tabNavigation = readFileSync(new URL('../../js/components/tab-navigation.js', import.meta.url), 'utf8');
 for (const contract of [
     "['delete','Dienst und Termine löschen']",
     "['detach','Nur Dienst löschen; Termine als Sperrtermine behalten']",
-    "state.vertical = !state.vertical",
-    "isoWeekValue",
     'weekTable.render(employees, state)',
     "entryDialog.open({ employee",
     "dialog.addEventListener('cancel'",
@@ -41,6 +40,20 @@ for (const contract of ['class TabNavigation', "addEventListener('click'", "this
 }
 for (const contract of ['class WeekTable', 'adc-group-heading', 'this.calendarCell.render(entries, employee, absences)', 'organization.staffBlockLabel', 'organization.roleLabel(value)', 'organization.areaLabel(value)', 'groupCell.colSpan = 8', 'this.staffRank(a) - this.staffRank(b)', 'roleNames.slice(1)', "join(' / ')"]) {
     if (!weekTable.includes(contract)) throw new Error(`Wochenmatrix-Komponentenvertrag fehlt: ${contract}`);
+}
+for (const contract of ['class WeekNavigation', 'this.move(-7)', 'this.move(7)', 'this.state.persist()', 'this.onWeekChange', 'this.onViewChange', 'isoWeekValue(date)', 'Tage als Zeilen', 'Personen als Zeilen']) {
+    if (!weekNavigation.includes(contract)) throw new Error(`Wochennavigations-Komponentenvertrag fehlt: ${contract}`);
+}
+const navigationContext = { window: {}, document: {}, Date, Number, String };
+runInNewContext(weekNavigation, navigationContext);
+const navigation = Object.create(navigationContext.window.AdCalendar.components.WeekNavigation.prototype);
+let navigationPersisted = false; let navigationLoaded = false;
+navigation.state = { monday: new Date(2026, 0, 5), persist: () => { navigationPersisted = true; } };
+navigation.render = () => {};
+navigation.onWeekChange = () => { navigationLoaded = true; };
+navigation.select('2026-W29');
+if (navigation.isoWeekValue(navigation.state.monday) !== '2026-W29' || !navigationPersisted || !navigationLoaded) {
+    throw new Error('Ausgewählte Kalenderwoche wird nicht korrekt berechnet, persistiert und geladen.');
 }
 const tableContext = { window: {}, document: {}, Date, Number };
 runInNewContext(weekTable, tableContext);

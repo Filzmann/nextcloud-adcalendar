@@ -10,7 +10,7 @@
     const OrganizationModel = window.AdCalendar.models.Organization;
     const leadershipStaffRoles = new Set();
     let organization = new OrganizationModel({});
-    const elements = Object.fromEntries(['week-label','calendar-body','calendar-head','notice','filter-status','week-number','toggle-view'].map(id => [id, document.getElementById(`adc-${id}`)]));
+    const elements = Object.fromEntries(['calendar-body','calendar-head','filter-status'].map(id => [id, document.getElementById(`adc-${id}`)]));
     const state = new window.AdCalendar.modules.CalendarState(leadershipStaffRoles).restore();
     const tabs = new window.AdCalendar.components.TabNavigation({
         calendarButton: document.getElementById('adc-tab-calendar'),
@@ -42,8 +42,12 @@
         leadershipStaffRoles,
         onChange: renderTable,
     });
+    const weekNavigation = new window.AdCalendar.components.WeekNavigation({
+        state,
+        onWeekChange: load,
+        onViewChange: renderTable,
+    });
 
-    function startOfWeek(value) { const result = new Date(value); const weekday = result.getDay() || 7; result.setDate(result.getDate() - weekday + 1); result.setHours(0, 0, 0, 0); return result; }
     function isoDay(value) { const year = value.getFullYear(); const month = String(value.getMonth() + 1).padStart(2, '0'); const day = String(value.getDate()).padStart(2, '0'); return `${year}-${month}-${day}`; }
     function node(tag, value, className) { const result = document.createElement(tag); if (value !== undefined) result.textContent = value; if (className) result.className = className; return result; }
     function show(message, error) { if (error) notice.error(message); else if (message) notice.success(message); else notice.clear(); }
@@ -92,11 +96,7 @@
         const employees = state.availableEmployees();
         elements['filter-status'].textContent = state.selected.size ? `${employees.length} ausgewählt` : state.roles.size || state.areas.size ? `${employees.length} gefiltert` : 'Alle Personen';
         weekTable.render(employees, state);
-        elements['toggle-view'].textContent = state.vertical ? 'Tage als Zeilen' : 'Personen als Zeilen';
-        elements['toggle-view'].setAttribute('aria-pressed', String(!state.vertical));
     }
-
-    function isoWeekValue(date) { const value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())); const day = value.getUTCDay() || 7; value.setUTCDate(value.getUTCDate() + 4 - day); const yearStart = new Date(Date.UTC(value.getUTCFullYear(), 0, 1)); const week = Math.ceil((((value - yearStart) / 86400000) + 1) / 7); return `${value.getUTCFullYear()}-W${String(week).padStart(2, '0')}`; }
 
     async function removeEntry(entry) {
         if (entry.meetingUid) {
@@ -126,7 +126,7 @@
     }
 
     async function load() {
-        const sunday = new Date(state.monday); sunday.setDate(sunday.getDate() + 6); elements['week-label'].textContent = `${state.monday.toLocaleDateString('de-DE')} – ${sunday.toLocaleDateString('de-DE')}`; elements['week-number'].value = isoWeekValue(state.monday);
+        weekNavigation.render();
         try { state.data = await repository.week(isoDay(state.monday)); state.data.entries = EntryModel.get_all(state.data.entries); applyMeetingCapabilities(); applyOrganization(state.data.organization); state.applyInitialFilters(); renderFilters(); renderTable(); tabs.show(state.activeTab, false); show(''); } catch (error) { show(error, true); }
     }
 
@@ -144,8 +144,6 @@
         }
     }
 
-    document.getElementById('adc-previous-week').addEventListener('click', () => { state.monday.setDate(state.monday.getDate() - 7); load(); });
-    document.getElementById('adc-next-week').addEventListener('click', () => { state.monday.setDate(state.monday.getDate() + 7); load(); });
     document.getElementById('adc-open-meeting-finder').addEventListener('click', () => meetingFinder.open(isoDay(state.monday), state.data.employees, [...state.selected]));
     document.getElementById('adc-save-default').addEventListener('click', async () => {
         try {
@@ -153,8 +151,6 @@
             show('Aktuelle Filter und Ansicht wurden zum persönlichen Standard gemacht.');
         } catch (error) { show(error, true); }
     });
-    elements['toggle-view'].addEventListener('click', () => { state.vertical = !state.vertical; state.persist(); renderTable(); });
-    elements['week-number'].addEventListener('change', event => { if (event.target.value) { const [year, week] = event.target.value.split('-W').map(Number); const januaryFourth = new Date(year, 0, 4); state.monday = startOfWeek(januaryFourth); state.monday.setDate(state.monday.getDate() + (week - 1) * 7); load(); } });
     elements['calendar-body'].addEventListener('click', event => {
         const button = event.target instanceof Element ? event.target.closest('button[data-action]') : null;
         if (!button) return;
