@@ -17,14 +17,11 @@
 
         render(employees, state) {
             const days = this.days(state.monday);
-            const visibleUids = new Set(employees.map(employee => employee.uid));
-            const visibleEntries = state.data.entries.filter(entry => visibleUids.has(entry.employeeUid));
-            const layout = this.timeline.layout(visibleEntries, days);
-            if (state.vertical) this.vertical(employees, state, days, layout);
-            else this.horizontal(employees, state, days, layout);
+            if (state.vertical) this.vertical(employees, state, days);
+            else this.horizontal(employees, state, days);
         }
 
-        vertical(employees, state, days, layout) {
+        vertical(employees, state, days) {
             const header = document.createElement('tr'); header.append(this.node('th', 'Mitarbeiter*in'));
             for (const day of days) header.append(this.node('th', day.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })));
             this.head.replaceChildren(header);
@@ -41,13 +38,15 @@
                 const row = document.createElement('tr');
                 const name = this.node('th', employee.displayName, state.selected.has(employee.uid) ? 'adc-selected' : '');
                 name.scope = 'row'; row.append(name);
+                const employeeEntries = state.data.entries.filter(entry => entry.employeeUid === employee.uid);
+                const layout = this.timeline.layout(employeeEntries, days);
                 for (const day of days) row.append(this.cellFor(employee, day, state.data.entries, state.data.absences || [], layout));
                 rows.push(row);
             }
             this.body.replaceChildren(...rows);
         }
 
-        horizontal(employees, state, days, layout) {
+        horizontal(employees, state, days) {
             const header = document.createElement('tr'); header.append(this.node('th', 'Tag'));
             for (const employee of employees) header.append(this.node('th', employee.displayName, state.selected.has(employee.uid) ? 'adc-selected' : ''));
             this.head.replaceChildren(header);
@@ -55,6 +54,10 @@
                 const row = document.createElement('tr');
                 const label = this.node('th', day.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit' }));
                 label.scope = 'row'; row.append(label);
+                const dayEnd = new Date(day); dayEnd.setDate(dayEnd.getDate() + 1);
+                const visibleUids = new Set(employees.map(employee => employee.uid));
+                const dayEntries = state.data.entries.filter(entry => visibleUids.has(entry.employeeUid) && new Date(entry.start) < dayEnd && new Date(entry.end) > day);
+                const layout = this.timeline.layout(dayEntries, [day]);
                 for (const employee of employees) row.append(this.cellFor(employee, day, state.data.entries, state.data.absences || [], layout));
                 return row;
             });

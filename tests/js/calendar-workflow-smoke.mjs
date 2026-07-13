@@ -61,7 +61,7 @@ for (const contract of ['class CalendarFilters', 'this.renderLeadershipStaffChec
 for (const contract of ['class TabNavigation', "addEventListener('click'", "this.show('settings')", "this.onChange(active)"]) {
     if (!tabNavigation.includes(contract)) throw new Error(`Tab-Komponentenvertrag fehlt: ${contract}`);
 }
-for (const contract of ['class WeekTable', 'adc-group-heading', 'this.calendarCell.render(entries, employee, absences, layout, day, this.timeline)', 'this.timeline.layout(visibleEntries, days)', 'organization.staffBlockLabel', 'organization.roleLabel(value)', 'organization.areaLabel(value)', 'groupCell.colSpan = 8', 'this.staffRank(a) - this.staffRank(b)', 'roleNames.slice(1)', "join(' / ')"]) {
+for (const contract of ['class WeekTable', 'adc-group-heading', 'this.calendarCell.render(entries, employee, absences, layout, day, this.timeline)', 'this.timeline.layout(employeeEntries, days)', 'this.timeline.layout(dayEntries, [day])', 'organization.staffBlockLabel', 'organization.roleLabel(value)', 'organization.areaLabel(value)', 'groupCell.colSpan = 8', 'this.staffRank(a) - this.staffRank(b)', 'roleNames.slice(1)', "join(' / ')"]) {
     if (!weekTable.includes(contract)) throw new Error(`Wochenmatrix-Komponentenvertrag fehlt: ${contract}`);
 }
 const timelineContext = { window: {}, Date, Set, Math };

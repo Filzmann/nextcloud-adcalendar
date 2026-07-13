@@ -30,7 +30,7 @@
         rows(points, segments) {
             const heights = points.slice(0, -1).map((start, index) => {
                 const end = points[index + 1];
-                return Math.max(6, Math.min(36, Math.round((end - start) / 5)));
+                return Math.max(4, Math.min(18, Math.round((end - start) / 10)));
             });
             for (const segment of segments) {
                 const startIndex = points.indexOf(segment.start);
