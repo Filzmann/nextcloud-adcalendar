@@ -1,5 +1,6 @@
 (function() {
     'use strict';
+    const CalendarDate = window.AdCalendar.modules.CalendarDate;
 
     /**
      * Zweck: Steuert Kalenderwoche und Orientierung der Wochenmatrix als zusammengehörige Navigation.
@@ -24,7 +25,7 @@
             const sunday = new Date(this.state.monday);
             sunday.setDate(sunday.getDate() + 6);
             this.label.textContent = `${this.state.monday.toLocaleDateString('de-DE')} – ${sunday.toLocaleDateString('de-DE')}`;
-            this.weekNumber.value = this.isoWeekValue(this.state.monday);
+            this.weekNumber.value = CalendarDate.isoWeekValue(this.state.monday);
             this.toggleView.textContent = this.state.vertical ? 'Tage als Zeilen' : 'Personen als Zeilen';
             this.toggleView.setAttribute('aria-pressed', String(!this.state.vertical));
         }
@@ -39,7 +40,7 @@
             const [year, week] = value.split('-W').map(Number);
             if (!year || !week) return;
             const januaryFourth = new Date(year, 0, 4);
-            this.state.monday = this.startOfWeek(januaryFourth);
+            this.state.monday = CalendarDate.startOfWeek(januaryFourth);
             this.state.monday.setDate(this.state.monday.getDate() + (week - 1) * 7);
             this.changed(this.onWeekChange);
         }
@@ -55,22 +56,6 @@
             callback();
         }
 
-        startOfWeek(value) {
-            const result = new Date(value);
-            const weekday = result.getDay() || 7;
-            result.setDate(result.getDate() - weekday + 1);
-            result.setHours(0, 0, 0, 0);
-            return result;
-        }
-
-        isoWeekValue(date) {
-            const value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-            const day = value.getUTCDay() || 7;
-            value.setUTCDate(value.getUTCDate() + 4 - day);
-            const yearStart = new Date(Date.UTC(value.getUTCFullYear(), 0, 1));
-            const week = Math.ceil((((value - yearStart) / 86400000) + 1) / 7);
-            return `${value.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
-        }
     }
 
     window.AdCalendar = window.AdCalendar || {};

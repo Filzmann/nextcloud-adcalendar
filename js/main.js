@@ -8,6 +8,7 @@
     const notice = new window.LocalBase.ui.Notice('adc-notice', { baseClass: 'adc-notice', typeClassPrefix: 'adc-notice--' });
     const EntryModel = window.AdCalendar.models.CalendarEntry;
     const OrganizationModel = window.AdCalendar.models.Organization;
+    const CalendarDate = window.AdCalendar.modules.CalendarDate;
     const leadershipStaffRoles = new Set();
     let loadSequence = 0;
     let organization = new OrganizationModel({});
@@ -59,7 +60,6 @@
         reload: load,
     });
 
-    function isoDay(value) { const year = value.getFullYear(); const month = String(value.getMonth() + 1).padStart(2, '0'); const day = String(value.getDate()).padStart(2, '0'); return `${year}-${month}-${day}`; }
     function show(message, error) { if (error) notice.error(message); else if (message) notice.success(message); else notice.clear(); }
 
     function renderFilters() {
@@ -93,7 +93,7 @@
 
     async function load() {
         const sequence = ++loadSequence;
-        const week = isoDay(state.monday);
+        const week = CalendarDate.isoDay(state.monday);
         weekNavigation.render();
         try {
             const data = await repository.week(week);
@@ -112,7 +112,7 @@
         }
     }
 
-    document.getElementById('adc-open-meeting-finder').addEventListener('click', () => meetingFinder.open(isoDay(state.monday), state.data.employees, [...state.selected]));
+    document.getElementById('adc-open-meeting-finder').addEventListener('click', () => meetingFinder.open(CalendarDate.isoDay(state.monday), state.data.employees, [...state.selected]));
     document.getElementById('adc-save-default').addEventListener('click', async () => {
         try {
             await repository.savePreferences(state.toPreference());

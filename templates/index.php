@@ -7,6 +7,7 @@ script('orgsuite', 'suite-navigation');
 script('adcalendar', 'models/calendar-entry');
 script('adcalendar', 'models/organization');
 script('adcalendar', 'repositories/calendar-repository');
+script('adcalendar', 'modules/calendar-date');
 script('adcalendar', 'modules/calendar-state');
 script('adcalendar', 'modules/entry-workflow');
 script('adcalendar', 'modules/meeting-capabilities');

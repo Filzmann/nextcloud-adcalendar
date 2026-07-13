@@ -10,6 +10,7 @@ const calendarFilters = readFileSync(new URL('../../js/components/calendar-filte
 const entryDialog = readFileSync(new URL('../../js/components/entry-dialog.js', import.meta.url), 'utf8');
 const meetingFinder = readFileSync(new URL('../../js/components/meeting-finder.js', import.meta.url), 'utf8');
 const shiftDefaults = readFileSync(new URL('../../js/components/shift-defaults.js', import.meta.url), 'utf8');
+const dateSource = readFileSync(new URL('../../js/modules/calendar-date.js', import.meta.url), 'utf8');
 const stateSource = readFileSync(new URL('../../js/modules/calendar-state.js', import.meta.url), 'utf8');
 const entryWorkflow = readFileSync(new URL('../../js/modules/entry-workflow.js', import.meta.url), 'utf8');
 const meetingCapabilities = readFileSync(new URL('../../js/modules/meeting-capabilities.js', import.meta.url), 'utf8');
@@ -24,7 +25,7 @@ for (const contract of [
     'tabs.show(state.activeTab, false)',
     'shiftDefaults.set(state.data.shiftDefaults || {})',
     'repository.saveShiftDefaults(defaults)',
-    'meetingFinder.open(isoDay(state.monday)',
+    'meetingFinder.open(CalendarDate.isoDay(state.monday)',
     'meetingCapabilities.apply(data.entries, data.employees)',
     'const sequence = ++loadSequence',
     'if (sequence !== loadSequence) return;',
@@ -62,10 +63,11 @@ for (const contract of ['class TabNavigation', "addEventListener('click'", "this
 for (const contract of ['class WeekTable', 'adc-group-heading', 'this.calendarCell.render(entries, employee, absences)', 'organization.staffBlockLabel', 'organization.roleLabel(value)', 'organization.areaLabel(value)', 'groupCell.colSpan = 8', 'this.staffRank(a) - this.staffRank(b)', 'roleNames.slice(1)', "join(' / ')"]) {
     if (!weekTable.includes(contract)) throw new Error(`Wochenmatrix-Komponentenvertrag fehlt: ${contract}`);
 }
-for (const contract of ['class WeekNavigation', 'this.move(-7)', 'this.move(7)', 'this.state.persist()', 'this.onWeekChange', 'this.onViewChange', 'isoWeekValue(date)', 'Tage als Zeilen', 'Personen als Zeilen']) {
+for (const contract of ['class WeekNavigation', 'this.move(-7)', 'this.move(7)', 'this.state.persist()', 'this.onWeekChange', 'this.onViewChange', 'CalendarDate.isoWeekValue', 'Tage als Zeilen', 'Personen als Zeilen']) {
     if (!weekNavigation.includes(contract)) throw new Error(`Wochennavigations-Komponentenvertrag fehlt: ${contract}`);
 }
 const navigationContext = { window: {}, document: {}, Date, Number, String };
+runInNewContext(dateSource, navigationContext);
 runInNewContext(weekNavigation, navigationContext);
 const navigation = Object.create(navigationContext.window.AdCalendar.components.WeekNavigation.prototype);
 let navigationPersisted = false; let navigationLoaded = false;
@@ -73,10 +75,11 @@ navigation.state = { monday: new Date(2026, 0, 5), persist: () => { navigationPe
 navigation.render = () => {};
 navigation.onWeekChange = () => { navigationLoaded = true; };
 navigation.select('2026-W29');
-if (navigation.isoWeekValue(navigation.state.monday) !== '2026-W29' || !navigationPersisted || !navigationLoaded) {
+if (navigationContext.window.AdCalendar.modules.CalendarDate.isoWeekValue(navigation.state.monday) !== '2026-W29' || !navigationPersisted || !navigationLoaded) {
     throw new Error('Ausgewählte Kalenderwoche wird nicht korrekt berechnet, persistiert und geladen.');
 }
 const tableContext = { window: {}, document: {}, Date, Number };
+runInNewContext(dateSource, tableContext);
 runInNewContext(weekTable, tableContext);
 const clusterTable = Object.create(tableContext.window.AdCalendar.components.WeekTable.prototype);
 clusterTable.organization = () => ({ staffRoleGroups: () => [], staffBlockLabel: 'Leitungen', roleLabel: value => ({'ad-EB':'Einsatzbegleitung','ad-StvBL':'Stellvertretende Büroleitung'}[value] || value), areaLabel: () => 'Nordost', roleOrder: () => 1 });
@@ -141,6 +144,7 @@ if (!calendarPanel.hidden || settingsPanel.hidden || settingsButton.attributes['
 }
 
 const stateContext = { window: {}, Date, Set, URLSearchParams, Number };
+runInNewContext(dateSource, stateContext);
 runInNewContext(stateSource, stateContext);
 const historyCalls = [];
 const CalendarState = stateContext.window.AdCalendar.modules.CalendarState;

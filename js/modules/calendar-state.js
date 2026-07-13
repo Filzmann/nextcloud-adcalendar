@@ -1,5 +1,6 @@
 (function() {
     'use strict';
+    const CalendarDate = window.AdCalendar.modules.CalendarDate;
 
     /**
      * Zweck: Kapselt URL-, Filter-, Tab- und persönlichen Standardzustand der Kalenderansicht.
@@ -10,7 +11,7 @@
             this.leadershipStaffRoles = leadershipStaffRoles;
             this.location = location;
             this.history = history;
-            this.monday = this.startOfWeek(new Date());
+            this.monday = CalendarDate.startOfWeek(new Date());
             this.data = null;
             this.vertical = true;
             this.selected = new Set();
@@ -25,7 +26,7 @@
 
         restore() {
             const params = new URLSearchParams(this.location.search);
-            if (params.get('week')) this.monday = this.startOfWeek(new Date(`${params.get('week')}T12:00:00`));
+            if (params.get('week')) this.monday = CalendarDate.startOfWeek(new Date(`${params.get('week')}T12:00:00`));
             this.urlConfigured = ['people', 'roles', 'areas', 'view', 'staff'].some(key => params.has(key));
             this.vertical = params.get('view') !== 'days';
             this.showLeadershipStaff = params.get('staff') !== 'hidden';
@@ -38,7 +39,7 @@
 
         persist() {
             const params = new URLSearchParams();
-            params.set('week', this.isoDay(this.monday));
+            params.set('week', CalendarDate.isoDay(this.monday));
             if (!this.vertical) params.set('view', 'days');
             params.set('staff', this.showLeadershipStaff ? 'visible' : 'hidden');
             if (this.activeTab === 'settings') params.set('tab', 'settings');
@@ -90,8 +91,6 @@
             };
         }
 
-        startOfWeek(value) { const result = new Date(value); const weekday = result.getDay() || 7; result.setDate(result.getDate() - weekday + 1); result.setHours(0, 0, 0, 0); return result; }
-        isoDay(value) { const year = value.getFullYear(); const month = String(value.getMonth() + 1).padStart(2, '0'); const day = String(value.getDate()).padStart(2, '0'); return `${year}-${month}-${day}`; }
         values(params, key) { return new Set((params.get(key) || '').split(',').filter(Boolean)); }
     }
 

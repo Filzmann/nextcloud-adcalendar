@@ -1,5 +1,6 @@
 (function() {
     'use strict';
+    const CalendarDate = window.AdCalendar.modules.CalendarDate;
 
     /**
      * Zweck: Rendert beide Wochenmatrix-Ansichten inklusive Fachgruppen- und Hierarchiesortierung.
@@ -61,7 +62,7 @@
             const entries = allEntries.filter(entry => entry.employeeUid === employee.uid && new Date(entry.start) < dayEnd && new Date(entry.end) > day);
             const absences = allAbsences.filter(absence => absence.employeeUid === employee.uid && new Date(absence.start) < dayEnd && new Date(absence.end) > day);
             cell.dataset.employeeUid = employee.uid;
-            cell.dataset.day = this.isoDay(day);
+            cell.dataset.day = CalendarDate.isoDay(day);
             cell.innerHTML = this.calendarCell.render(entries, employee, absences);
             return cell;
         }
@@ -89,7 +90,6 @@
         }
 
         days(monday) { return Array.from({ length: 7 }, (_, offset) => { const day = new Date(monday); day.setDate(day.getDate() + offset); return day; }); }
-        isoDay(value) { const year = value.getFullYear(); const month = String(value.getMonth() + 1).padStart(2, '0'); const day = String(value.getDate()).padStart(2, '0'); return `${year}-${month}-${day}`; }
         node(tag, value, className) { const result = document.createElement(tag); result.textContent = value; if (className) result.className = className; return result; }
     }
 
