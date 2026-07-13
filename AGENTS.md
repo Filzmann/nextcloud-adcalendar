@@ -31,6 +31,7 @@ Kernprozess:
 - Jedes angemeldete Konto kann im eigenen Einstellungs-Tab Standard-Dienstzeiten je Wochentag speichern. Sie dienen als Vorschlag beim Anlegen; ein Ende vor dem Beginn bildet einen Dienst bis zum Folgetag.
 - Bewusst gespeicherte Standard-Dienstzeiten werden beim Aufruf einer Woche als normale Dienste materialisiert. Individuell bearbeitete Vorkommen bleiben einmalige Abweichungen; ein geloeschtes Vorkommen bleibt fuer genau dieses Datum dauerhaft unterdrueckt.
 - Zeitwerte werden serverseitig eindeutig gespeichert und fuer die Anzeige in der konfigurierten Nextcloud-Zeitzone formatiert.
+- `adcalendar:demo:seed` synchronisiert neutrale, benannte Demokonten fuer jede Kalenderrolle und jeden Buerobereich. Namen tragen die fachliche Demo-Zuordnung in Klammern; Mehrfachrollen werden auch in Gruppentiteln als Hauptrolle mit weiteren Rollen in Klammern dargestellt.
 
 Verbindliches Gruppenschema:
 

@@ -32,8 +32,15 @@ for (const contract of [
 for (const contract of ['class TabNavigation', "addEventListener('click'", "this.show('settings')", "this.onChange(active)"]) {
     if (!tabNavigation.includes(contract)) throw new Error(`Tab-Komponentenvertrag fehlt: ${contract}`);
 }
-for (const contract of ['class WeekTable', 'adc-group-heading', 'this.calendarCell.render(entries, employee)', "return 'Geschäftsführung, PDL und Stabsstellen'", 'groupCell.colSpan = 8', 'this.staffRank(a) - this.staffRank(b)']) {
+for (const contract of ['class WeekTable', 'adc-group-heading', 'this.calendarCell.render(entries, employee)', "return 'Geschäftsführung, PDL und Stabsstellen'", 'groupCell.colSpan = 8', 'this.staffRank(a) - this.staffRank(b)', 'roleNames.slice(1)', "join(' / ')"]) {
     if (!weekTable.includes(contract)) throw new Error(`Wochenmatrix-Komponentenvertrag fehlt: ${contract}`);
+}
+const tableContext = { window: {}, document: {}, Date, Number };
+runInNewContext(weekTable, tableContext);
+const clusterTable = Object.create(tableContext.window.AdCalendar.components.WeekTable.prototype);
+clusterTable.leadershipStaffRoles = new Set();
+if (clusterTable.clusterLabel({ roles: ['ad-EB', 'ad-StvBL'], areas: ['ad-Bereich-Nordost'] }) !== 'EB (Stv. BL) · Nordost') {
+    throw new Error('Mehrfachrollen werden im Gruppentitel nicht in Klammern dargestellt.');
 }
 for (const contract of ["params.set('people'", "params.set('roles'", "params.set('areas'", 'this.data.defaultFilters ||', 'this.data.currentUserProfile?.roles', 'if (this.selected.size) return this.selected.has(employee.uid)', 'showLeadershipStaff: this.showLeadershipStaff']) {
     if (!stateSource.includes(contract)) throw new Error(`Kalenderzustandsvertrag fehlt: ${contract}`);
