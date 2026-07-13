@@ -11,6 +11,7 @@ const entryDialog = readFileSync(new URL('../../js/components/entry-dialog.js', 
 const meetingFinder = readFileSync(new URL('../../js/components/meeting-finder.js', import.meta.url), 'utf8');
 const shiftDefaults = readFileSync(new URL('../../js/components/shift-defaults.js', import.meta.url), 'utf8');
 const dateSource = readFileSync(new URL('../../js/modules/calendar-date.js', import.meta.url), 'utf8');
+const timelineSource = readFileSync(new URL('../../js/modules/calendar-timeline.js', import.meta.url), 'utf8');
 const stateSource = readFileSync(new URL('../../js/modules/calendar-state.js', import.meta.url), 'utf8');
 const entryWorkflow = readFileSync(new URL('../../js/modules/entry-workflow.js', import.meta.url), 'utf8');
 const meetingCapabilities = readFileSync(new URL('../../js/modules/meeting-capabilities.js', import.meta.url), 'utf8');
@@ -60,8 +61,21 @@ for (const contract of ['class CalendarFilters', 'this.renderLeadershipStaffChec
 for (const contract of ['class TabNavigation', "addEventListener('click'", "this.show('settings')", "this.onChange(active)"]) {
     if (!tabNavigation.includes(contract)) throw new Error(`Tab-Komponentenvertrag fehlt: ${contract}`);
 }
-for (const contract of ['class WeekTable', 'adc-group-heading', 'this.calendarCell.render(entries, employee, absences)', 'organization.staffBlockLabel', 'organization.roleLabel(value)', 'organization.areaLabel(value)', 'groupCell.colSpan = 8', 'this.staffRank(a) - this.staffRank(b)', 'roleNames.slice(1)', "join(' / ')"]) {
+for (const contract of ['class WeekTable', 'adc-group-heading', 'this.calendarCell.render(entries, employee, absences, layout, day, this.timeline)', 'this.timeline.layout(visibleEntries, days)', 'organization.staffBlockLabel', 'organization.roleLabel(value)', 'organization.areaLabel(value)', 'groupCell.colSpan = 8', 'this.staffRank(a) - this.staffRank(b)', 'roleNames.slice(1)', "join(' / ')"]) {
     if (!weekTable.includes(contract)) throw new Error(`Wochenmatrix-Komponentenvertrag fehlt: ${contract}`);
+}
+const timelineContext = { window: {}, Date, Set, Math };
+runInNewContext(timelineSource, timelineContext);
+const CalendarTimeline = timelineContext.window.AdCalendar.modules.CalendarTimeline;
+const calendarTimeline = new CalendarTimeline();
+const timelineDay = new Date(2026, 6, 6);
+const timelineEntries = [
+    { start: '2026-07-06T08:00:00', end: '2026-07-06T16:00:00' },
+    { start: '2026-07-06T10:00:00', end: '2026-07-06T11:00:00' },
+];
+const calendarLayout = calendarTimeline.layout(timelineEntries, [timelineDay]);
+if (calendarTimeline.gridRow(calendarLayout, timelineEntries[0], timelineDay) !== '2 / 5' || !calendarLayout.rows.includes('48px')) {
+    throw new Error('Kalendereinträge werden nicht auf das gemeinsame kompakte Zeitraster abgebildet.');
 }
 for (const contract of ['class WeekNavigation', 'this.move(-7)', 'this.move(7)', 'this.state.persist()', 'this.onWeekChange', 'this.onViewChange', 'CalendarDate.isoWeekValue', 'Tage als Zeilen', 'Personen als Zeilen']) {
     if (!weekNavigation.includes(contract)) throw new Error(`Wochennavigations-Komponentenvertrag fehlt: ${contract}`);
@@ -100,7 +114,7 @@ for (const contract of ['class Organization extends BaseModel', 'roleLabel(group
 for (const contract of ['window.LocalBase.models.Model', 'extends BaseModel', 'toArray()', 'this.defaultDate', 'this.defaultModified', 'this.defaultDeleted', 'this.meetingUid', 'this.canManageMeeting']) {
     if (!model.includes(contract)) throw new Error(`Modell-Vertrag fehlt: ${contract}`);
 }
-for (const contract of ['class CalendarCell', 'adc-cell-actions', 'adc-entry__children', 'entry.parentEntryId === shift.id', 'entry.canManageMeeting !== false', 'adc-entry__blocked-marker', 'aria-hidden="true">🔒', "data-action=\"add-entry\"", 'data-tooltip="Dienst anlegen"', 'icon-calendar-dark']) {
+for (const contract of ['class CalendarCell', 'adc-cell-actions', 'adc-entry__children', 'grid-template-rows:', 'grid-row:', 'entry.parentEntryId === shift.id', 'entry.canManageMeeting !== false', 'adc-entry__blocked-marker', 'aria-hidden="true">🔒', "data-action=\"add-entry\"", 'data-tooltip="Dienst anlegen"', 'icon-calendar-dark']) {
     if (!calendarCell.includes(contract)) throw new Error(`Kalenderzellen-Vertrag fehlt: ${contract}`);
 }
 for (const contract of ['class MeetingFinder', 'this.selected = new Set(selected)', 'employeeUids.length < 2', 'this.repository.meetingGaps', 'renderResults(gaps, canBlockAll)', 'In der nächsten Woche suchen', 'abwählen', 'this.repository.blockMeeting', 'Number(this.duration.value)']) {
@@ -127,6 +141,8 @@ if (!cellHtml.includes('adc-entry__children') || cellHtml.indexOf('Teamtermin') 
     throw new Error('Termin wurde nicht sichtbar innerhalb des Dienstes gerendert.');
 }
 if ((cellHtml.match(/Teamtermin/g) || []).length !== 1) throw new Error('Enthaltener Termin wurde mehrfach gerendert.');
+const timedCellHtml = cell.render(timelineEntries.map((entry, index) => ({ ...entry, id: index + 10, type: index === 0 ? 'shift' : 'appointment', parentEntryId: index === 0 ? null : 10, title: index === 0 ? '' : 'Zeitachsentermin' })), { canManage: true }, [], calendarLayout, timelineDay, calendarTimeline);
+if (!timedCellHtml.includes('grid-template-rows:') || !timedCellHtml.includes('grid-row:2 / 5')) throw new Error('Kalenderzelle verwendet das gemeinsame Zeitraster nicht.');
 const blockedHtml = cell.render([
     { id: 3, type: 'appointment', start: '2026-07-06T18:00:00Z', end: '2026-07-06T19:00:00Z', title: 'Blockiert', parentEntryId: null },
 ], { canManage: true });

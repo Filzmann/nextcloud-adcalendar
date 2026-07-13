@@ -13,11 +13,15 @@ foreach (['role="tablist"', 'id="adc-tab-calendar"', 'id="adc-tab-settings"', 'i
 foreach (["script('localbase', 'api/api-client')", "script('localbase', 'models/model')", "script('localbase', 'repositories/repository')", "script('localbase', 'ui/ui')"] as $contract) {
     if (!str_contains($template, $contract)) throw new RuntimeException("LocalBase-UI-Vertrag fehlt: {$contract}");
 }
+if (!str_contains($template, "script('adcalendar', 'modules/calendar-timeline')")) throw new RuntimeException('Zeitachsenmodul fehlt im Template.');
 foreach (["script('orgsuite', 'suite-navigation')", "style('orgsuite', 'suite-navigation')", 'data-orgsuite data-suite="ad" data-current-app="adcalendar"'] as $contract) {
     if (!str_contains($template, $contract)) throw new RuntimeException("Suite-Navigationsvertrag fehlt: {$contract}");
 }
 if (!str_contains($template, 'erscheinen als feste Dienste im Kalender')) throw new RuntimeException('Standarddienst-Erklaerung fehlt in den Einstellungen.');
 foreach (['height: 100%', 'min-height: 0', 'overflow-y: auto', 'overflow-x: hidden', 'background: var(--color-main-background)', '.adc-app [hidden] { display: none !important; }', '.adc-table-wrap { width: 100%; max-width: 100%; min-width: 0; overflow-x: auto', 'width: max-content', 'min-width: 0', 'table-layout: auto', '.adc-filter-grid', '.adc-selection-actions', 'height: auto !important', '.adc-dialog:not([open])', '.adc-quick-add', '.adc-quick-add[data-tooltip]::after', '.adc-meeting-people', '.adc-tabs', '.adc-shift-default-row', '.adc-overview-header', 'white-space: nowrap', '.adc-settings-view { width: 100%; max-width: none', '.adc-entry--blocked { border: 2px solid var(--color-error)', 'background: var(--color-error)', 'color: var(--color-error-text)'] as $contract) {
     if (!str_contains($css, $contract)) throw new RuntimeException("Scroll-/Layoutvertrag fehlt: {$contract}");
+}
+foreach (['.adc-cell-entries { display: grid', 'repeating-linear-gradient'] as $contract) {
+    if (!str_contains($css, $contract)) throw new RuntimeException("Zeitachsen-Layoutvertrag fehlt: {$contract}");
 }
 echo "LayoutSmokeTest: OK\n";

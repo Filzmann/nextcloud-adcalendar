@@ -9,6 +9,7 @@ script('adcalendar', 'models/organization');
 script('adcalendar', 'repositories/calendar-repository');
 script('adcalendar', 'modules/calendar-date');
 script('adcalendar', 'modules/calendar-state');
+script('adcalendar', 'modules/calendar-timeline');
 script('adcalendar', 'modules/entry-workflow');
 script('adcalendar', 'modules/meeting-capabilities');
 script('adcalendar', 'components/calendar-filters');

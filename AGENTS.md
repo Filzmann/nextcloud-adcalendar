@@ -23,6 +23,7 @@ Kernprozess:
 - Termine besitzen zusaetzlich einen sprechenden Titel.
 - Termine innerhalb eines Dienstes werden diesem Dienst in der Darstellung zugeordnet.
 - Termine ausserhalb eines Dienstes gelten fachlich als Sperrtermine und werden deutlich, nicht nur farblich, gekennzeichnet.
+- Die Wochenmatrix verwendet für alle sichtbaren Zellen ein gemeinsames komprimiertes Tages-Zeitraster. Einträge werden dadurch zeitlich vergleichbar ausgerichtet; freie Intervalle erscheinen als Abstand, ohne die Ansicht auf eine starre 24-Stunden-Höhe aufzublähen.
 - Pro Mitarbeiter*in werden Dienstanzahl und gesamte Dienstzeit fuer den sichtbaren Zeitraum ausgewiesen.
 - Filter nach Mitarbeiter*innen und Nextcloud-Gruppen sollen die Ansicht begrenzen.
 - Ohne bewusst gespeicherten Standard startet die Ansicht mit den Fachrollen und Bereichen des eingeloggten Kontos. Die aktuelle Filter-/Personen-/Ansichtskonfiguration wird nur ueber „Zum Standard machen“ als persoenlicher Nextcloud-Benutzerwert gespeichert.
