@@ -1,9 +1,10 @@
 .adc-app { height: 100%; min-height: 0; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; padding: 10px 14px 24px; background: var(--color-main-background); color: var(--color-main-text); }
 .adc-app [hidden] { display: none !important; }
-.adc-header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: end; }
 .adc-header h1 { margin: 0; font-size: 1.35rem; }
 .adc-header p { margin: 4px 0 0; color: var(--color-text-maxcontrast); }
-.adc-navigation { display: flex; gap: 4px; align-items: center; }
+.adc-overview-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 20px; }
+.adc-overview-header h2 { margin: 14px 0 8px; }
+.adc-navigation { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .adc-navigation output { min-width: 13rem; text-align: center; font-weight: 600; }
 .adc-tabs { display: flex; gap: 4px; margin-top: 8px; border-bottom: 1px solid var(--color-border); }
 .adc-tabs button { margin: 0 0 -1px; border-radius: var(--border-radius) var(--border-radius) 0 0; }
@@ -20,7 +21,8 @@
 .adc-person-filter { display: grid; grid-template-columns: auto minmax(160px, 1fr); align-items: center; gap: 6px 10px; }
 .adc-person-filter .adc-search-results { grid-column: 1 / -1; }
 .adc-selection-filter { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 6px 10px; }
-.adc-selection-action { grid-column: 2; justify-self: start; margin: 0 !important; }
+.adc-selection-action { display: inline-flex; grid-column: 2; justify-self: start; align-items: center; gap: 6px; margin: 0 !important; white-space: nowrap; }
+.adc-button-icon { display: inline-block; flex: 0 0 16px; width: 16px; height: 16px; background-position: center; background-repeat: no-repeat; }
 .adc-filter-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
 .adc-search-results, .adc-selected-people { display: flex; flex-wrap: wrap; gap: 4px; list-style: none; margin: 0; padding: 0; }
 .adc-notice--error { color: var(--color-error); font-weight: 600; }

@@ -21,13 +21,6 @@ style('adcalendar', 'style');
             <h1>AD Kalender</h1>
             <p>Dienste, Termine und Sperrtermine im Wochenueberblick</p>
         </div>
-        <nav aria-label="Kalenderwoche" class="adc-navigation">
-            <button type="button" id="adc-previous-week">Vorherige Woche</button>
-            <output id="adc-week-label" aria-live="polite"></output>
-            <label>KW <input id="adc-week-number" type="week"></label>
-            <button type="button" id="adc-next-week">Naechste Woche</button>
-            <button type="button" id="adc-toggle-view" aria-pressed="false">Tage als Zeilen</button>
-        </nav>
     </header>
     <div id="adc-notice" role="status" aria-live="polite"></div>
     <nav class="adc-tabs" role="tablist" aria-label="AD Kalender Bereiche">
@@ -48,15 +41,24 @@ style('adcalendar', 'style');
             <div class="adc-selection-filter">
                 <strong>Ausgewaehlte Personen</strong>
                 <ul id="adc-selected-people" class="adc-selected-people"><li>Keine explizite Auswahl – Gruppenfilter gelten.</li></ul>
-                <button type="button" id="adc-open-meeting-finder" class="adc-selection-action icon-calendar-dark" aria-label="Meetinglücke finden" title="Meetinglücke finden" disabled>Meetinglücke finden</button>
+                <button type="button" id="adc-open-meeting-finder" class="adc-selection-action" disabled><span class="adc-button-icon icon-calendar-dark" aria-hidden="true"></span><span>Meetinglücke finden</span></button>
             </div>
             <div class="adc-filter-actions">
                 <button type="button" id="adc-save-default">Zum Standard machen</button>
             </div>
         </div>
       </details>
-      <section aria-labelledby="adc-overview-heading">
-        <h2 id="adc-overview-heading">Wochenplan</h2>
+      <section class="adc-overview" aria-labelledby="adc-overview-heading">
+        <div class="adc-overview-header">
+            <h2 id="adc-overview-heading">Wochenplan</h2>
+            <nav aria-label="Kalenderwoche" class="adc-navigation">
+                <button type="button" id="adc-previous-week">Vorherige Woche</button>
+                <output id="adc-week-label" aria-live="polite"></output>
+                <label>KW <input id="adc-week-number" type="week"></label>
+                <button type="button" id="adc-next-week">Naechste Woche</button>
+                <button type="button" id="adc-toggle-view" aria-pressed="false">Tage als Zeilen</button>
+            </nav>
+        </div>
         <div class="adc-table-wrap">
             <table class="adc-calendar">
                 <caption>Geplante Dienste und Termine je Mitarbeiter*in</caption>
