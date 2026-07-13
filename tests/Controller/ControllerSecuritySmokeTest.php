@@ -29,5 +29,8 @@ foreach (['preferences', 'savePreferences', 'saveShiftDefaults', 'meetingGaps'] 
 if (preg_match('/#\[NoCSRFRequired\]\s+#\[NoAdminRequired\]\s+public function (savePreferences|saveShiftDefaults|meetingGaps)\b/s', $source)) {
     throw new RuntimeException('Neue schreibende API-Pfade umgehen den CSRF-Schutz.');
 }
+if (str_contains($source, 'Response::STATUS_') || !str_contains($source, 'Http::STATUS_BAD_REQUEST')) {
+    throw new RuntimeException('Controller verwendet nicht den Nextcloud-HTTP-Statusvertrag.');
+}
 
 echo "ControllerSecuritySmokeTest: OK\n";

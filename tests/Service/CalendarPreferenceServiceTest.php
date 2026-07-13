@@ -20,6 +20,7 @@ $config = new class implements IConfig {
 };
 $service = new CalendarPreferenceService($config);
 if ($service->filterDefault('demo', ['a'], ['ad-Buero'], ['ad-Bereich-Sued']) !== null) throw new RuntimeException('Fehlender persoenlicher Standard muss null bleiben.');
+if ($service->storedShiftDefaults('demo') !== null) throw new RuntimeException('Nicht gespeicherte Dienstzeiten duerfen keine Kalenderdienste erzeugen.');
 $saved = $service->saveFilterDefault('demo', [
     'people' => ['a', 'fremd'], 'roles' => ['ad-Buero', 'ad-Unbekannt'],
     'areas' => ['ad-Bereich-Sued', 'ad-Bereich-Fremd'], 'vertical' => false, 'empty' => false, 'showLeadershipStaff' => false,
@@ -36,5 +37,6 @@ if ($shiftDefaults['1'] !== ['enabled' => true, 'start' => '07:30', 'end' => '15
 if ($shiftDefaults['2'] !== ['enabled' => false, 'start' => '08:00', 'end' => '23:30']) throw new RuntimeException('Dienstzeitnormalisierung ist falsch.');
 if ($shiftDefaults['7'] !== ['enabled' => true, 'start' => '08:00', 'end' => '16:00']) throw new RuntimeException('Fehlender Wochentag hat keinen stabilen Standard.');
 if ($service->shiftDefaults('demo') !== $shiftDefaults) throw new RuntimeException('Gespeicherte Dienstzeiten sind nicht lesbar.');
+if ($service->storedShiftDefaults('demo') !== $shiftDefaults) throw new RuntimeException('Gespeicherte Dienstzeiten sind nicht als Serienregel lesbar.');
 
 echo "CalendarPreferenceServiceTest: OK\n";

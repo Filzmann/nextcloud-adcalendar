@@ -11,6 +11,7 @@ foreach (['role="tablist"', 'id="adc-tab-calendar"', 'id="adc-tab-settings"', 'i
 foreach (["script('localbase', 'api/api-client')", "script('localbase', 'models/model')", "script('localbase', 'repositories/repository')", "script('localbase', 'ui/ui')"] as $contract) {
     if (!str_contains($template, $contract)) throw new RuntimeException("LocalBase-UI-Vertrag fehlt: {$contract}");
 }
+if (!str_contains($template, 'erscheinen als feste Dienste im Kalender')) throw new RuntimeException('Standarddienst-Erklaerung fehlt in den Einstellungen.');
 foreach (['height: 100%', 'min-height: 0', 'overflow-y: auto', 'overflow-x: hidden', 'background: var(--color-main-background)', '.adc-app [hidden] { display: none !important; }', '.adc-table-wrap { overflow-x: auto', 'width: max-content', 'min-width: 0', 'table-layout: auto', '.adc-filter-grid', 'height: auto !important', '.adc-dialog:not([open])', '.adc-quick-add', '.adc-quick-add[data-tooltip]::after', '.adc-meeting-people', '.adc-tabs', '.adc-shift-default-row', '.adc-overview-header', 'white-space: nowrap'] as $contract) {
     if (!str_contains($css, $contract)) throw new RuntimeException("Scroll-/Layoutvertrag fehlt: {$contract}");
 }

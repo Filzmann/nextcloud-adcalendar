@@ -18,6 +18,9 @@
             this.title = String(data.title || '');
             this.parentEntryId = data.parentEntryId == null ? null : Number(data.parentEntryId);
             this.isBlocked = Boolean(data.isBlocked);
+            this.defaultDate = data.defaultDate == null ? null : String(data.defaultDate);
+            this.defaultModified = Boolean(data.defaultModified);
+            this.defaultDeleted = Boolean(data.defaultDeleted);
         }
 
         toArray() {
@@ -30,6 +33,9 @@
                 title: this.title,
                 parentEntryId: this.parentEntryId,
                 isBlocked: this.isBlocked,
+                defaultDate: this.defaultDate,
+                defaultModified: this.defaultModified,
+                defaultDeleted: this.defaultDeleted,
             };
         }
     }

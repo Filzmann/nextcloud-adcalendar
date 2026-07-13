@@ -31,9 +31,15 @@ final class CalendarPreferenceService {
     }
 
     public function shiftDefaults(string $uid): array {
+        return $this->storedShiftDefaults($uid) ?? $this->normalizeShiftDefaults([]);
+    }
+
+    /** Liefert null, solange die Vorschlagswerte nie bewusst gespeichert wurden. */
+    public function storedShiftDefaults(string $uid): ?array {
         $raw = $this->config->getUserValue($uid, Application::APP_ID, self::SHIFT_KEY, '');
-        $decoded = $raw === '' ? [] : json_decode($raw, true);
-        return $this->normalizeShiftDefaults(is_array($decoded) ? $decoded : []);
+        if ($raw === '') return null;
+        $decoded = json_decode($raw, true);
+        return is_array($decoded) ? $this->normalizeShiftDefaults($decoded) : null;
     }
 
     public function saveShiftDefaults(string $uid, array $defaults): array {

@@ -92,6 +92,7 @@
             const response = await repository.saveShiftDefaults(defaults);
             state.data.shiftDefaults = response.shiftDefaults;
             shiftDefaults.set(response.shiftDefaults);
+            await load();
             show('Persönliche Standard-Dienstzeiten gespeichert.');
         } catch (error) { show(error, true); }
     }

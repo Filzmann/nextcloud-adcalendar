@@ -12,25 +12,40 @@ use OCP\IDBConnection;
 
 /** Zweck: Kapselt alle gebundenen Datenbankzugriffe auf Kalendereintraege. */
 final class CalendarEntryRepository {
+    private const COLUMNS = [
+        'id', 'employee_uid', 'start_at', 'end_at', 'entry_type', 'title', 'parent_entry_id',
+        'default_date', 'default_modified', 'default_deleted',
+    ];
+
     public function __construct(private IDBConnection $db) {}
 
     /** @return list<CalendarEntry> */
     public function findRange(DateTimeImmutable $start, DateTimeImmutable $end, array $employeeUids): array {
         if ($employeeUids === []) return [];
         $qb = $this->db->getQueryBuilder();
-        $qb->select('id', 'employee_uid', 'start_at', 'end_at', 'entry_type', 'title', 'parent_entry_id')->from('adc_entries')
+        $qb->select(...self::COLUMNS)->from('adc_entries')
             ->where($qb->expr()->lt('start_at', $qb->createNamedParameter($end, IQueryBuilder::PARAM_DATETIME_IMMUTABLE)))
             ->andWhere($qb->expr()->gt('end_at', $qb->createNamedParameter($start, IQueryBuilder::PARAM_DATETIME_IMMUTABLE)))
             ->andWhere($qb->expr()->in('employee_uid', $qb->createNamedParameter($employeeUids, IQueryBuilder::PARAM_STR_ARRAY)))
+            ->andWhere($qb->expr()->eq('default_deleted', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)))
             ->orderBy('start_at', 'ASC');
-        $rows = $qb->executeQuery()->fetchAllAssociative();
-        return CalendarEntry::get_all(array_map([$this, 'mapRow'], $rows));
+        return CalendarEntry::get_all(array_map([$this, 'mapRow'], $qb->executeQuery()->fetchAllAssociative()));
     }
 
     public function find(int $id): ?CalendarEntry {
         $qb = $this->db->getQueryBuilder();
-        $qb->select('id', 'employee_uid', 'start_at', 'end_at', 'entry_type', 'title', 'parent_entry_id')->from('adc_entries')
-            ->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)));
+        $qb->select(...self::COLUMNS)->from('adc_entries')
+            ->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))
+            ->andWhere($qb->expr()->eq('default_deleted', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)));
+        $row = $qb->executeQuery()->fetchAssociative();
+        return $row === false ? null : CalendarEntry::get($this->mapRow($row));
+    }
+
+    public function findDefaultOccurrence(string $employeeUid, string $date): ?CalendarEntry {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select(...self::COLUMNS)->from('adc_entries')
+            ->where($qb->expr()->eq('employee_uid', $qb->createNamedParameter($employeeUid)))
+            ->andWhere($qb->expr()->eq('default_date', $qb->createNamedParameter($date)));
         $row = $qb->executeQuery()->fetchAssociative();
         return $row === false ? null : CalendarEntry::get($this->mapRow($row));
     }
@@ -39,18 +54,31 @@ final class CalendarEntryRepository {
         $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
         $values = [
             'employee_uid' => $entry->employeeUid(), 'start_at' => $entry->start(), 'end_at' => $entry->end(),
-            'entry_type' => $entry->type(), 'title' => $entry->title(), 'parent_entry_id' => $entry->parentEntryId(), 'updated_at' => $now,
+            'entry_type' => $entry->type(), 'title' => $entry->title(), 'parent_entry_id' => $entry->parentEntryId(),
+            'default_date' => $entry->defaultDate(), 'default_modified' => $entry->defaultModified(),
+            'default_deleted' => $entry->defaultDeleted(), 'updated_at' => $now,
         ];
-        $types = ['employee_uid' => IQueryBuilder::PARAM_STR, 'start_at' => IQueryBuilder::PARAM_DATETIME_IMMUTABLE, 'end_at' => IQueryBuilder::PARAM_DATETIME_IMMUTABLE, 'entry_type' => IQueryBuilder::PARAM_STR, 'title' => IQueryBuilder::PARAM_STR, 'parent_entry_id' => IQueryBuilder::PARAM_INT, 'updated_at' => IQueryBuilder::PARAM_DATETIME_IMMUTABLE];
+        $types = [
+            'employee_uid' => IQueryBuilder::PARAM_STR, 'start_at' => IQueryBuilder::PARAM_DATETIME_IMMUTABLE,
+            'end_at' => IQueryBuilder::PARAM_DATETIME_IMMUTABLE, 'entry_type' => IQueryBuilder::PARAM_STR,
+            'title' => IQueryBuilder::PARAM_STR, 'parent_entry_id' => IQueryBuilder::PARAM_INT,
+            'default_date' => IQueryBuilder::PARAM_STR, 'default_modified' => IQueryBuilder::PARAM_BOOL,
+            'default_deleted' => IQueryBuilder::PARAM_BOOL, 'updated_at' => IQueryBuilder::PARAM_DATETIME_IMMUTABLE,
+        ];
         $qb = $this->db->getQueryBuilder();
-        if ($entry->id() === null) {
+        $insert = $entry->id() === null;
+        if ($insert) {
             $values += ['created_by_uid' => $actorUid, 'created_at' => $now];
             $types += ['created_by_uid' => IQueryBuilder::PARAM_STR, 'created_at' => IQueryBuilder::PARAM_DATETIME_IMMUTABLE];
             $qb->insert('adc_entries');
         } else {
             $qb->update('adc_entries')->where($qb->expr()->eq('id', $qb->createNamedParameter($entry->id(), IQueryBuilder::PARAM_INT)));
         }
-        foreach ($values as $field => $value) $qb->setValue($field, $qb->createNamedParameter($value, $value === null ? IQueryBuilder::PARAM_NULL : $types[$field]));
+        foreach ($values as $field => $value) {
+            $parameter = $qb->createNamedParameter($value, $value === null ? IQueryBuilder::PARAM_NULL : $types[$field]);
+            if ($insert) $qb->setValue($field, $parameter);
+            else $qb->set($field, $parameter);
+        }
         $qb->executeStatement();
         return $entry->id() ?? (int)$this->db->lastInsertId('adc_entries');
     }
@@ -63,8 +91,9 @@ final class CalendarEntryRepository {
     /** @return list<CalendarEntry> */
     public function children(int $parentId): array {
         $qb = $this->db->getQueryBuilder();
-        $qb->select('id', 'employee_uid', 'start_at', 'end_at', 'entry_type', 'title', 'parent_entry_id')->from('adc_entries')
+        $qb->select(...self::COLUMNS)->from('adc_entries')
             ->where($qb->expr()->eq('parent_entry_id', $qb->createNamedParameter($parentId, IQueryBuilder::PARAM_INT)))
+            ->andWhere($qb->expr()->eq('default_deleted', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)))
             ->orderBy('start_at', 'ASC');
         return CalendarEntry::get_all(array_map([$this, 'mapRow'], $qb->executeQuery()->fetchAllAssociative()));
     }
@@ -86,9 +115,7 @@ final class CalendarEntryRepository {
         $qb->delete('adc_entries')->where($qb->expr()->eq('parent_entry_id', $qb->createNamedParameter($parentId, IQueryBuilder::PARAM_INT)))->executeStatement();
     }
 
-    /**
-     * Vertrag: Kindbehandlung und Dienstloeschung sind atomar; ein Fehler laesst alles unveraendert.
-     */
+    /** Vertrag: Kindbehandlung und Dienstloeschung sind atomar; ein Fehler laesst alles unveraendert. */
     public function deleteShift(int $shiftId, string $childMode): void {
         $this->db->beginTransaction();
         try {
@@ -102,12 +129,58 @@ final class CalendarEntryRepository {
         }
     }
 
+    /** Vertrag: Das ausgeblendete Vorkommen bleibt als Tombstone erhalten und wird nicht erneut materialisiert. */
+    public function deleteDefaultShift(int $shiftId, string $childMode): void {
+        $this->db->beginTransaction();
+        try {
+            if ($childMode === 'delete') $this->deleteChildren($shiftId);
+            else $this->detachChildren($shiftId);
+            $qb = $this->db->getQueryBuilder();
+            $qb->update('adc_entries')
+                ->set('default_deleted', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL))
+                ->set('default_modified', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL))
+                ->set('updated_at', $qb->createNamedParameter(new DateTimeImmutable('now', new DateTimeZone('UTC')), IQueryBuilder::PARAM_DATETIME_IMMUTABLE))
+                ->where($qb->expr()->eq('id', $qb->createNamedParameter($shiftId, IQueryBuilder::PARAM_INT)))
+                ->executeStatement();
+            $this->db->commit();
+        } catch (\Throwable $error) {
+            $this->db->rollBack();
+            throw $error;
+        }
+    }
+
+    /** Entfernt nur eine unveraenderte, aus einer inzwischen deaktivierten Vorlage erzeugte Instanz. */
+    public function removeGeneratedDefault(int $shiftId): void {
+        $this->db->beginTransaction();
+        try {
+            $this->detachChildren($shiftId);
+            $this->delete($shiftId);
+            $this->db->commit();
+        } catch (\Throwable $error) {
+            $this->db->rollBack();
+            throw $error;
+        }
+    }
+
+    public function attachContainedAppointments(int $shiftId, string $employeeUid, DateTimeImmutable $start, DateTimeImmutable $end): void {
+        $qb = $this->db->getQueryBuilder();
+        $qb->update('adc_entries')
+            ->set('parent_entry_id', $qb->createNamedParameter($shiftId, IQueryBuilder::PARAM_INT))
+            ->where($qb->expr()->eq('employee_uid', $qb->createNamedParameter($employeeUid)))
+            ->andWhere($qb->expr()->eq('entry_type', $qb->createNamedParameter(CalendarEntry::TYPE_APPOINTMENT)))
+            ->andWhere($qb->expr()->isNull('parent_entry_id'))
+            ->andWhere($qb->expr()->gte('start_at', $qb->createNamedParameter($start, IQueryBuilder::PARAM_DATETIME_IMMUTABLE)))
+            ->andWhere($qb->expr()->lte('end_at', $qb->createNamedParameter($end, IQueryBuilder::PARAM_DATETIME_IMMUTABLE)))
+            ->executeStatement();
+    }
+
     /** @return list<CalendarEntry> */
     public function containingShifts(string $employeeUid, DateTimeImmutable $start, DateTimeImmutable $end, ?int $excludeId = null): array {
         $qb = $this->db->getQueryBuilder();
-        $qb->select('id', 'employee_uid', 'start_at', 'end_at', 'entry_type', 'title', 'parent_entry_id')->from('adc_entries')
+        $qb->select(...self::COLUMNS)->from('adc_entries')
             ->where($qb->expr()->eq('employee_uid', $qb->createNamedParameter($employeeUid)))
             ->andWhere($qb->expr()->eq('entry_type', $qb->createNamedParameter(CalendarEntry::TYPE_SHIFT)))
+            ->andWhere($qb->expr()->eq('default_deleted', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)))
             ->andWhere($qb->expr()->lte('start_at', $qb->createNamedParameter($start, IQueryBuilder::PARAM_DATETIME_IMMUTABLE)))
             ->andWhere($qb->expr()->gte('end_at', $qb->createNamedParameter($end, IQueryBuilder::PARAM_DATETIME_IMMUTABLE)));
         if ($excludeId !== null) $qb->andWhere($qb->expr()->neq('id', $qb->createNamedParameter($excludeId, IQueryBuilder::PARAM_INT)));
@@ -117,9 +190,10 @@ final class CalendarEntryRepository {
     /** @return list<CalendarEntry> */
     public function overlappingShifts(string $employeeUid, DateTimeImmutable $start, DateTimeImmutable $end, ?int $excludeId = null): array {
         $qb = $this->db->getQueryBuilder();
-        $qb->select('id', 'employee_uid', 'start_at', 'end_at', 'entry_type', 'title', 'parent_entry_id')->from('adc_entries')
+        $qb->select(...self::COLUMNS)->from('adc_entries')
             ->where($qb->expr()->eq('employee_uid', $qb->createNamedParameter($employeeUid)))
             ->andWhere($qb->expr()->eq('entry_type', $qb->createNamedParameter(CalendarEntry::TYPE_SHIFT)))
+            ->andWhere($qb->expr()->eq('default_deleted', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)))
             ->andWhere($qb->expr()->lt('start_at', $qb->createNamedParameter($end, IQueryBuilder::PARAM_DATETIME_IMMUTABLE)))
             ->andWhere($qb->expr()->gt('end_at', $qb->createNamedParameter($start, IQueryBuilder::PARAM_DATETIME_IMMUTABLE)));
         if ($excludeId !== null) $qb->andWhere($qb->expr()->neq('id', $qb->createNamedParameter($excludeId, IQueryBuilder::PARAM_INT)));
@@ -148,6 +222,12 @@ final class CalendarEntryRepository {
     }
 
     private function mapRow(array $row): array {
-        return ['id' => (int)$row['id'], 'employeeUid' => $row['employee_uid'], 'start' => (string)$row['start_at'], 'end' => (string)$row['end_at'], 'type' => $row['entry_type'], 'title' => $row['title'], 'parentEntryId' => $row['parent_entry_id'] === null ? null : (int)$row['parent_entry_id']];
+        return [
+            'id' => (int)$row['id'], 'employeeUid' => $row['employee_uid'], 'start' => (string)$row['start_at'],
+            'end' => (string)$row['end_at'], 'type' => $row['entry_type'], 'title' => $row['title'],
+            'parentEntryId' => $row['parent_entry_id'] === null ? null : (int)$row['parent_entry_id'],
+            'defaultDate' => $row['default_date'] === null ? null : (string)$row['default_date'],
+            'defaultModified' => (bool)$row['default_modified'], 'defaultDeleted' => (bool)$row['default_deleted'],
+        ];
     }
 }

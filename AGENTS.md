@@ -29,6 +29,7 @@ Kernprozess:
 - `ad-Stab-HR`, `ad-Stab-QMB`, `ad-AsdGF-Digi`, `ad-PDL`, beide GF-Rollen und `ad-Sekretariat` werden im Rollenfilter ueber einen gemeinsamen Anzeigen-/Ausblenden-Schalter gesteuert; der Schalter ist Teil des persoenlichen Standards. Diese Personen stehen in einem gemeinsamen Block und werden entlang der GF-AS- und GF-Digi-Hierarchie sortiert.
 - Eine Meeting-Lueckensuche schneidet die Dienste der ausgewaehlten Personen innerhalb einer Kalenderwoche und zieht deren vorhandene Termine ab; die Mindestdauer ist frei waehlbar und betraegt initial 60 Minuten.
 - Jedes angemeldete Konto kann im eigenen Einstellungs-Tab Standard-Dienstzeiten je Wochentag speichern. Sie dienen als Vorschlag beim Anlegen; ein Ende vor dem Beginn bildet einen Dienst bis zum Folgetag.
+- Bewusst gespeicherte Standard-Dienstzeiten werden beim Aufruf einer Woche als normale Dienste materialisiert. Individuell bearbeitete Vorkommen bleiben einmalige Abweichungen; ein geloeschtes Vorkommen bleibt fuer genau dieses Datum dauerhaft unterdrueckt.
 - Zeitwerte werden serverseitig eindeutig gespeichert und fuer die Anzeige in der konfigurierten Nextcloud-Zeitzone formatiert.
 
 Verbindliches Gruppenschema:
@@ -90,6 +91,7 @@ Die Gruppenlogik wird zentral implementiert und serverseitig erzwungen.
 - Persistente Kernobjekte nutzen `get(...)`, `get_all([...])`, `toArray()` und nur bei Store-Bindung `save()`.
 - Dienste und Termine werden als ein gemeinsamer Kalendereintrag mit explizitem Typ modelliert; die fachliche Darstellung eines externen Termins als Sperrtermin wird abgeleitet und nicht als widerspruechliche zweite Datenwahrheit gespeichert.
 - Termine innerhalb eines Dienstes referenzieren diesen explizit ueber `parent_entry_id`; Termine ohne Parent sind Sperrtermine.
+- Materialisierte Standarddienste tragen ein eindeutiges Mitarbeiter*innen-/Datumsmerkmal. `default_modified` schuetzt Einzelabweichungen vor spaeterer Seriensynchronisierung; `default_deleted` bewahrt eine Loeschausnahme als Tombstone.
 - Bestehende Eintraege duerfen ihren Typ nicht wechseln; Dienst und Termin haben unterschiedliche Folge- und Loeschvertraege.
 - Beim Loeschen eines Dienstes muss zwischen gemeinsamem Loeschen der Termine und deren Erhalt als Sperrtermine gewaehlt werden.
 - API-Zugriffe liegen im Frontend in Repositories, Daten in Modellen/ViewModels und Rendering/Eventbindung in Komponenten.

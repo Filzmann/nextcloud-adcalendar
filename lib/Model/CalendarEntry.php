@@ -23,6 +23,9 @@ final class CalendarEntry {
         private readonly string $type,
         private readonly string $title,
         private readonly ?int $parentEntryId,
+        private readonly ?string $defaultDate,
+        private readonly bool $defaultModified,
+        private readonly bool $defaultDeleted,
     ) {}
 
     public static function get(array $payload): self {
@@ -49,7 +52,22 @@ final class CalendarEntry {
         if ($type === self::TYPE_SHIFT && $parentEntryId !== null) {
             throw new InvalidArgumentException('Ein Dienst darf keinen uebergeordneten Eintrag haben.');
         }
-        return new self(isset($payload['id']) ? (int)$payload['id'] : null, $employeeUid, $start, $end, $type, $title, $parentEntryId);
+        $defaultDate = isset($payload['defaultDate']) && $payload['defaultDate'] !== null ? (string)$payload['defaultDate'] : null;
+        if ($defaultDate !== null && ($type !== self::TYPE_SHIFT || preg_match('/^\d{4}-\d{2}-\d{2}$/', $defaultDate) !== 1)) {
+            throw new InvalidArgumentException('Eine Standarddienst-Referenz benoetigt einen Dienst und ein gueltiges Datum.');
+        }
+        return new self(
+            isset($payload['id']) ? (int)$payload['id'] : null,
+            $employeeUid,
+            $start,
+            $end,
+            $type,
+            $title,
+            $parentEntryId,
+            $defaultDate,
+            filter_var($payload['defaultModified'] ?? false, FILTER_VALIDATE_BOOL),
+            filter_var($payload['defaultDeleted'] ?? false, FILTER_VALIDATE_BOOL),
+        );
     }
 
     /** @return list<self> */
@@ -87,6 +105,9 @@ final class CalendarEntry {
     public function type(): string { return $this->type; }
     public function title(): string { return $this->title; }
     public function parentEntryId(): ?int { return $this->parentEntryId; }
+    public function defaultDate(): ?string { return $this->defaultDate; }
+    public function defaultModified(): bool { return $this->defaultModified; }
+    public function defaultDeleted(): bool { return $this->defaultDeleted; }
 
     public function toArray(): array {
         return [
@@ -97,6 +118,9 @@ final class CalendarEntry {
             'type' => $this->type,
             'title' => $this->title,
             'parentEntryId' => $this->parentEntryId,
+            'defaultDate' => $this->defaultDate,
+            'defaultModified' => $this->defaultModified,
+            'defaultDeleted' => $this->defaultDeleted,
         ];
     }
 

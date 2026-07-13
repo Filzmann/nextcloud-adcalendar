@@ -11,16 +11,18 @@ use OCA\AdCalendar\Repository\CalendarEntryRepository;
 
 /**
  * Zweck: Orchestriert Wochenansicht, Persistenz, Dienst-Termin-Zuordnung und gemeinsame Meetingluecken.
- * Zusammenspiel: ApiController -> CalendarService -> CalendarEntryRepository/MeetingAvailabilityService.
+ * Zusammenspiel: ApiController -> CalendarService -> DefaultShiftMaterializer/CalendarEntryRepository/MeetingAvailabilityService.
  */
 final class CalendarService {
     public function __construct(
         private CalendarEntryRepository $entries,
         private MeetingAvailabilityService $meetingAvailability,
+        private DefaultShiftMaterializer $defaultShifts,
     ) {}
 
     public function week(DateTimeImmutable $start, array $employees): array {
         $end = $start->modify('+7 days');
+        $this->defaultShifts->syncWeek($start, array_column($employees, 'uid'));
         $entries = $this->entries->findRange($start, $end, array_column($employees, 'uid'));
         return [
             'start' => $start->format('Y-m-d'),
@@ -31,7 +33,16 @@ final class CalendarService {
     }
 
     public function save(array $payload, ?int $id, string $actorUid): int {
-        if ($id !== null) $payload['id'] = $id;
+        if ($id !== null) {
+            $existing = $this->existing($id);
+            if ($existing->defaultDate() !== null) {
+                if ($existing->employeeUid() !== (string)($payload['employeeUid'] ?? '')) {
+                    throw new InvalidArgumentException('Ein Standarddienst kann nicht einer anderen Person zugeordnet werden.');
+                }
+                $payload = array_replace($payload, ['defaultDate' => $existing->defaultDate(), 'defaultModified' => true, 'defaultDeleted' => false]);
+            }
+            $payload['id'] = $id;
+        }
         $entry = CalendarEntry::get($payload);
         $this->assertTypeUnchanged($entry, $id);
         $this->assertShiftDoesNotOverlap($entry);
@@ -47,6 +58,7 @@ final class CalendarService {
 
     public function meetingGaps(DateTimeImmutable $start, array $employeeUids, int $durationMinutes): array {
         $end = $start->modify('+7 days');
+        $this->defaultShifts->syncWeek($start, $employeeUids);
         return $this->meetingAvailability->find($this->entries->findRange($start, $end, $employeeUids), $employeeUids, $start, $end, $durationMinutes);
     }
 
@@ -58,12 +70,18 @@ final class CalendarService {
 
     public function delete(int $id, string $childMode): void {
         $entry = $this->existing($id);
-        if ($entry->type() !== CalendarEntry::TYPE_SHIFT || $this->entries->children($id) === []) {
+        $children = $entry->type() === CalendarEntry::TYPE_SHIFT ? $this->entries->children($id) : [];
+        if ($entry->type() !== CalendarEntry::TYPE_SHIFT) {
             $this->entries->delete($id);
             return;
         }
-        if (!in_array($childMode, ['delete', 'detach'], true)) {
+        if ($children !== [] && !in_array($childMode, ['delete', 'detach'], true)) {
             throw new InvalidArgumentException('Bitte Behandlung der enthaltenen Termine bestaetigen.');
+        }
+        $childMode = $children === [] ? 'detach' : $childMode;
+        if ($entry->defaultDate() !== null) {
+            $this->entries->deleteDefaultShift($id, $childMode);
+            return;
         }
         $this->entries->deleteShift($id, $childMode);
     }

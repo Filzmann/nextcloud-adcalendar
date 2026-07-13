@@ -11,11 +11,12 @@ use OCA\AdCalendar\Service\CalendarService;
 use OCA\AdCalendar\Service\CalendarSettingsService;
 use OCA\AdCalendar\Service\CalendarPreferenceService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
+use Psr\Log\LoggerInterface;
 
 final class ApiController extends Controller {
     public function __construct(
@@ -24,6 +25,7 @@ final class ApiController extends Controller {
         private CalendarService $calendar,
         private CalendarSettingsService $settingsService,
         private CalendarPreferenceService $preferences,
+        private LoggerInterface $logger,
     ) {
         parent::__construct(Application::APP_ID, $request);
     }
@@ -40,8 +42,9 @@ final class ApiController extends Controller {
             $response['defaultFilters'] = $this->preferencesFor($employees);
             $response['shiftDefaults'] = $this->preferences->shiftDefaults($this->access->currentUser()?->getUID() ?? '');
             return new JSONResponse($response);
-        } catch (\Throwable) {
-            return new JSONResponse(['error' => 'Ungueltiger Wochenbeginn.'], Response::STATUS_BAD_REQUEST);
+        } catch (\Throwable $error) {
+            $this->logger->error('Wochenansicht konnte nicht aufgebaut werden.', ['exception' => $error]);
+            return new JSONResponse(['error' => 'Die Wochenansicht konnte nicht geladen werden.'], Http::STATUS_BAD_REQUEST);
         }
     }
 
@@ -64,18 +67,18 @@ final class ApiController extends Controller {
         try {
             $entry = $this->calendar->existing($id);
         } catch (\Throwable) {
-            return new JSONResponse(['error' => 'Nicht gefunden.'], Response::STATUS_NOT_FOUND);
+            return new JSONResponse(['error' => 'Nicht gefunden.'], Http::STATUS_NOT_FOUND);
         }
         if (!$this->access->canManage($entry->employeeUid())) return $this->denied();
         try {
             $preview = $this->calendar->deletionPreview($id);
             if ($entry->type() === 'shift' && $preview['children'] !== [] && $childMode === '') {
-                return new JSONResponse(['confirmationRequired' => true, 'children' => $preview['children']], Response::STATUS_CONFLICT);
+                return new JSONResponse(['confirmationRequired' => true, 'children' => $preview['children']], Http::STATUS_CONFLICT);
             }
             $this->calendar->delete($id, $childMode);
             return new JSONResponse(['deleted' => true, 'childMode' => $childMode]);
         } catch (\Throwable) {
-            return new JSONResponse(['error' => 'Der Eintrag konnte nicht geloescht werden.'], Response::STATUS_BAD_REQUEST);
+            return new JSONResponse(['error' => 'Der Eintrag konnte nicht geloescht werden.'], Http::STATUS_BAD_REQUEST);
         }
     }
 
@@ -121,7 +124,7 @@ final class ApiController extends Controller {
             }
             return new JSONResponse(['gaps' => $this->calendar->meetingGaps(new DateTimeImmutable($start), $uids, $durationMinutes)]);
         } catch (\Throwable) {
-            return new JSONResponse(['error' => 'Teilnehmende, Kalenderwoche oder Dauer sind ungueltig.'], Response::STATUS_BAD_REQUEST);
+            return new JSONResponse(['error' => 'Teilnehmende, Kalenderwoche oder Dauer sind ungueltig.'], Http::STATUS_BAD_REQUEST);
         }
     }
 
@@ -133,12 +136,12 @@ final class ApiController extends Controller {
             $user = $this->access->currentUser();
             return new JSONResponse(['id' => $this->calendar->save($payload, $id, $user?->getUID() ?? '')]);
         } catch (\Throwable) {
-            return new JSONResponse(['error' => 'Der Kalendereintrag ist ungueltig.'], Response::STATUS_BAD_REQUEST);
+            return new JSONResponse(['error' => 'Der Kalendereintrag ist ungueltig.'], Http::STATUS_BAD_REQUEST);
         }
     }
 
     private function denied(): JSONResponse {
-        return new JSONResponse(['error' => 'Keine Berechtigung.'], Response::STATUS_FORBIDDEN);
+        return new JSONResponse(['error' => 'Keine Berechtigung.'], Http::STATUS_FORBIDDEN);
     }
 
     private function preferencesFor(array $employees): ?array {

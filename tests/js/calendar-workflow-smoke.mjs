@@ -43,7 +43,7 @@ if (source.includes('state.data.summaries')) throw new Error('Entfernter Gesamt-
 for (const contract of ['extends BaseRepository', 'saveSettings(peerEditing)', 'savePreferences(filters)', 'saveShiftDefaults(shiftDefaults)', 'meetingGaps(start, employeeUids, durationMinutes)', "method: id == null ? 'POST' : 'PUT'"]) {
     if (!repository.includes(contract)) throw new Error(`Repository-Vertrag fehlt: ${contract}`);
 }
-for (const contract of ['window.LocalBase.models.Model', 'extends BaseModel', 'toArray()']) {
+for (const contract of ['window.LocalBase.models.Model', 'extends BaseModel', 'toArray()', 'this.defaultDate', 'this.defaultModified', 'this.defaultDeleted']) {
     if (!model.includes(contract)) throw new Error(`Modell-Vertrag fehlt: ${contract}`);
 }
 for (const contract of ['class CalendarCell', 'adc-cell-actions', 'adc-entry__children', 'entry.parentEntryId === shift.id', "data-action=\"add-entry\"", 'data-tooltip="Dienst anlegen"', 'icon-calendar-dark']) {

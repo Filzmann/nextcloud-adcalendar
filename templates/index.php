@@ -73,7 +73,7 @@ style('adcalendar', 'style');
     <section id="adc-settings-view" class="adc-settings-view" role="tabpanel" aria-labelledby="adc-tab-settings" hidden>
         <section aria-labelledby="adc-shift-defaults-heading">
             <h2 id="adc-shift-defaults-heading">Meine Standard-Dienstzeiten</h2>
-            <p>Diese Zeiten werden beim Anlegen eines Dienstes vorgeschlagen. Liegt das Ende vor dem Beginn, endet der Dienst am Folgetag.</p>
+            <p>Diese Zeiten erscheinen als feste Dienste im Kalender und werden beim Anlegen vorgeschlagen. Individuell bearbeitete oder geloeschte Tage bleiben Einzelabweichungen. Liegt das Ende vor dem Beginn, endet der Dienst am Folgetag.</p>
             <form id="adc-shift-defaults-form"><div id="adc-shift-defaults"></div><button type="submit" class="primary">Dienstzeiten speichern</button></form>
         </section>
         <section id="adc-settings" class="adc-settings" aria-labelledby="adc-settings-heading" hidden>
