@@ -4,29 +4,19 @@ declare(strict_types=1);
 
 namespace OCA\AdCalendar\Service;
 
-/** Zweck: Leitet sichtbare Fachrollen und nur fuer BO/EB gueltige Buerobereiche aus Nextcloud-Gruppen ab. */
+use OCA\LocalBase\Organization\AdOrganizationDefinition;
+use OCA\LocalBase\Organization\AdOrganizationSettingsService;
+
+/** Zweck: Leitet sichtbare Fachrollen und nur für BO/EB gültige Bürobereiche aus Nextcloud-Gruppen ab. */
 final class CalendarGroupProfile {
+    public function __construct(private ?AdOrganizationSettingsService $organization = null) {}
+
     public function get(array $groupIds): array {
-        $roles = array_values(array_intersect([
-            CalendarAccessService::ROLE_EB,
-            CalendarAccessService::ROLE_PFK,
-            CalendarAccessService::ROLE_OFFICE,
-            CalendarAccessService::ROLE_STAFF_HR,
-            CalendarAccessService::ROLE_STAFF_QMB,
-            CalendarHierarchyPolicy::GF_AS,
-            CalendarHierarchyPolicy::GF_DIGI,
-            CalendarHierarchyPolicy::ASSISTANT_GF_DIGI,
-            CalendarHierarchyPolicy::FINANCE_LEAD,
-            CalendarHierarchyPolicy::FINANCE,
-            CalendarHierarchyPolicy::IT,
-            CalendarHierarchyPolicy::SECRETARIAT,
-            CalendarHierarchyPolicy::PDL,
-            CalendarHierarchyPolicy::BL,
-            CalendarHierarchyPolicy::DEPUT_BL,
-        ], $groupIds));
-        $hasAreaRole = array_intersect([CalendarAccessService::ROLE_EB, CalendarAccessService::ROLE_OFFICE, CalendarHierarchyPolicy::BL, CalendarHierarchyPolicy::DEPUT_BL], $roles) !== [];
+        $definition = $this->definition();
+        $roles = array_values(array_intersect($definition->roleGroupIds(static fn(array $role): bool => $role['calendarVisible']), $groupIds));
+        $hasAreaRole = array_filter($roles, $definition->roleIsAreaScopedByGroup(...)) !== [];
         $areas = $hasAreaRole
-            ? array_values(array_filter($groupIds, static fn(string $id): bool => str_starts_with($id, CalendarAccessService::AREA_PREFIX)))
+            ? array_values(array_intersect($definition->areaGroupIds(), $groupIds))
             : [];
         $clusters = [];
         foreach ($roles as $role) {
@@ -34,4 +24,6 @@ final class CalendarGroupProfile {
         }
         return ['roles' => $roles, 'areas' => $areas, 'clusters' => $clusters];
     }
+
+    private function definition(): AdOrganizationDefinition { return $this->organization?->definition() ?? AdOrganizationDefinition::defaults(); }
 }

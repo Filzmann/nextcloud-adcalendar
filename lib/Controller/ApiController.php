@@ -42,6 +42,7 @@ final class ApiController extends Controller {
             $response['currentUserProfile'] = $this->access->currentProfile();
             $response['defaultFilters'] = $this->preferencesFor($employees);
             $response['shiftDefaults'] = $this->preferences->shiftDefaults($this->access->currentUser()?->getUID() ?? '');
+            $response['organization'] = $this->settingsService->organization();
             return new JSONResponse($response);
         } catch (\Throwable $error) {
             $this->logger->error('Wochenansicht konnte nicht aufgebaut werden.', ['exception' => $error]);
@@ -79,16 +80,27 @@ final class ApiController extends Controller {
             $this->calendar->delete($id, $childMode);
             return new JSONResponse(['deleted' => true, 'childMode' => $childMode]);
         } catch (\Throwable) {
-            return new JSONResponse(['error' => 'Der Eintrag konnte nicht geloescht werden.'], Http::STATUS_BAD_REQUEST);
+            return new JSONResponse(['error' => 'Der Eintrag konnte nicht gelöscht werden.'], Http::STATUS_BAD_REQUEST);
         }
     }
 
     public function settings(): JSONResponse {
-        return new JSONResponse(['peerEditing' => $this->settingsService->peerEditing()]);
+        return new JSONResponse(['peerEditing' => $this->settingsService->peerEditing(), 'peerOptions' => $this->settingsService->peerOptions(), 'organization' => $this->settingsService->organization()]);
     }
 
     public function saveSettings(array $peerEditing): JSONResponse {
         return new JSONResponse(['peerEditing' => $this->settingsService->savePeerEditing($peerEditing)]);
+    }
+
+    public function saveOrganizationSettings(array $organization): JSONResponse {
+        try {
+            return new JSONResponse(['organization' => $this->settingsService->saveOrganization($organization)]);
+        } catch (InvalidArgumentException $error) {
+            return new JSONResponse(['error' => $error->getMessage()], Http::STATUS_BAD_REQUEST);
+        } catch (\Throwable $error) {
+            $this->logger->error('Organisationseinstellungen konnten nicht gespeichert werden.', ['exception' => $error]);
+            return new JSONResponse(['error' => 'Die Organisationseinstellungen konnten nicht gespeichert werden.'], Http::STATUS_BAD_REQUEST);
+        }
     }
 
     #[NoAdminRequired]
@@ -125,7 +137,7 @@ final class ApiController extends Controller {
             }
             return new JSONResponse(['gaps' => $this->calendar->meetingGaps(new DateTimeImmutable($start), $uids, $durationMinutes)]);
         } catch (\Throwable) {
-            return new JSONResponse(['error' => 'Teilnehmende, Kalenderwoche oder Dauer sind ungueltig.'], Http::STATUS_BAD_REQUEST);
+            return new JSONResponse(['error' => 'Teilnehmende, Kalenderwoche oder Dauer sind ungültig.'], Http::STATUS_BAD_REQUEST);
         }
     }
 
@@ -139,7 +151,7 @@ final class ApiController extends Controller {
         } catch (InvalidArgumentException $error) {
             return new JSONResponse(['error' => $error->getMessage()], Http::STATUS_BAD_REQUEST);
         } catch (\Throwable) {
-            return new JSONResponse(['error' => 'Der Kalendereintrag ist ungueltig.'], Http::STATUS_BAD_REQUEST);
+            return new JSONResponse(['error' => 'Der Kalendereintrag ist ungültig.'], Http::STATUS_BAD_REQUEST);
         }
     }
 

@@ -36,6 +36,8 @@ Kernprozess:
 
 Verbindliches Gruppenschema:
 
+Die folgenden Gruppen-IDs beschreiben ausschließlich die initiale Standardkonfiguration. Gruppen-IDs, sichtbare Namen, Bereiche, Reihenfolge, Peer-Fähigkeit, Assistenzteam-Konventionen und direkte Hierarchiekanten werden gemeinsam über `AdOrganizationDefinition` konfiguriert und im administrativen Einstellungs-Tab bearbeitet. App-Code darf daneben keine parallelen Rollenregister führen.
+
 - Rollen werden als eigenstaendige Nextcloud-Gruppen gepflegt: `ad-EB` und `ad-PFK`.
 - Bereiche werden separat als `ad-Bereich-<Name>` gepflegt.
 - Nur `ad-Buero` und `ad-EB` werden einem Buero-Bereich zugeordnet. `ad-PFK`, `ad-Stab-HR` und `ad-Stab-QMB` sind bereichsunabhaengig; versehentliche Bereichsmitgliedschaften duerfen ihre Kalenderdarstellung oder Rechte nicht veraendern.
@@ -84,6 +86,8 @@ Es gilt deny by default fuer schreibende Zugriffe:
 
 Die Gruppenlogik wird zentral implementiert und serverseitig erzwungen.
 
+Eine Änderung technischer Gruppen-IDs verschiebt keine bestehenden Nextcloud-Gruppenmitgliedschaften. Zielgruppen und Mitgliedschaften müssen vor einer Umstellung in Nextcloud vorbereitet werden.
+
 ## Architektur
 
 - Controller bleiben duenn.
@@ -98,6 +102,7 @@ Die Gruppenlogik wird zentral implementiert und serverseitig erzwungen.
 - Beim Loeschen eines Dienstes muss zwischen gemeinsamem Loeschen der Termine und deren Erhalt als Sperrtermine gewaehlt werden.
 - API-Zugriffe liegen im Frontend in Repositories, Daten in Modellen/ViewModels und Rendering/Eventbindung in Komponenten.
 - Der Frontend-Unterbau nutzt die vorhandenen LocalBase-Vertraege `ApiClient`, `Repository`, `Model` und `Notice`; AD-Kalender-spezifische API-Pfade, Modelle und Renderinglogik bleiben in diesem Repo.
+- Sichtbare Gruppenbezeichnungen, Filter, Leitungsblock, Hierarchiedarstellung und Demo-Gruppenzuordnungen werden aus der gemeinsamen Organisationsdefinition abgeleitet.
 - Die UI bleibt per Tastatur bedienbar, verwendet semantische Tabellen/Listen, sichtbare Fokuszustaende und Textkennzeichnungen zusaetzlich zu Farben.
 - Keine vorsorgliche gemeinsame Library und keine WordPress-Kompatibilitaetsschicht.
 

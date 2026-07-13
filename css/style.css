@@ -30,6 +30,7 @@
 .adc-settings form div { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0; }
 .adc-settings-view { max-width: 58rem; padding: 14px 2px 30px; }
 .adc-settings-view > section { padding: 12px 14px; border: 1px solid var(--color-border); border-radius: var(--border-radius-large); background: var(--color-main-background); }
+.adc-organization-general,.adc-hierarchy-settings{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;padding:10px;border:1px solid var(--color-border);border-radius:var(--border-radius)}.adc-organization-general label,.adc-hierarchy-settings label{display:grid;gap:4px}.adc-hierarchy-settings label{min-width:220px}.adc-hierarchy-settings select{min-height:90px}.adc-organization-table{width:max-content;min-width:100%;border-collapse:collapse;margin:10px 0}.adc-organization-table th,.adc-organization-table td{padding:5px;border:1px solid var(--color-border);vertical-align:middle}.adc-organization-table input:not([type="checkbox"]){min-width:120px;width:100%}.adc-organization-table input[type="number"]{min-width:72px;width:82px}#adc-organization-form>button{margin-top:10px}
 .adc-shift-default-row { display: grid; grid-template-columns: minmax(9rem, 1fr) minmax(9rem, auto) minmax(9rem, auto); gap: 8px 14px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--color-border); }
 .adc-shift-default-row:last-child { border-bottom: 0; }
 .adc-shift-default-row label { display: flex; align-items: center; gap: 5px; }

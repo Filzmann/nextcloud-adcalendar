@@ -31,6 +31,10 @@
             return this.request('/api/settings', { method: 'PUT', body: JSON.stringify({ peerEditing }) });
         }
 
+        saveOrganizationSettings(organization) {
+            return this.request('/api/settings/organization', { method: 'PUT', body: JSON.stringify({ organization }) });
+        }
+
         savePreferences(filters) {
             return this.request('/api/preferences', { method: 'PUT', body: JSON.stringify({ filters }) });
         }

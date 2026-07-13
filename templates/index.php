@@ -5,6 +5,7 @@ script('localbase', 'repositories/repository');
 script('localbase', 'ui/ui');
 script('orgsuite', 'suite-navigation');
 script('adcalendar', 'models/calendar-entry');
+script('adcalendar', 'models/organization');
 script('adcalendar', 'repositories/calendar-repository');
 script('adcalendar', 'modules/calendar-state');
 script('adcalendar', 'components/calendar-cell');
@@ -12,6 +13,7 @@ script('adcalendar', 'components/entry-dialog');
 script('adcalendar', 'components/meeting-finder');
 script('adcalendar', 'components/shift-defaults');
 script('adcalendar', 'components/tab-navigation');
+script('adcalendar', 'components/organization-settings');
 script('adcalendar', 'components/week-table');
 script('adcalendar', 'main');
 style('adcalendar', 'style');
@@ -22,7 +24,7 @@ style('orgsuite', 'suite-navigation');
     <header class="adc-header">
         <div>
             <h1>AD Kalender</h1>
-            <p>Dienste, Termine und Sperrtermine im Wochenueberblick</p>
+            <p>Dienste, Termine und Sperrtermine im Wochenüberblick</p>
         </div>
     </header>
     <div id="adc-notice" role="status" aria-live="polite"></div>
@@ -42,7 +44,7 @@ style('orgsuite', 'suite-navigation');
                 <ul id="adc-search-results" class="adc-search-results"></ul>
             </div>
             <div class="adc-selection-filter">
-                <strong>Ausgewaehlte Personen</strong>
+                <strong>Ausgewählte Personen</strong>
                 <ul id="adc-selected-people" class="adc-selected-people"><li>Keine explizite Auswahl – Gruppenfilter gelten.</li></ul>
                 <button type="button" id="adc-open-meeting-finder" class="adc-selection-action" disabled><span class="adc-button-icon icon-calendar-dark" aria-hidden="true"></span><span>Meetinglücke finden</span></button>
             </div>
@@ -58,7 +60,7 @@ style('orgsuite', 'suite-navigation');
                 <button type="button" id="adc-previous-week">Vorherige Woche</button>
                 <output id="adc-week-label" aria-live="polite"></output>
                 <label>KW <input id="adc-week-number" type="week"></label>
-                <button type="button" id="adc-next-week">Naechste Woche</button>
+                <button type="button" id="adc-next-week">Nächste Woche</button>
                 <button type="button" id="adc-toggle-view" aria-pressed="false">Tage als Zeilen</button>
             </nav>
         </div>
@@ -76,12 +78,16 @@ style('orgsuite', 'suite-navigation');
     <section id="adc-settings-view" class="adc-settings-view" role="tabpanel" aria-labelledby="adc-tab-settings" hidden>
         <section aria-labelledby="adc-shift-defaults-heading">
             <h2 id="adc-shift-defaults-heading">Meine Standard-Dienstzeiten</h2>
-            <p>Diese Zeiten erscheinen als feste Dienste im Kalender und werden beim Anlegen vorgeschlagen. Individuell bearbeitete oder geloeschte Tage bleiben Einzelabweichungen. Liegt das Ende vor dem Beginn, endet der Dienst am Folgetag.</p>
+            <p>Diese Zeiten erscheinen als feste Dienste im Kalender und werden beim Anlegen vorgeschlagen. Individuell bearbeitete oder gelöschte Tage bleiben Einzelabweichungen. Liegt das Ende vor dem Beginn, endet der Dienst am Folgetag.</p>
             <form id="adc-shift-defaults-form"><div id="adc-shift-defaults"></div><button type="submit" class="primary">Dienstzeiten speichern</button></form>
         </section>
         <section id="adc-settings" class="adc-settings" aria-labelledby="adc-settings-heading" hidden>
-            <h2 id="adc-settings-heading">Bearbeitungsrechte innerhalb von Fachgruppen</h2>
-            <p>Ist ein Schalter aktiv, duerfen Mitglieder dieser Gruppe gegenseitig ihre Kalenderdaten bearbeiten.</p>
+            <h2 id="adc-settings-heading">AD-Organisation</h2>
+            <p>Diese gemeinsame Konfiguration steuert Gruppen, sichtbare Namen, Bereiche, Hierarchie und Teamansichten in AD Kalender, AD Urlaub und AdPlaner.</p>
+            <p><strong>Wichtig:</strong> Änderungen an Gruppen-IDs verschieben keine bestehenden Nextcloud-Mitgliedschaften. Lege die Zielgruppen und Mitgliedschaften vor der Umstellung in Nextcloud an.</p>
+            <form id="adc-organization-form"><div id="adc-organization-settings"></div><button type="submit" class="primary">Organisation speichern</button></form>
+            <h3>Bearbeitungsrechte innerhalb von Fachgruppen</h3>
+            <p>Ist ein Schalter aktiv, dürfen Mitglieder dieser Gruppe gegenseitig ihre Kalenderdaten bearbeiten.</p>
             <form id="adc-settings-form"><div id="adc-peer-settings"></div><button type="submit">Gruppenrechte speichern</button></form>
         </section>
     </section>

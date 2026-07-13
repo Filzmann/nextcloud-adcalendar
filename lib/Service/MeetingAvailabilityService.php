@@ -9,7 +9,7 @@ use OCA\AdCalendar\Model\CalendarEntry;
 
 /**
  * Zweck: Findet gemeinsame freie Zeit innerhalb der Dienste mehrerer Personen.
- * Vertrag: Termine werden als belegt abgezogen; Ergebnisse sind maximale gemeinsame Luecken von mindestens der Wunschdauer.
+ * Vertrag: Termine werden als belegt abgezogen; Ergebnisse sind maximale gemeinsame Lücken von mindestens der Wunschdauer.
  */
 final class MeetingAvailabilityService {
     /** @param list<CalendarEntry> $entries @param list<string> $employeeUids */

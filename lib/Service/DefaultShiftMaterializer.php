@@ -12,7 +12,7 @@ use OCP\IConfig;
 /**
  * Zweck: Synchronisiert gespeicherte Standard-Dienstzeiten idempotent in reale Wochen-Dienste.
  * Zusammenspiel: CalendarService ruft vor Wochenansicht und Meetinglueckensuche Materializer -> PreferenceService/Repository auf.
- * Vertrag: Manuell geaenderte oder geloeschte Einzelvorkommen werden niemals aus der Serie ueberschrieben oder neu erzeugt.
+ * Vertrag: Manuell geänderte oder gelöschte Einzelvorkommen werden niemals aus der Serie überschrieben oder neu erzeugt.
  */
 final class DefaultShiftMaterializer {
     public function __construct(

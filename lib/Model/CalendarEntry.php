@@ -45,16 +45,16 @@ final class CalendarEntry {
             throw new InvalidArgumentException('Das Ende muss nach dem Beginn liegen.');
         }
         if ($type === self::TYPE_APPOINTMENT && $title === '') {
-            throw new InvalidArgumentException('Ein Termin benoetigt einen Titel.');
+            throw new InvalidArgumentException('Ein Termin benötigt einen Titel.');
         }
 
         $parentEntryId = isset($payload['parentEntryId']) && $payload['parentEntryId'] !== null ? (int)$payload['parentEntryId'] : null;
         if ($type === self::TYPE_SHIFT && $parentEntryId !== null) {
-            throw new InvalidArgumentException('Ein Dienst darf keinen uebergeordneten Eintrag haben.');
+            throw new InvalidArgumentException('Ein Dienst darf keinen übergeordneten Eintrag haben.');
         }
         $defaultDate = isset($payload['defaultDate']) && $payload['defaultDate'] !== null ? (string)$payload['defaultDate'] : null;
         if ($defaultDate !== null && ($type !== self::TYPE_SHIFT || preg_match('/^\d{4}-\d{2}-\d{2}$/', $defaultDate) !== 1)) {
-            throw new InvalidArgumentException('Eine Standarddienst-Referenz benoetigt einen Dienst und ein gueltiges Datum.');
+            throw new InvalidArgumentException('Eine Standarddienst-Referenz benötigt einen Dienst und ein gültiges Datum.');
         }
         return new self(
             isset($payload['id']) ? (int)$payload['id'] : null,
@@ -134,7 +134,7 @@ final class CalendarEntry {
         try {
             return new DateTimeImmutable($value);
         } catch (\Exception) {
-            throw new InvalidArgumentException("Das Feld {$field} enthaelt kein gueltiges Datum.");
+            throw new InvalidArgumentException("Das Feld {$field} enthält kein gültiges Datum.");
         }
     }
 }

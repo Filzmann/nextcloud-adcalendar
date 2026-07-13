@@ -2,21 +2,24 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../../../localbase/lib/Organization/AdOrganizationDefinition.php';
 require_once __DIR__ . '/../../lib/Service/DemoFixtureCatalog.php';
 
 use OCA\AdCalendar\Service\DemoFixtureCatalog;
+use OCA\LocalBase\Organization\AdOrganizationDefinition;
 
 $fixtures = (new DemoFixtureCatalog())->all();
 if (count($fixtures) < 20) throw new RuntimeException('Der Demokatalog deckt die Organisationsstruktur nicht ausreichend ab.');
-$requiredGroups = [
-    'ad-EB', 'ad-PFK', 'ad-Buero', 'ad-Stab-HR', 'ad-Stab-QMB', 'ad-GF-AS', 'ad-GF-Digi',
-    'ad-AsdGF-Digi', 'ad-Leitung-Finanzen-Lohn', 'ad-Finanzen-Lohn', 'ad-IT', 'ad-Sekretariat',
-    'ad-PDL', 'ad-BL', 'ad-StvBL', 'ad-Bereich-Nordost', 'ad-Bereich-West', 'ad-Bereich-Sued',
-];
+$definition = AdOrganizationDefinition::defaults();
+$requiredGroups = array_merge($definition->roleGroupIds(), $definition->areaGroupIds());
 $covered = array_fill_keys(array_merge(...array_column($fixtures, 'groups')), true);
 foreach ($requiredGroups as $group) {
     if (!isset($covered[$group])) throw new RuntimeException("Demodatensatz fuer {$group} fehlt.");
 }
+$custom = $definition->toArray();
+$custom['roles']['office']['groupId'] = 'custom-office';
+$customFixtures = (new DemoFixtureCatalog(null, AdOrganizationDefinition::get($custom)))->all();
+if (!in_array('custom-office', array_merge(...array_column($customFixtures, 'groups')), true)) throw new RuntimeException('Demodaten verwenden nicht die konfigurierte Gruppen-ID.');
 $uids = [];
 foreach ($fixtures as $fixture) {
     if (isset($uids[$fixture['uid']])) throw new RuntimeException("Doppelte Demo-UID: {$fixture['uid']}");

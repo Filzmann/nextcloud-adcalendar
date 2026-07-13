@@ -7,13 +7,11 @@
     const repository = new window.AdCalendar.repositories.CalendarRepository(apiClient);
     const notice = new window.LocalBase.ui.Notice('adc-notice', { baseClass: 'adc-notice', typeClassPrefix: 'adc-notice--' });
     const EntryModel = window.AdCalendar.models.CalendarEntry;
-    const LEADERSHIP_STAFF_ROLES = new Set(['ad-Stab-HR', 'ad-Stab-QMB', 'ad-GF-AS', 'ad-GF-Digi', 'ad-AsdGF-Digi', 'ad-Sekretariat', 'ad-PDL']);
-    const LEADERSHIP_STAFF_ORDER = new Map([
-        ['ad-GF-AS', 0], ['ad-PDL', 1], ['ad-Stab-HR', 2], ['ad-Stab-QMB', 3],
-        ['ad-GF-Digi', 4], ['ad-AsdGF-Digi', 5], ['ad-Sekretariat', 6],
-    ]);
-    const elements = Object.fromEntries(['week-label','calendar-body','calendar-head','notice','role-filters','area-filters','person-search','search-results','selected-people','filter-status','week-number','toggle-view','settings','settings-form','peer-settings'].map(id => [id, document.getElementById(`adc-${id}`)]));
-    const state = new window.AdCalendar.modules.CalendarState(LEADERSHIP_STAFF_ROLES).restore();
+    const OrganizationModel = window.AdCalendar.models.Organization;
+    const leadershipStaffRoles = new Set();
+    let organization = new OrganizationModel({});
+    const elements = Object.fromEntries(['week-label','calendar-body','calendar-head','notice','role-filters','area-filters','person-search','search-results','selected-people','filter-status','week-number','toggle-view','settings','settings-form','peer-settings','organization-form','organization-settings'].map(id => [id, document.getElementById(`adc-${id}`)]));
+    const state = new window.AdCalendar.modules.CalendarState(leadershipStaffRoles).restore();
     const tabs = new window.AdCalendar.components.TabNavigation({
         calendarButton: document.getElementById('adc-tab-calendar'),
         settingsButton: document.getElementById('adc-tab-settings'),
@@ -25,7 +23,7 @@
     const calendarCell = new window.AdCalendar.components.CalendarCell();
     const weekTable = new window.AdCalendar.components.WeekTable({
         head: elements['calendar-head'], body: elements['calendar-body'], calendarCell,
-        leadershipStaffRoles: LEADERSHIP_STAFF_ROLES, leadershipStaffOrder: LEADERSHIP_STAFF_ORDER,
+        organization: () => organization,
     });
     const entryDialog = new window.AdCalendar.components.EntryDialog({
         entries: () => state.data?.entries || [],
@@ -34,6 +32,9 @@
     });
     const meetingFinder = new window.AdCalendar.components.MeetingFinder({ repository, onError: error => show(error, true) });
     const shiftDefaults = new window.AdCalendar.components.ShiftDefaults({ onSave: saveShiftDefaults });
+    const organizationSettings = new window.AdCalendar.components.OrganizationSettings({
+        container: elements['organization-settings'], form: elements['organization-form'], onSave: saveOrganization,
+    });
 
     function startOfWeek(value) { const result = new Date(value); const weekday = result.getDay() || 7; result.setDate(result.getDate() - weekday + 1); result.setHours(0, 0, 0, 0); return result; }
     function isoDay(value) { const year = value.getFullYear(); const month = String(value.getMonth() + 1).padStart(2, '0'); const day = String(value.getDate()).padStart(2, '0'); return `${year}-${month}-${day}`; }
@@ -41,8 +42,8 @@
     function show(message, error) { if (error) notice.error(message); else if (message) notice.success(message); else notice.clear(); }
 
     function renderFilters() {
-        const roles = [...new Set(state.data.employees.flatMap(employee => employee.roles))].filter(role => !LEADERSHIP_STAFF_ROLES.has(role)).sort();
-        const areas = [...new Set(state.data.employees.flatMap(employee => employee.areas))].sort();
+        const roles = [...new Set(state.data.employees.flatMap(employee => employee.roles))].filter(role => !leadershipStaffRoles.has(role)).sort((a, b) => organization.roleOrder(a) - organization.roleOrder(b));
+        const areas = [...new Set(state.data.employees.flatMap(employee => employee.areas))].sort((a, b) => organization.areaLabel(a).localeCompare(organization.areaLabel(b), 'de'));
         renderCheckboxes(elements['role-filters'], roles, state.roles);
         renderLeadershipStaffCheckbox();
         renderCheckboxes(elements['area-filters'], areas, state.areas);
@@ -59,15 +60,15 @@
         input.checked = state.showLeadershipStaff;
         input.addEventListener('change', () => {
             state.showLeadershipStaff = input.checked;
-            if (!input.checked) for (const role of LEADERSHIP_STAFF_ROLES) state.roles.delete(role);
+            if (!input.checked) for (const role of leadershipStaffRoles) state.roles.delete(role);
             state.persist(); renderTable();
         });
-        label.append(input, document.createTextNode(' GF, PDL, Stabsstellen und Sekretariat anzeigen'));
+        label.append(input, document.createTextNode(` ${organization.staffBlockLabel} anzeigen`));
         elements['role-filters'].append(label);
     }
 
     function renderCheckboxes(container, values, selected) {
-        container.replaceChildren(...values.map(value => { const label = node('label'); const input = document.createElement('input'); input.type = 'checkbox'; input.checked = selected.has(value); input.addEventListener('change', () => { state.emptyOwnProfile = false; input.checked ? selected.add(value) : selected.delete(value); state.persist(); renderTable(); }); label.append(input, document.createTextNode(' ' + value.replace('ad-', '').replace('Bereich-', ''))); return label; }));
+        container.replaceChildren(...values.map(value => { const label = node('label'); const input = document.createElement('input'); input.type = 'checkbox'; input.checked = selected.has(value); input.addEventListener('change', () => { state.emptyOwnProfile = false; input.checked ? selected.add(value) : selected.delete(value); state.persist(); renderTable(); }); const text = state.data.employees.some(employee => employee.roles.includes(value)) ? organization.roleLabel(value) : organization.areaLabel(value); label.append(input, document.createTextNode(' ' + text)); return label; }));
     }
 
     function renderSelected() {
@@ -97,9 +98,26 @@
         } catch (error) { show(error, true); }
     }
 
+    async function saveOrganization(data) {
+        try {
+            const response = await repository.saveOrganizationSettings(data);
+            applyOrganization(response.organization);
+            organizationSettings.set(organization);
+            await load();
+            await loadSettings();
+            show('Organisationseinstellungen gespeichert.');
+        } catch (error) { show(error, true); }
+    }
+
+    function applyOrganization(data) {
+        organization = OrganizationModel.get(data);
+        leadershipStaffRoles.clear();
+        for (const group of organization.staffRoleGroups()) leadershipStaffRoles.add(group);
+    }
+
     function renderTable() {
         const employees = state.availableEmployees();
-        elements['filter-status'].textContent = state.selected.size ? `${employees.length} ausgewaehlt` : state.roles.size || state.areas.size ? `${employees.length} gefiltert` : 'Alle Personen';
+        elements['filter-status'].textContent = state.selected.size ? `${employees.length} ausgewählt` : state.roles.size || state.areas.size ? `${employees.length} gefiltert` : 'Alle Personen';
         weekTable.render(employees, state);
         elements['toggle-view'].textContent = state.vertical ? 'Tage als Zeilen' : 'Personen als Zeilen';
         elements['toggle-view'].setAttribute('aria-pressed', String(!state.vertical));
@@ -126,13 +144,16 @@
 
     async function load() {
         const sunday = new Date(state.monday); sunday.setDate(sunday.getDate() + 6); elements['week-label'].textContent = `${state.monday.toLocaleDateString('de-DE')} – ${sunday.toLocaleDateString('de-DE')}`; elements['week-number'].value = isoWeekValue(state.monday);
-        try { state.data = await repository.week(isoDay(state.monday)); state.data.entries = EntryModel.get_all(state.data.entries); state.applyInitialFilters(); renderFilters(); renderTable(); tabs.show(state.activeTab, false); show(''); } catch (error) { show(error, true); }
+        try { state.data = await repository.week(isoDay(state.monday)); state.data.entries = EntryModel.get_all(state.data.entries); applyOrganization(state.data.organization); state.applyInitialFilters(); renderFilters(); renderTable(); tabs.show(state.activeTab, false); show(''); } catch (error) { show(error, true); }
     }
 
     async function loadSettings() {
         let data; try { data = await repository.settings(); } catch (_) { return; }
         elements.settings.hidden = false;
-        elements['peer-settings'].replaceChildren(...Object.entries(data.peerEditing).map(([group, enabled]) => { const label = node('label'); const input = document.createElement('input'); input.type = 'checkbox'; input.name = group; input.checked = enabled; label.append(input, document.createTextNode(` ${group}`)); return label; }));
+        applyOrganization(data.organization);
+        organizationSettings.set(organization);
+        const labels = new Map((data.peerOptions || []).map(option => [option.groupId, option.label]));
+        elements['peer-settings'].replaceChildren(...Object.entries(data.peerEditing).map(([group, enabled]) => { const label = node('label'); const input = document.createElement('input'); input.type = 'checkbox'; input.name = group; input.checked = enabled; label.append(input, document.createTextNode(` ${labels.get(group) || organization.roleLabel(group)}`)); return label; }));
     }
 
     document.getElementById('adc-previous-week').addEventListener('click', () => { state.monday.setDate(state.monday.getDate() - 7); load(); });

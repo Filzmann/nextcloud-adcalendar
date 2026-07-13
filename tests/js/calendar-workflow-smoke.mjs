@@ -4,6 +4,7 @@ import { runInNewContext } from 'node:vm';
 const source = readFileSync(new URL('../../js/main.js', import.meta.url), 'utf8');
 const repository = readFileSync(new URL('../../js/repositories/calendar-repository.js', import.meta.url), 'utf8');
 const model = readFileSync(new URL('../../js/models/calendar-entry.js', import.meta.url), 'utf8');
+const organizationModel = readFileSync(new URL('../../js/models/organization.js', import.meta.url), 'utf8');
 const calendarCell = readFileSync(new URL('../../js/components/calendar-cell.js', import.meta.url), 'utf8');
 const entryDialog = readFileSync(new URL('../../js/components/entry-dialog.js', import.meta.url), 'utf8');
 const meetingFinder = readFileSync(new URL('../../js/components/meeting-finder.js', import.meta.url), 'utf8');
@@ -11,6 +12,7 @@ const shiftDefaults = readFileSync(new URL('../../js/components/shift-defaults.j
 const stateSource = readFileSync(new URL('../../js/modules/calendar-state.js', import.meta.url), 'utf8');
 const weekTable = readFileSync(new URL('../../js/components/week-table.js', import.meta.url), 'utf8');
 const tabNavigation = readFileSync(new URL('../../js/components/tab-navigation.js', import.meta.url), 'utf8');
+const organizationSettings = readFileSync(new URL('../../js/components/organization-settings.js', import.meta.url), 'utf8');
 for (const contract of [
     "['delete','Dienst und Termine löschen']",
     "['detach','Nur Dienst löschen; Termine als Sperrtermine behalten']",
@@ -20,8 +22,8 @@ for (const contract of [
     "entryDialog.open({ employee",
     "dialog.addEventListener('cancel'",
     'repository.savePreferences(state.toPreference())',
-    "new Set(['ad-Stab-HR', 'ad-Stab-QMB', 'ad-GF-AS', 'ad-GF-Digi', 'ad-AsdGF-Digi', 'ad-Sekretariat', 'ad-PDL'])",
-    'GF, PDL, Stabsstellen und Sekretariat anzeigen',
+    'applyOrganization(state.data.organization)',
+    'organization.staffBlockLabel',
     'tabs.show(state.activeTab, false)',
     'shiftDefaults.set(state.data.shiftDefaults || {})',
     'repository.saveShiftDefaults(defaults)',
@@ -32,14 +34,14 @@ for (const contract of [
 for (const contract of ['class TabNavigation', "addEventListener('click'", "this.show('settings')", "this.onChange(active)"]) {
     if (!tabNavigation.includes(contract)) throw new Error(`Tab-Komponentenvertrag fehlt: ${contract}`);
 }
-for (const contract of ['class WeekTable', 'adc-group-heading', 'this.calendarCell.render(entries, employee, absences)', "return 'Geschäftsführung, PDL und Stabsstellen'", 'groupCell.colSpan = 8', 'this.staffRank(a) - this.staffRank(b)', 'roleNames.slice(1)', "join(' / ')"]) {
+for (const contract of ['class WeekTable', 'adc-group-heading', 'this.calendarCell.render(entries, employee, absences)', 'organization.staffBlockLabel', 'organization.roleLabel(value)', 'organization.areaLabel(value)', 'groupCell.colSpan = 8', 'this.staffRank(a) - this.staffRank(b)', 'roleNames.slice(1)', "join(' / ')"]) {
     if (!weekTable.includes(contract)) throw new Error(`Wochenmatrix-Komponentenvertrag fehlt: ${contract}`);
 }
 const tableContext = { window: {}, document: {}, Date, Number };
 runInNewContext(weekTable, tableContext);
 const clusterTable = Object.create(tableContext.window.AdCalendar.components.WeekTable.prototype);
-clusterTable.leadershipStaffRoles = new Set();
-if (clusterTable.clusterLabel({ roles: ['ad-EB', 'ad-StvBL'], areas: ['ad-Bereich-Nordost'] }) !== 'EB (Stv. BL) · Nordost') {
+clusterTable.organization = () => ({ staffRoleGroups: () => [], staffBlockLabel: 'Leitungen', roleLabel: value => ({'ad-EB':'Einsatzbegleitung','ad-StvBL':'Stellvertretende Büroleitung'}[value] || value), areaLabel: () => 'Nordost', roleOrder: () => 1 });
+if (clusterTable.clusterLabel({ roles: ['ad-EB', 'ad-StvBL'], areas: ['ad-Bereich-Nordost'] }) !== 'Einsatzbegleitung (Stellvertretende Büroleitung) · Nordost') {
     throw new Error('Mehrfachrollen werden im Gruppentitel nicht in Klammern dargestellt.');
 }
 for (const contract of ["params.set('people'", "params.set('roles'", "params.set('areas'", 'this.data.defaultFilters ||', 'this.data.currentUserProfile?.roles', 'if (this.selected.size) return this.selected.has(employee.uid)', 'showLeadershipStaff: this.showLeadershipStaff']) {
@@ -47,8 +49,14 @@ for (const contract of ["params.set('people'", "params.set('roles'", "params.set
 }
 if (weekTable.includes("header.append(this.node('th', 'Gesamt'))")) throw new Error('Entfernte Gesamtspalte wird noch gerendert.');
 if (source.includes('state.data.summaries')) throw new Error('Entfernter Gesamt-Payload wird noch verwendet.');
-for (const contract of ['extends BaseRepository', 'saveSettings(peerEditing)', 'savePreferences(filters)', 'saveShiftDefaults(shiftDefaults)', 'meetingGaps(start, employeeUids, durationMinutes)', "method: id == null ? 'POST' : 'PUT'"]) {
+for (const contract of ['extends BaseRepository', 'saveSettings(peerEditing)', 'saveOrganizationSettings(organization)', '/api/settings/organization', 'savePreferences(filters)', 'saveShiftDefaults(shiftDefaults)', 'meetingGaps(start, employeeUids, durationMinutes)', "method: id == null ? 'POST' : 'PUT'"]) {
     if (!repository.includes(contract)) throw new Error(`Repository-Vertrag fehlt: ${contract}`);
+}
+for (const contract of ['class Organization extends BaseModel', 'roleLabel(groupId)', 'areaLabel(groupId)', 'staffRoleGroups()', 'roleOrder(groupId)', 'toArray()']) {
+    if (!organizationModel.includes(contract)) throw new Error(`Organisationsmodell-Vertrag fehlt: ${contract}`);
+}
+for (const contract of ['class OrganizationSettings', 'Direkte Hierarchie', 'Fachrollen und Nextcloud-Gruppen', 'organizationTeams', 'selectedOptions', 'this.onSave(this.collect())']) {
+    if (!organizationSettings.includes(contract)) throw new Error(`Organisationseinstellungs-Vertrag fehlt: ${contract}`);
 }
 for (const contract of ['window.LocalBase.models.Model', 'extends BaseModel', 'toArray()', 'this.defaultDate', 'this.defaultModified', 'this.defaultDeleted']) {
     if (!model.includes(contract)) throw new Error(`Modell-Vertrag fehlt: ${contract}`);

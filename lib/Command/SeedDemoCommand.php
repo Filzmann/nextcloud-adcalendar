@@ -26,7 +26,7 @@ final class SeedDemoCommand extends Command {
     ) { parent::__construct(); }
 
     protected function configure(): void {
-        $this->setName('adcalendar:demo:seed')->setDescription('Erzeugt vollstaendige AD-Kalender-Demokonten und Demodaten.');
+        $this->setName('adcalendar:demo:seed')->setDescription('Erzeugt vollständige AD-Kalender-Demokonten und Demodaten.');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int {
@@ -51,7 +51,7 @@ final class SeedDemoCommand extends Command {
             $createdEntries++;
         }
         $count = count($fixtures);
-        $output->writeln("<info>{$count} Demokonten synchronisiert; Kalendereintraege fuer {$createdEntries} erzeugt, {$skippedEntries} bereits vorhanden.</info>");
+        $output->writeln("<info>{$count} Demokonten synchronisiert; Kalendereinträge für {$createdEntries} erzeugt, {$skippedEntries} bereits vorhanden.</info>");
         return self::SUCCESS;
     }
 

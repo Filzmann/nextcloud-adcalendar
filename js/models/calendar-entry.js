@@ -4,7 +4,7 @@
     const BaseModel = window.LocalBase.models.Model;
 
     /**
-     * Zweck: Hydriert den serverseitigen CalendarEntry-Vertrag fuer Komponenten und Workflows.
+     * Zweck: Hydriert den serverseitigen CalendarEntry-Vertrag für Komponenten und Workflows.
      * Spiegelung: PHP: OCA\AdCalendar\Model\CalendarEntry::toArray().
      */
     class CalendarEntry extends BaseModel {

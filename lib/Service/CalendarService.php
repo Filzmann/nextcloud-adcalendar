@@ -81,7 +81,7 @@ final class CalendarService {
             return;
         }
         if ($children !== [] && !in_array($childMode, ['delete', 'detach'], true)) {
-            throw new InvalidArgumentException('Bitte Behandlung der enthaltenen Termine bestaetigen.');
+            throw new InvalidArgumentException('Bitte Behandlung der enthaltenen Termine bestätigen.');
         }
         $childMode = $children === [] ? 'detach' : $childMode;
         if ($entry->defaultDate() !== null) {
@@ -99,14 +99,14 @@ final class CalendarService {
 
     private function assertTypeUnchanged(CalendarEntry $entry, ?int $id): void {
         if ($id !== null && $this->existing($id)->type() !== $entry->type()) {
-            throw new InvalidArgumentException('Der Typ eines bestehenden Eintrags kann nicht geaendert werden.');
+            throw new InvalidArgumentException('Der Typ eines bestehenden Eintrags kann nicht geändert werden.');
         }
     }
 
     private function assertShiftDoesNotOverlap(CalendarEntry $entry): void {
         if ($entry->type() !== CalendarEntry::TYPE_SHIFT) return;
         if ($this->entries->overlappingShifts($entry->employeeUid(), $entry->start(), $entry->end(), $entry->id()) !== []) {
-            throw new InvalidArgumentException('Der Dienst ueberschneidet sich mit einem bestehenden Dienst dieser Person.');
+            throw new InvalidArgumentException('Der Dienst überschneidet sich mit einem bestehenden Dienst dieser Person.');
         }
     }
 

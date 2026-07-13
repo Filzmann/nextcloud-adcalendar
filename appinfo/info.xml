@@ -3,9 +3,9 @@
       xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
     <id>adcalendar</id>
     <name>AD Kalender</name>
-    <summary>Dienst- und Terminplanung fuer Mitarbeiter*innen im Buero.</summary>
+    <summary>Dienst- und Terminplanung für Mitarbeiter*innen im Büro.</summary>
     <description>Zeigt Dienste, darin liegende Termine, externe Sperrtermine und Dienstsummen in einer gemeinsamen Wochenuebersicht.</description>
-    <version>0.6.1</version>
+    <version>0.7.0</version>
     <licence>agpl</licence>
     <author>Simon / Codex-Prototyp</author>
     <namespace>AdCalendar</namespace>

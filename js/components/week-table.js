@@ -10,8 +10,7 @@
             this.head = options.head;
             this.body = options.body;
             this.calendarCell = options.calendarCell;
-            this.leadershipStaffRoles = options.leadershipStaffRoles;
-            this.leadershipStaffOrder = options.leadershipStaffOrder;
+            this.organization = options.organization;
         }
 
         render(employees, state) {
@@ -68,15 +67,13 @@
         }
 
         clusterLabel(employee) {
-            if (employee.roles.some(role => this.leadershipStaffRoles.has(role))) return 'Geschäftsführung, PDL und Stabsstellen';
-            const roleNames = employee.roles.map(value => this.roleName(value));
+            const organization = this.organization();
+            const staffRoles = new Set(organization.staffRoleGroups());
+            if (employee.roles.some(role => staffRoles.has(role))) return organization.staffBlockLabel;
+            const roleNames = employee.roles.map(value => organization.roleLabel(value));
             const roles = roleNames.length > 1 ? `${roleNames[0]} (${roleNames.slice(1).join(', ')})` : roleNames[0] || 'Ohne Fachrolle';
-            const areas = employee.areas.map(value => value.replace('ad-Bereich-', '')).join(' / ');
+            const areas = employee.areas.map(value => organization.areaLabel(value)).join(' / ');
             return areas ? `${roles} · ${areas}` : roles;
-        }
-
-        roleName(value) {
-            return value.replace('ad-', '').replace('Stab-', 'Stab ').replace('Buero', 'Büro').replace('StvBL', 'Stv. BL');
         }
 
         employeeOrder(a, b) {
@@ -87,7 +84,7 @@
         }
 
         staffRank(employee) {
-            const ranks = employee.roles.filter(role => this.leadershipStaffOrder.has(role)).map(role => this.leadershipStaffOrder.get(role));
+            const ranks = employee.roles.map(role => this.organization().roleOrder(role));
             return ranks.length ? Math.min(...ranks) : Number.MAX_SAFE_INTEGER;
         }
 
