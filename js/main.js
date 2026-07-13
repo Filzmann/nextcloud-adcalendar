@@ -25,10 +25,11 @@
         head: elements['calendar-head'], body: elements['calendar-body'], calendarCell,
         organization: () => organization,
     });
+    let entryWorkflow;
     const entryDialog = new window.AdCalendar.components.EntryDialog({
         entries: () => state.data?.entries || [],
         shiftDefaults: () => state.data?.shiftDefaults || {},
-        onSubmit: saveEntry,
+        onSubmit: data => entryWorkflow.save(data),
     });
     const meetingFinder = new window.AdCalendar.components.MeetingFinder({
         repository,
@@ -47,9 +48,16 @@
         onWeekChange: load,
         onViewChange: renderTable,
     });
+    entryWorkflow = new window.AdCalendar.modules.EntryWorkflow({
+        repository,
+        state,
+        dialog: entryDialog,
+        body: elements['calendar-body'],
+        show,
+        reload: load,
+    });
 
     function isoDay(value) { const year = value.getFullYear(); const month = String(value.getMonth() + 1).padStart(2, '0'); const day = String(value.getDate()).padStart(2, '0'); return `${year}-${month}-${day}`; }
-    function node(tag, value, className) { const result = document.createElement(tag); if (value !== undefined) result.textContent = value; if (className) result.className = className; return result; }
     function show(message, error) { if (error) notice.error(message); else if (message) notice.success(message); else notice.clear(); }
 
     function renderFilters() {
@@ -57,23 +65,6 @@
         entryDialog.setEmployees(state.data.employees.filter(employee => employee.canManage));
         shiftDefaults.set(state.data.shiftDefaults || {});
         document.getElementById('adc-open-meeting-finder').disabled = false;
-    }
-
-    async function saveEntry(data) {
-        try {
-            const existing = state.data.entries.find(entry => entry.id === Number(data.id));
-            if (existing?.meetingUid) {
-                if (!existing.canManageMeeting) throw new Error('Das gemeinsame Meeting darf nur bearbeitet werden, wenn alle beteiligten Kalender bearbeitet werden dürfen.');
-                await repository.updateMeeting(existing.meetingUid, data.start, data.end, data.title);
-            } else {
-                await repository.save({ employeeUid: data.employeeUid, type: data.type, start: data.start, end: data.end, title: data.title }, data.id);
-            }
-            entryDialog.close();
-            show(existing?.meetingUid ? 'Meeting für alle Beteiligten gespeichert.' : 'Eintrag gespeichert.');
-            await load();
-        } catch (error) {
-            show(error, true);
-        }
     }
 
     async function saveShiftDefaults(defaults) {
@@ -96,33 +87,6 @@
         const employees = state.availableEmployees();
         elements['filter-status'].textContent = state.selected.size ? `${employees.length} ausgewählt` : state.roles.size || state.areas.size ? `${employees.length} gefiltert` : 'Alle Personen';
         weekTable.render(employees, state);
-    }
-
-    async function removeEntry(entry) {
-        if (entry.meetingUid) {
-            if (!entry.canManageMeeting) { show('Das gemeinsame Meeting darf nur gelöscht werden, wenn alle beteiligten Kalender bearbeitet werden dürfen.', true); return; }
-            if (!window.confirm('Meeting wirklich für alle Beteiligten löschen?')) return;
-            try {
-                await repository.removeMeeting(entry.meetingUid);
-                show('Meeting für alle Beteiligten gelöscht.');
-                await load();
-            } catch (error) { show(error, true); }
-            return;
-        }
-        let mode = '';
-        if (entry.type === 'shift') {
-            try { await repository.remove(entry.id); show('Dienst gelöscht.'); await load(); return; }
-            catch (error) {
-                if (error.status !== 409 || !error.data?.confirmationRequired) { show(error, true); return; }
-                mode = await deletionChoice(error.data.children.length);
-            }
-            if (mode === null) return;
-        } else if (!window.confirm('Termin wirklich löschen?')) return;
-        await repository.remove(entry.id, mode); show(mode === 'detach' ? 'Dienst gelöscht; Termine sind jetzt Sperrtermine.' : 'Eintrag gelöscht.'); await load();
-    }
-
-    function deletionChoice(count) {
-        return new Promise(resolve => { const dialog = document.createElement('dialog'); dialog.className = 'adc-dialog adc-delete-dialog'; let settled = false; const finish = value => { if (settled) return; settled = true; dialog.close(); dialog.remove(); resolve(value); }; dialog.setAttribute('aria-labelledby', 'adc-delete-title'); dialog.append(node('h2', 'Dienst mit Terminen löschen', undefined)); dialog.firstChild.id = 'adc-delete-title'; dialog.append(node('p', `Der Dienst enthält ${count} Termin(e). Was soll damit geschehen?`)); [['delete','Dienst und Termine löschen'],['detach','Nur Dienst löschen; Termine als Sperrtermine behalten'],[null,'Abbrechen']].forEach(([value,label]) => { const button = node('button', label); button.type = 'button'; button.addEventListener('click', () => finish(value)); dialog.append(button); }); dialog.addEventListener('cancel', event => { event.preventDefault(); finish(null); }); document.body.append(dialog); dialog.showModal(); });
     }
 
     async function load() {
@@ -150,22 +114,6 @@
             await repository.savePreferences(state.toPreference());
             show('Aktuelle Filter und Ansicht wurden zum persönlichen Standard gemacht.');
         } catch (error) { show(error, true); }
-    });
-    elements['calendar-body'].addEventListener('click', event => {
-        const button = event.target instanceof Element ? event.target.closest('button[data-action]') : null;
-        if (!button) return;
-        const cell = button.closest('td[data-employee-uid][data-day]');
-        if (!cell) return;
-        const employee = state.data.employees.find(item => item.uid === cell.dataset.employeeUid);
-        if (!employee?.canManage) return;
-        if (button.dataset.action === 'add-entry') {
-            entryDialog.open({ employee, day: new Date(`${cell.dataset.day}T12:00:00`), type: button.dataset.entryType });
-            return;
-        }
-        const entry = state.data.entries.find(item => item.id === Number(button.dataset.entryId));
-        if (!entry) return;
-        if (button.dataset.action === 'edit-entry') entryDialog.open({ employee, day: new Date(entry.start), type: entry.type, entry });
-        if (button.dataset.action === 'delete-entry') removeEntry(entry);
     });
     load();
 }());

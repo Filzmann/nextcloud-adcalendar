@@ -11,15 +11,13 @@ const entryDialog = readFileSync(new URL('../../js/components/entry-dialog.js', 
 const meetingFinder = readFileSync(new URL('../../js/components/meeting-finder.js', import.meta.url), 'utf8');
 const shiftDefaults = readFileSync(new URL('../../js/components/shift-defaults.js', import.meta.url), 'utf8');
 const stateSource = readFileSync(new URL('../../js/modules/calendar-state.js', import.meta.url), 'utf8');
+const entryWorkflow = readFileSync(new URL('../../js/modules/entry-workflow.js', import.meta.url), 'utf8');
 const weekTable = readFileSync(new URL('../../js/components/week-table.js', import.meta.url), 'utf8');
 const weekNavigation = readFileSync(new URL('../../js/components/week-navigation.js', import.meta.url), 'utf8');
 const tabNavigation = readFileSync(new URL('../../js/components/tab-navigation.js', import.meta.url), 'utf8');
 for (const contract of [
-    "['delete','Dienst und Termine löschen']",
-    "['detach','Nur Dienst löschen; Termine als Sperrtermine behalten']",
     'weekTable.render(employees, state)',
-    "entryDialog.open({ employee",
-    "dialog.addEventListener('cancel'",
+    'entryWorkflow.save(data)',
     'repository.savePreferences(state.toPreference())',
     'applyOrganization(state.data.organization)',
     'tabs.show(state.activeTab, false)',
@@ -27,11 +25,21 @@ for (const contract of [
     'repository.saveShiftDefaults(defaults)',
     'meetingFinder.open(isoDay(state.monday)',
     'applyMeetingCapabilities()',
-    'repository.updateMeeting(existing.meetingUid',
-    'repository.removeMeeting(entry.meetingUid)',
 ]) {
     if (!source.includes(contract)) throw new Error(`Frontend-Vertrag fehlt: ${contract}`);
 }
+for (const contract of ['class EntryWorkflow', "['delete', 'Dienst und Termine löschen']", "['detach', 'Nur Dienst löschen; Termine als Sperrtermine behalten']", "dialog.addEventListener('cancel'", 'this.dialog.open({ employee', 'this.repository.updateMeeting(existing.meetingUid', 'this.repository.removeMeeting(entry.meetingUid)', 'if (!employee?.canManage) return;', 'this.show(error, true)']) {
+    if (!entryWorkflow.includes(contract)) throw new Error(`Eintragsworkflow-Vertrag fehlt: ${contract}`);
+}
+const workflowContext = { window: { confirm: () => true }, document: {}, Element: class {}, Date, Number, Promise };
+runInNewContext(entryWorkflow, workflowContext);
+const workflow = Object.create(workflowContext.window.AdCalendar.modules.EntryWorkflow.prototype);
+let deletionError = null;
+workflow.repository = { remove: async () => { throw new Error('Löschen fehlgeschlagen'); } };
+workflow.show = (error, isError) => { if (isError) deletionError = error; };
+workflow.reload = async () => {};
+await workflow.remove({ id: 7, type: 'appointment', meetingUid: null });
+if (deletionError?.message !== 'Löschen fehlgeschlagen') throw new Error('Fehler beim abschließenden Löschen wird nicht angezeigt.');
 for (const contract of ['class CalendarFilters', 'this.renderLeadershipStaffCheckbox()', 'this.state.selected.clear()', 'this.state.persist()', 'this.onChange()', 'Keine explizite Auswahl – Gruppenfilter gelten.', 'this.organization().staffBlockLabel']) {
     if (!calendarFilters.includes(contract)) throw new Error(`Kalenderfilter-Komponentenvertrag fehlt: ${contract}`);
 }
