@@ -55,7 +55,7 @@ for (const contract of ['extends BaseRepository', 'saveSettings(peerEditing)', '
 for (const contract of ['class Organization extends BaseModel', 'roleLabel(groupId)', 'areaLabel(groupId)', 'staffRoleGroups()', 'roleOrder(groupId)', 'toArray()']) {
     if (!organizationModel.includes(contract)) throw new Error(`Organisationsmodell-Vertrag fehlt: ${contract}`);
 }
-for (const contract of ['class OrganizationSettings', 'Direkte Hierarchie', 'Fachrollen und Nextcloud-Gruppen', 'organizationTeams', 'selectedOptions', 'this.onSave(this.collect())']) {
+for (const contract of ['class OrganizationSettings', 'Direkte Hierarchie', 'Fachrollen und Nextcloud-Gruppen', 'organizationTeams', 'selectedOptions', 'this.onSave(this.collect())', 'addOrganizationTeam()', 'remove-organization-team', 'data-organization-teams']) {
     if (!organizationSettings.includes(contract)) throw new Error(`Organisationseinstellungs-Vertrag fehlt: ${contract}`);
 }
 for (const contract of ['window.LocalBase.models.Model', 'extends BaseModel', 'toArray()', 'this.defaultDate', 'this.defaultModified', 'this.defaultDeleted']) {

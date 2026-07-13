@@ -88,6 +88,8 @@ Die Gruppenlogik wird zentral implementiert und serverseitig erzwungen.
 
 Eine Änderung technischer Gruppen-IDs verschiebt keine bestehenden Nextcloud-Gruppenmitgliedschaften. Zielgruppen und Mitgliedschaften müssen vor einer Umstellung in Nextcloud vorbereitet werden.
 
+Urlaubsansichten sind dynamisch ergänzbare Rollen-/Bereichsschnitte. Die Standardansichten Büro Nordost, Büro West und Büro Süd bleiben getrennt; eine bereichsübergreifende Büroleitung erscheint aufgrund ihrer Mitgliedschaften in allen passenden Ansichten.
+
 ## Architektur
 
 - Controller bleiben duenn.
