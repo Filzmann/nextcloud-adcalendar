@@ -7,6 +7,7 @@ namespace OCA\AdCalendar\Service;
 use DateTimeImmutable;
 use DateTimeZone;
 use OCA\AdCalendar\Repository\CalendarEntryRepository;
+use OCP\Config\IUserConfig;
 use OCP\IConfig;
 
 /**
@@ -20,6 +21,7 @@ final class DefaultShiftMaterializer {
         private CalendarPreferenceService $preferences,
         private DefaultShiftOccurrenceFactory $factory,
         private IConfig $config,
+        private IUserConfig $userConfig,
     ) {}
 
     /** @param list<string> $employeeUids */
@@ -53,7 +55,7 @@ final class DefaultShiftMaterializer {
     }
 
     private function timezone(string $employeeUid): DateTimeZone {
-        $name = (string)$this->config->getUserValue($employeeUid, 'core', 'timezone', '');
+        $name = $this->userConfig->getValueString($employeeUid, 'core', 'timezone');
         if ($name === '') $name = $this->config->getSystemValueString('default_timezone', 'UTC');
         try {
             return new DateTimeZone($name);

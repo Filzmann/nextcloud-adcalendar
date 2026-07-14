@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-if (!interface_exists('OCP\\IConfig')) {
-    eval('namespace OCP; interface IConfig { public function getUserValue($userId, $appName, $key, $default = ""); public function setUserValue($userId, $appName, $key, $value, $preCondition = null); }');
+if (!interface_exists('OCP\\Config\\IUserConfig')) {
+    eval('namespace OCP\\Config; interface IUserConfig { public function getValueString(string $userId, string $app, string $key, string $default = "", bool $lazy = false): string; public function setValueString(string $userId, string $app, string $key, string $value, bool $lazy = false, int $flags = 0): bool; }');
 }
 if (!class_exists('OCA\\AdCalendar\\AppInfo\\Application')) {
     eval('namespace OCA\\AdCalendar\\AppInfo; final class Application { public const APP_ID = "adcalendar"; }');
@@ -11,12 +11,12 @@ if (!class_exists('OCA\\AdCalendar\\AppInfo\\Application')) {
 require_once __DIR__ . '/../../lib/Service/CalendarPreferenceService.php';
 
 use OCA\AdCalendar\Service\CalendarPreferenceService;
-use OCP\IConfig;
+use OCP\Config\IUserConfig;
 
-$config = new class implements IConfig {
+$config = new class implements IUserConfig {
     public array $values = [];
-    public function getUserValue($userId, $appName, $key, $default = '') { return $this->values[$userId][$appName][$key] ?? $default; }
-    public function setUserValue($userId, $appName, $key, $value, $preCondition = null) { $this->values[$userId][$appName][$key] = $value; return true; }
+    public function getValueString(string $userId, string $app, string $key, string $default = '', bool $lazy = false): string { return $this->values[$userId][$app][$key] ?? $default; }
+    public function setValueString(string $userId, string $app, string $key, string $value, bool $lazy = false, int $flags = 0): bool { $this->values[$userId][$app][$key] = $value; return true; }
 };
 $service = new CalendarPreferenceService($config);
 if ($service->filterDefault('demo', ['a'], ['ad-Buero'], ['ad-Bereich-Sued']) !== null) throw new RuntimeException('Fehlender persoenlicher Standard muss null bleiben.');

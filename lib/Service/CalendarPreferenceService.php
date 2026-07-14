@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace OCA\AdCalendar\Service;
 
 use OCA\AdCalendar\AppInfo\Application;
-use OCP\IConfig;
+use OCP\Config\IUserConfig;
 
 /**
  * Zweck: Speichert den bewusst per „Zum Standard machen“ gesetzten persönlichen Kalenderfilter.
@@ -15,10 +15,10 @@ final class CalendarPreferenceService {
     private const FILTER_KEY = 'filter_default';
     private const SHIFT_KEY = 'shift_defaults';
 
-    public function __construct(private IConfig $config) {}
+    public function __construct(private IUserConfig $config) {}
 
     public function filterDefault(string $uid, array $employees, array $roles, array $areas): ?array {
-        $raw = $this->config->getUserValue($uid, Application::APP_ID, self::FILTER_KEY, '');
+        $raw = $this->config->getValueString($uid, Application::APP_ID, self::FILTER_KEY);
         if ($raw === '') return null;
         $decoded = json_decode($raw, true);
         return is_array($decoded) ? $this->normalize($decoded, $employees, $roles, $areas) : null;
@@ -26,7 +26,7 @@ final class CalendarPreferenceService {
 
     public function saveFilterDefault(string $uid, array $filters, array $employees, array $roles, array $areas): array {
         $normalized = $this->normalize($filters, $employees, $roles, $areas);
-        $this->config->setUserValue($uid, Application::APP_ID, self::FILTER_KEY, json_encode($normalized, JSON_THROW_ON_ERROR));
+        $this->config->setValueString($uid, Application::APP_ID, self::FILTER_KEY, json_encode($normalized, JSON_THROW_ON_ERROR));
         return $normalized;
     }
 
@@ -36,7 +36,7 @@ final class CalendarPreferenceService {
 
     /** Liefert null, solange die Vorschlagswerte nie bewusst gespeichert wurden. */
     public function storedShiftDefaults(string $uid): ?array {
-        $raw = $this->config->getUserValue($uid, Application::APP_ID, self::SHIFT_KEY, '');
+        $raw = $this->config->getValueString($uid, Application::APP_ID, self::SHIFT_KEY);
         if ($raw === '') return null;
         $decoded = json_decode($raw, true);
         return is_array($decoded) ? $this->normalizeShiftDefaults($decoded) : null;
@@ -44,7 +44,7 @@ final class CalendarPreferenceService {
 
     public function saveShiftDefaults(string $uid, array $defaults): array {
         $normalized = $this->normalizeShiftDefaults($defaults);
-        $this->config->setUserValue($uid, Application::APP_ID, self::SHIFT_KEY, json_encode($normalized, JSON_THROW_ON_ERROR));
+        $this->config->setValueString($uid, Application::APP_ID, self::SHIFT_KEY, json_encode($normalized, JSON_THROW_ON_ERROR));
         return $normalized;
     }
 

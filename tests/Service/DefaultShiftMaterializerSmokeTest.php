@@ -30,6 +30,8 @@ foreach (['storedShiftDefaults', 'findDefaultOccurrence', 'defaultDeleted()', 'd
     if (!str_contains($materializer, $contract)) throw new RuntimeException("Materialisierungsvertrag fehlt: {$contract}");
 }
 foreach (['absence->approved()', 'absence->overlaps'] as $contract) if (!str_contains($materializer, $contract)) throw new RuntimeException("Urlaubsblockade fehlt: {$contract}");
+foreach (['OCP\\Config\\IUserConfig', 'userConfig->getValueString'] as $contract) if (!str_contains($materializer, $contract)) throw new RuntimeException("Moderner Benutzerkonfigurationsvertrag fehlt: {$contract}");
+if (str_contains($materializer, 'config->getUserValue')) throw new RuntimeException('Materialisierung verwendet noch den veralteten IConfig-Benutzerwertzugriff.');
 foreach (['deleteDefaultShift', "set('default_deleted'", 'default_date', 'default_modified'] as $contract) {
     if (!str_contains($repository . $migration, $contract)) throw new RuntimeException("Ausnahme-/Persistenzvertrag fehlt: {$contract}");
 }
