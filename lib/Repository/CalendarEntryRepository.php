@@ -90,7 +90,7 @@ final class CalendarEntryRepository {
             else $qb->set($field, $parameter);
         }
         $qb->executeStatement();
-        return $entry->id() ?? (int)$this->db->lastInsertId('adc_entries');
+        return $entry->id() ?? $qb->getLastInsertId();
     }
 
     /** Vertrag: Gemeinsame Meetingtermine werden vollständig oder gar nicht gespeichert. */

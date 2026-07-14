@@ -38,6 +38,9 @@ foreach (['deleteDefaultShift', "set('default_deleted'", 'default_date', 'defaul
 if (!str_contains($repository, 'if ($insert) $qb->setValue') || !str_contains($repository, 'else $qb->set($field')) {
     throw new RuntimeException('Insert und Update verwenden nicht ihre jeweiligen QueryBuilder-Vertraege.');
 }
+if (!str_contains($repository, '$qb->getLastInsertId()') || str_contains($repository, 'db->lastInsertId')) {
+    throw new RuntimeException('Kalendereinträge verwenden nicht den modernen QueryBuilder-ID-Vertrag.');
+}
 if (substr_count($calendar, 'defaultShifts->syncWeek') !== 1 || substr_count($meetings, 'defaultShifts->syncWeek') !== 1 || !str_contains($calendar, "'defaultModified' => true")) {
     throw new RuntimeException('Wochenansicht, Meetingluecken oder individuelle Bearbeitung umgehen Standarddienste.');
 }
