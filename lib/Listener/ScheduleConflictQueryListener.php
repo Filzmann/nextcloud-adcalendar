@@ -11,8 +11,27 @@ use OCA\LocalBase\Calendar\ScheduleConflictQueryEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
-/** Zweck: Meldet bestehende Dienste und Termine read-only als Konflikte an Abwesenheitsprovider. */
+/**
+ * Zweck: Meldet bestehende Dienste und Termine read-only als Konflikte an Abwesenheitsprovider.
+ * Zusammenspiel: AdUrlaub sendet ScheduleConflictQueryEvent; dieser Listener liest ausschließlich aus dem Kalender-Repository.
+ * Vertrag: Der Listener verändert keine Kalendereinträge und liefert sichere, knappe Konfliktbezeichnungen.
+ */
 final class ScheduleConflictQueryListener implements IEventListener {
     public function __construct(private CalendarEntryRepository $entries) {}
-    public function handle(Event $event): void { if (!$event instanceof ScheduleConflictQueryEvent) return; foreach ($this->entries->findRange($event->start(),$event->end(),[$event->employeeUid()]) as $entry) $event->add(new ScheduleConflict($entry->type(),$entry->start(),$entry->end(),$entry->type() === CalendarEntry::TYPE_SHIFT ? 'Dienst' : ($entry->title() !== '' ? $entry->title() : 'Termin'))); }
+
+    public function handle(Event $event): void {
+        if (!$event instanceof ScheduleConflictQueryEvent) return;
+
+        foreach ($this->entries->findRange($event->start(), $event->end(), [$event->employeeUid()]) as $entry) {
+            $label = $entry->type() === CalendarEntry::TYPE_SHIFT
+                ? 'Dienst'
+                : ($entry->title() !== '' ? $entry->title() : 'Termin');
+            $event->add(new ScheduleConflict(
+                $entry->type(),
+                $entry->start(),
+                $entry->end(),
+                $label,
+            ));
+        }
+    }
 }
