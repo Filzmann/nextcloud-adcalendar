@@ -144,6 +144,7 @@ Migrationen laufen beim Aktivieren der App bzw. ueber `occ upgrade`; `occ migrat
 - Testdaten bleiben kuenstlich, neutral und datenschutzarm.
 - Authentifizierter App-/API-Smoke: `ADC_BASE_URL=... ADC_USER=... ADC_PASSWORD=... tests/http-smoke.sh`
 - Serverseitiger Rechte-Smoke: `ADC_BASE_URL=... ADC_USER=... ADC_PASSWORD=... ADC_EXPECTED='uid=true,...' tests/access-http-smoke.sh`
+- Reale Tombstone-/Urlaubsintegration in DDEV: `ddev exec -d /var/www/html/html php custom_apps/adcalendar/tests/integration/DefaultShiftVacationSmoke.php`
 
 ## Learnings
 
