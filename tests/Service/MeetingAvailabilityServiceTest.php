@@ -26,10 +26,10 @@ $start = new DateTimeImmutable('2026-07-13T00:00:00+02:00');
 $end = $start->modify('+7 days');
 $gaps = $service->find($entries, ['a', 'b', 'c'], $start, $end, 60);
 if (count($gaps) !== 2 || $gaps[0]['durationMinutes'] !== 60 || $gaps[1]['durationMinutes'] !== 90) {
-    throw new RuntimeException('Gemeinsame Meetingluecken oder Terminabzug sind falsch.');
+    throw new RuntimeException('Gemeinsame Meetinglücken oder Terminabzug sind falsch.');
 }
 if ($service->find($entries, ['a', 'b', 'c'], $start, $end, 120) !== []) {
-    throw new RuntimeException('Zu kurze Luecken wurden fuer ein 120-Minuten-Meeting angeboten.');
+    throw new RuntimeException('Zu kurze Lücken wurden für ein 120-Minuten-Meeting angeboten.');
 }
 $approved = new AbsenceInterval('a', new DateTimeImmutable('2026-07-13T09:00:00+02:00'), new DateTimeImmutable('2026-07-13T16:00:00+02:00'), AbsenceInterval::STATUS_APPROVED);
 if ($service->find($entries, ['a','b','c'], $start, $end, 60, [$approved]) !== []) throw new RuntimeException('Genehmigter Urlaub wurde in Meetinglücken nicht blockiert.');
