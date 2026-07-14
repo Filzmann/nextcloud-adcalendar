@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
-$template = file_get_contents(__DIR__ . '/../../templates/index.php');
+$indexTemplate = file_get_contents(__DIR__ . '/../../templates/index.php');
+$partials = array_map(static fn(string $name): string|false => file_get_contents(__DIR__ . '/../../templates/partials/' . $name . '.php'), ['settings', 'entry-dialog', 'meeting-dialog']);
+$template = $indexTemplate === false || in_array(false, $partials, true) ? false : $indexTemplate . implode('', $partials);
 $css = file_get_contents(__DIR__ . '/../../css/style.css');
 $info = file_get_contents(__DIR__ . '/../../appinfo/info.xml');
 if ($template === false || $css === false || $info === false) throw new RuntimeException('UI-Dateien konnten nicht gelesen werden.');
+foreach (['partials/settings', 'partials/entry-dialog', 'partials/meeting-dialog'] as $partial) if (!str_contains($indexTemplate, "echo \$this->inc('{$partial}')")) throw new RuntimeException("Template-Partial fehlt: {$partial}");
 if (!str_contains($info, '<app>orgsuite</app>') || str_contains($info, '<navigations>')) throw new RuntimeException('OrgSuite-Appvertrag fehlt.');
 foreach (['role="tablist"', 'id="adc-tab-calendar"', 'id="adc-tab-settings"', 'id="adc-settings-view"', 'id="adc-shift-defaults-form"', '<details class="adc-filters">', 'id="adc-filter-status"', 'id="adc-save-default"', 'id="adc-reset-selection"', 'Auswahl zurücksetzen', 'id="adc-entry-dialog"', 'id="adc-meeting-dialog"', 'id="adc-meeting-duration"', 'id="adc-meeting-title"', 'class="adc-overview"', 'class="adc-overview-header"', 'class="adc-button-icon icon-calendar-dark" aria-hidden="true"', "\\OCP\\Util::addScript('adcalendar', 'models/organization')", "\\OCP\\Util::addScript('adcalendar', 'modules/calendar-date')", "\\OCP\\Util::addScript('adcalendar', 'modules/calendar-state')", "\\OCP\\Util::addScript('adcalendar', 'modules/entry-workflow')", "\\OCP\\Util::addScript('adcalendar', 'modules/meeting-capabilities')", "\\OCP\\Util::addScript('adcalendar', 'components/calendar-filters')", "\\OCP\\Util::addScript('adcalendar', 'components/calendar-cell')", "\\OCP\\Util::addScript('adcalendar', 'components/entry-dialog')", "\\OCP\\Util::addScript('adcalendar', 'components/meeting-finder')", "\\OCP\\Util::addScript('adcalendar', 'components/shift-defaults')", "\\OCP\\Util::addScript('adcalendar', 'components/tab-navigation')", "\\OCP\\Util::addScript('adcalendar', 'components/week-navigation')", "\\OCP\\Util::addScript('adcalendar', 'components/week-table')"] as $contract) {
     if (!str_contains($template, $contract)) throw new RuntimeException("Kompakter Filtervertrag fehlt: {$contract}");

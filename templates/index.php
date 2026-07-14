@@ -83,52 +83,7 @@
         </div>
       </section>
     </section>
-    <section id="adc-settings-view" class="adc-settings-view" role="tabpanel" aria-labelledby="adc-tab-settings" hidden>
-        <section aria-labelledby="adc-shift-defaults-heading">
-            <h2 id="adc-shift-defaults-heading">Meine Standard-Dienstzeiten</h2>
-            <p>Diese Zeiten erscheinen als feste Dienste im Kalender und werden beim Anlegen vorgeschlagen. Individuell bearbeitete oder gelöschte Tage bleiben Einzelabweichungen. Liegt das Ende vor dem Beginn, endet der Dienst am Folgetag.</p>
-            <form id="adc-shift-defaults-form"><div id="adc-shift-defaults"></div><button type="submit" class="primary">Dienstzeiten speichern</button></form>
-        </section>
-    </section>
-    <dialog id="adc-entry-dialog" class="adc-dialog" aria-labelledby="adc-entry-dialog-title">
-        <form id="adc-entry-form" method="dialog">
-            <header class="adc-dialog__header">
-                <h2 id="adc-entry-dialog-title">Eintrag</h2>
-                <button type="button" id="adc-cancel-edit" class="adc-icon-button" aria-label="Dialog schließen" title="Schließen">×</button>
-            </header>
-            <input id="adc-entry-id" type="hidden">
-            <div class="adc-dialog__fields">
-                <label>Mitarbeiter*in <select id="adc-employee" required></select></label>
-                <label>Typ <select id="adc-type"><option value="shift">Dienst</option><option value="appointment">Termin / Sperrtermin</option></select></label>
-                <label>Beginn <input id="adc-start" type="datetime-local" required aria-describedby="adc-time-help"></label>
-                <label>Ende <input id="adc-end" type="datetime-local" required aria-describedby="adc-time-help"></label>
-                <label id="adc-title-field"><span id="adc-title-label">Titel</span><input id="adc-title" maxlength="255" aria-describedby="adc-title-help"></label>
-            </div>
-            <small id="adc-title-help">Titel ist bei Diensten optional.</small>
-            <p id="adc-time-help" class="adc-dialog__hint" aria-live="polite"></p>
-            <footer class="adc-dialog__actions">
-                <button type="button" id="adc-dialog-cancel">Abbrechen</button>
-                <button type="submit" class="primary">Speichern</button>
-            </footer>
-        </form>
-    </dialog>
-    <dialog id="adc-meeting-dialog" class="adc-dialog adc-meeting-dialog" aria-labelledby="adc-meeting-dialog-title">
-        <form id="adc-meeting-form">
-            <header class="adc-dialog__header">
-                <h2 id="adc-meeting-dialog-title">Meetinglücke finden</h2>
-                <button type="button" id="adc-meeting-close" class="adc-icon-button icon-close" aria-label="Dialog schließen" title="Schließen"></button>
-            </header>
-            <p id="adc-meeting-week"></p>
-            <label for="adc-meeting-search">Teilnehmende suchen</label>
-            <input id="adc-meeting-search" type="search" autocomplete="off">
-            <fieldset class="adc-meeting-people"><legend>Mindestens zwei Personen</legend><div id="adc-meeting-people"></div></fieldset>
-            <label>Dauer in Minuten <input id="adc-meeting-duration" type="number" min="15" max="480" step="15" value="60" required></label>
-            <label>Titel für die Blockierung <input id="adc-meeting-title" maxlength="255" placeholder="z. B. Teamsitzung"></label>
-            <div class="adc-dialog__actions">
-                <button type="button" id="adc-meeting-cancel">Abbrechen</button>
-                <button type="submit" class="primary">Lücken suchen</button>
-            </div>
-            <div id="adc-meeting-results" class="adc-meeting-results" aria-live="polite"></div>
-        </form>
-    </dialog>
+    <?php echo $this->inc('partials/settings'); ?>
+    <?php echo $this->inc('partials/entry-dialog'); ?>
+    <?php echo $this->inc('partials/meeting-dialog'); ?>
 </div>
