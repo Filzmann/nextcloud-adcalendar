@@ -12,7 +12,7 @@ use OCP\IConfig;
 
 /**
  * Zweck: Synchronisiert gespeicherte Standard-Dienstzeiten idempotent in reale Wochen-Dienste.
- * Zusammenspiel: CalendarService ruft vor Wochenansicht und Meetinglueckensuche Materializer -> PreferenceService/Repository auf.
+ * Zusammenspiel: CalendarService ruft vor Wochenansicht und Meetinglückensuche Materializer -> PreferenceService/Repository auf.
  * Vertrag: Manuell geänderte oder gelöschte Einzelvorkommen werden niemals aus der Serie überschrieben oder neu erzeugt.
  */
 final class DefaultShiftMaterializer {
@@ -47,9 +47,20 @@ final class DefaultShiftMaterializer {
         }
 
         $occurrence = $this->factory->create($employeeUid, $date, $rule, $timezone, $existing?->id());
-        foreach ($absences as $absence) if ($absence->employeeUid() === $employeeUid && $absence->approved() && $absence->overlaps($occurrence->start(), $occurrence->end())) { if ($existing !== null) $this->entries->removeGeneratedDefault((int)$existing->id()); return; }
+        foreach ($absences as $absence) {
+            $blocksOccurrence = $absence->employeeUid() === $employeeUid
+                && $absence->approved()
+                && $absence->overlaps($occurrence->start(), $occurrence->end());
+            if (!$blocksOccurrence) continue;
+
+            if ($existing !== null) {
+                $this->entries->removeGeneratedDefault((int)$existing->id());
+            }
+            return;
+        }
         if ($this->entries->overlappingShifts($employeeUid, $occurrence->start(), $occurrence->end(), $existing?->id()) !== []) return;
         if ($existing !== null && $existing->start() == $occurrence->start() && $existing->end() == $occurrence->end()) return;
+
         $id = $this->entries->save($occurrence, $employeeUid);
         $this->entries->attachContainedAppointments($id, $employeeUid, $occurrence->start(), $occurrence->end());
     }
@@ -57,6 +68,7 @@ final class DefaultShiftMaterializer {
     private function timezone(string $employeeUid): DateTimeZone {
         $name = $this->userConfig->getValueString($employeeUid, 'core', 'timezone');
         if ($name === '') $name = $this->config->getSystemValueString('default_timezone', 'UTC');
+
         try {
             return new DateTimeZone($name);
         } catch (\Throwable) {
