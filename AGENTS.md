@@ -151,8 +151,9 @@ Migrationen laufen beim Aktivieren der App bzw. ueber `occ upgrade`; `occ migrat
 
 ### Gemeinsame Suite-Navigation
 
-- AD Kalender besitzt keinen eigenen Nextcloud-Hauptnavigationseintrag. `orgsuite` stellt den gemeinsamen Einstieg `AD` bereit.
-- Das Template bindet das zentrale OrgSuite-Menue mit `data-suite="ad"` und `data-current-app="adcalendar"` ein.
+- Ohne aktive OrgSuite registriert AD Kalender einen eigenen Nextcloud-Hauptnavigationseintrag. Ab zwei AD-Produkten ersetzt `orgsuite` diesen durch den gemeinsamen Einstieg `AD`.
+- Das Template stellt den optionalen Menühost mit `data-suite="ad"` und `data-current-app="adcalendar"` bereit, lädt aber keine OrgSuite-Assets direkt.
+- Ohne AD Urlaub bleiben Sperrtermine der manuelle Abwesenheitsweg; fehlende optionale Provider dürfen die Wochenansicht nicht verhindern.
 - Fachliche Lese- und Bearbeitungsrechte bleiben ausschliesslich serverseitig im AD Kalender; Menuesichtbarkeit ist keine Berechtigung.
 
 - Wiederverwendbare app-spezifische Learnings werden Simon zuerst im Standardformat vorgeschlagen.

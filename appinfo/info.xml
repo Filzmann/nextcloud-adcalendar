@@ -5,7 +5,7 @@
     <name>AD Kalender</name>
     <summary>Dienst- und Terminplanung für Mitarbeiter*innen im Büro.</summary>
     <description>Zeigt Dienste, darin liegende Termine, externe Sperrtermine und Dienstsummen in einer gemeinsamen Wochenübersicht.</description>
-    <version>0.11.14-rc.1</version>
+    <version>0.12.0-rc.1</version>
     <licence>agpl</licence>
     <author>Simon</author>
     <website>https://github.com/Filzmann/ad-suite</website>
@@ -16,7 +16,6 @@
     <dependencies>
         <php min-version="8.3"/>
         <nextcloud min-version="34" max-version="34"/>
-        <app>orgsuite</app>
     </dependencies>
     <commands>
         <command>OCA\AdCalendar\Command\SeedDemoCommand</command>
