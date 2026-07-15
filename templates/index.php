@@ -3,7 +3,6 @@
 \OCP\Util::addScript('localbase', 'models/model');
 \OCP\Util::addScript('localbase', 'repositories/repository');
 \OCP\Util::addScript('localbase', 'ui/ui');
-\OCP\Util::addScript('orgsuite', 'suite-navigation');
 \OCP\Util::addScript('adcalendar', 'models/calendar-entry');
 \OCP\Util::addScript('adcalendar', 'models/organization');
 \OCP\Util::addScript('adcalendar', 'repositories/calendar-repository');
@@ -22,7 +21,6 @@
 \OCP\Util::addScript('adcalendar', 'components/week-table');
 \OCP\Util::addScript('adcalendar', 'main');
 \OCP\Util::addStyle('adcalendar', 'style');
-\OCP\Util::addStyle('orgsuite', 'suite-navigation');
 ?>
 <div id="adcalendar-app" class="adc-app">
     <div class="orgsuite-host" data-orgsuite data-suite="ad" data-current-app="adcalendar"></div>

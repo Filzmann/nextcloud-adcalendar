@@ -14,5 +14,6 @@ return [
         ['name' => 'meeting#block', 'url' => '/api/meetings', 'verb' => 'POST'],
         ['name' => 'meeting#update', 'url' => '/api/meetings/{meetingUid}', 'verb' => 'PUT'],
         ['name' => 'meeting#delete', 'url' => '/api/meetings/{meetingUid}', 'verb' => 'DELETE'],
+        ['name' => 'demo_admin#install', 'url' => '/api/admin/demo-pack/install', 'verb' => 'POST'],
     ],
 ];

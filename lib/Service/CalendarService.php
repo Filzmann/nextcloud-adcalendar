@@ -18,6 +18,7 @@ final class CalendarService {
         private CalendarEntryRepository $entries,
         private DefaultShiftMaterializer $defaultShifts,
         private AbsenceService $absences,
+        private ContainingShiftAssignment $shiftAssignment,
     ) {}
 
     public function week(DateTimeImmutable $start, array $employees): array {
@@ -111,10 +112,7 @@ final class CalendarService {
     private function assignContainingShift(CalendarEntry $entry): CalendarEntry {
         if ($entry->type() !== CalendarEntry::TYPE_APPOINTMENT) return $entry;
         $parents = $this->entries->containingShifts($entry->employeeUid(), $entry->start(), $entry->end(), $entry->id());
-        if (count($parents) > 1) {
-            throw new InvalidArgumentException('Der Termin liegt in mehreren Diensten. Bitte Dienste zuerst korrigieren.');
-        }
-        return CalendarEntry::get(array_replace($entry->toArray(), ['parentEntryId' => $parents[0]->id() ?? null]));
+        return $this->shiftAssignment->assign($entry, $parents);
     }
 
     private function detachChildrenOutsideShift(CalendarEntry $entry, int $savedId): void {
