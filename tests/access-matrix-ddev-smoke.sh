@@ -4,7 +4,8 @@ set -euo pipefail
 base_url="${ADC_BASE_URL:-https://nextcloud-dev.ddev.site}"
 ddev_project="${ADC_DDEV_PROJECT:-$(cd "$(dirname "$0")/../../nextcloud-dev" && pwd)}"
 suffix="$(date +%s)-$$"
-password="Adc-Smoke-${suffix}!"
+# Nur im Arbeitsspeicher vorhandenes Einmalpasswort für alle temporären Matrix-Konten.
+password="$(php -r 'echo bin2hex(random_bytes(24));')"
 created_users=()
 
 occ() {
