@@ -20,4 +20,8 @@
     <commands>
         <command>OCA\AdCalendar\Command\SeedDemoCommand</command>
     </commands>
+    <settings>
+        <admin>OCA\AdCalendar\Settings\Admin</admin>
+        <admin-section>OCA\AdCalendar\Settings\AdminSection</admin-section>
+    </settings>
 </info>

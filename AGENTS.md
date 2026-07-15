@@ -34,7 +34,8 @@ Kernprozess:
 - Jedes angemeldete Konto kann im eigenen Einstellungs-Tab Standard-Dienstzeiten je Wochentag speichern. Sie dienen als Vorschlag beim Anlegen; ein Ende vor dem Beginn bildet einen Dienst bis zum Folgetag.
 - Bewusst gespeicherte Standard-Dienstzeiten werden beim Aufruf einer Woche als normale Dienste materialisiert. Individuell bearbeitete Vorkommen bleiben einmalige Abweichungen; ein geloeschtes Vorkommen bleibt fuer genau dieses Datum dauerhaft unterdrueckt.
 - Zeitwerte werden serverseitig eindeutig gespeichert und fuer die Anzeige in der konfigurierten Nextcloud-Zeitzone formatiert.
-- `adcalendar:demo:seed` synchronisiert neutrale, benannte Demokonten fuer jede Kalenderrolle und jeden Buerobereich. Namen tragen die fachliche Demo-Zuordnung in Klammern; Mehrfachrollen werden auch in Gruppentiteln als Hauptrolle mit weiteren Rollen in Klammern dargestellt.
+- Das Kalender-Demo-Pack wird ausschließlich nach ausdrücklicher Bestätigung im app-eigenen Nextcloud-Adminabschnitt installiert; `adcalendar:demo:seed` delegiert auf denselben Service. Es synchronisiert neutrale, benannte Demokonten für jede Kalenderrolle und jeden Bürobereich. Namen tragen die fachliche Demo-Zuordnung in Klammern; Mehrfachrollen werden auch in Gruppentiteln als Hauptrolle mit weiteren Rollen in Klammern dargestellt.
+- Demo-Provisioning übernimmt niemals ein vorhandenes fremdes oder LDAP-verwaltetes Konto. Read-only LDAP-Gruppen brechen das Pack im Preflight vor der ersten Mutation ab; eigene lokale Demokonten werden explizit in LocalBase registriert.
 - Ist `adurlaub` aktiviert, erscheinen geplante Urlaube read-only als `U?` ohne Blockade. Genehmigte Urlaube erscheinen als `U`, blockieren neue Dienste/Termine, verhindern Standarddienst-Materialisierung und werden aus Meetingluecken entfernt. Genehmigungen mit bestehenden Eintraegen werden ueber einen read-only Konfliktvertrag bereits in `adurlaub` abgelehnt.
 
 Verbindliches Gruppenschema:
@@ -72,7 +73,10 @@ Hierarchie fuer Fremdbearbeitung:
 Offene Fachentscheidungen:
 - Dienste derselben Person duerfen sich nicht ueberschneiden; dadurch bleibt die Terminzuordnung eindeutig.
 - Welche Auswertungszeitraeume neben der Woche benoetigt werden.
-- Ob und wie Bestandsdaten aus WordPress importiert werden.
+
+Nicht Bestandteil:
+
+- WordPress-Bestandsdaten werden nicht importiert. Es gibt keine Legacy-Importstrecke; Test- und Vorführdaten stammen ausschließlich aus bewusst installierten synthetischen Demo-Packs.
 
 ## Rechte- und Zugriffsschutz
 

@@ -28,8 +28,15 @@ foreach ($fixtures as $fixture) {
 }
 
 $source = file_get_contents(__DIR__ . '/../../lib/Command/SeedDemoCommand.php');
-if ($source === false) throw new RuntimeException('SeedDemoCommand konnte nicht gelesen werden.');
-foreach (['ensureUser', 'createGroup', 'setDisplayName', 'existsCreatedByForEmployee', "'parentEntryId' => \$shiftId"] as $contract) {
-    if (!str_contains($source, $contract)) throw new RuntimeException("Demo-Vertrag fehlt: {$contract}");
+$service = file_get_contents(__DIR__ . '/../../lib/Service/CalendarDemoPackService.php');
+if ($source === false || $service === false) throw new RuntimeException('Demo-Pack-Code konnte nicht gelesen werden.');
+foreach (['CalendarDemoPackService', '->install()'] as $contract) {
+    if (!str_contains($source, $contract)) throw new RuntimeException("Demo-Command delegiert nicht sicher: {$contract}");
+}
+foreach (['DemoAccountProvisioningService', '->provision(', 'existsCreatedByForEmployee', "'parentEntryId' => \$shiftId"] as $contract) {
+    if (!str_contains($service, $contract)) throw new RuntimeException("Demo-Pack-Vertrag fehlt: {$contract}");
+}
+foreach (['IUserManager', 'ensureUser(', 'createGroup(', 'setDisplayName('] as $unsafeContract) {
+    if (str_contains($source, $unsafeContract)) throw new RuntimeException("Demo-Command umgeht das sichere Provisioning: {$unsafeContract}");
 }
 echo "SeedDemoCommandSmokeTest: OK\n";
