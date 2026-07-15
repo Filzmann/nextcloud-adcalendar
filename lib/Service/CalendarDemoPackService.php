@@ -25,7 +25,7 @@ final class CalendarDemoPackService {
     /** @return array{accounts:array{createdUsers:int,reusedUsers:int,createdGroups:int},createdCalendars:int,skippedCalendars:int} */
     public function install(): array {
         $fixtures = $this->fixtures->all();
-        $accounts = $this->accounts->provision('adcalendar', array_map(static fn(array $fixture): array => [
+        $accounts = $this->accounts->provision('ad-suite-demo', array_map(static fn(array $fixture): array => [
             'uid' => $fixture['uid'],
             'displayName' => $fixture['name'],
             'groups' => $fixture['groups'],
