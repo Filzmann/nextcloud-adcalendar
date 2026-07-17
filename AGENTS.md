@@ -116,14 +116,11 @@ Urlaubsansichten sind dynamisch ergänzbare Rollen-/Bereichsschnitte. Die Standa
 - Die UI bleibt per Tastatur bedienbar, verwendet semantische Tabellen/Listen, sichtbare Fokuszustaende und Textkennzeichnungen zusaetzlich zu Farben.
 - Keine vorsorgliche gemeinsame Library und keine WordPress-Kompatibilitaetsschicht.
 
-## Git- und Arbeitsregeln
+## Repository und gemeinsamer Arbeitsablauf
 
 - Dieses Verzeichnis ist ein eigenstaendiges Git-Repository.
-- Keine Commits, kein Push und kein Deployment ohne ausdrueckliche Freigabe durch Simon.
-- Vor Commits `git status --short`, `git diff --stat` und `git diff --name-only` zeigen.
-- Dateien gezielt stagen; nie `git add .`.
-- Aenderungen klein, pruefbar und rueckbaubar halten.
-- Die Parent-`AGENTS.md` gilt ergaenzend.
+- Diese Datei und lokal referenzierte Skills bilden bei einem direkten Start in diesem Repository die vollständige Repository-Steuerung.
+- Fuer Git-, Sandbox-, DDEV-/`occ`-Sicherheit, Verifikation und Learning Candidates gilt der lokal mitgefuehrte Skill `work-in-nextcloud-app`; die folgenden Kalender-Regeln und Pruefungen ergaenzen ihn.
 
 ## DDEV
 
@@ -135,8 +132,6 @@ Geplante Checks:
 
     ddev exec -d /var/www/html/html php occ status
     ddev exec -d /var/www/html/html php occ app:list | grep -i adcalendar
-
-Migrationen laufen beim Aktivieren der App bzw. ueber `occ upgrade`; `occ migrations:migrate` steht in der lokalen Nextcloud-34-Umgebung nicht zur Verfuegung. Zustandsaendernde DDEV-/`occ`-Befehle brauchen ausdrueckliche Freigabe.
 
 ## Tests
 
@@ -160,6 +155,4 @@ Migrationen laufen beim Aktivieren der App bzw. ueber `occ upgrade`; `occ migrat
 - Ohne AD Urlaub bleiben Sperrtermine der manuelle Abwesenheitsweg; fehlende optionale Provider dürfen die Wochenansicht nicht verhindern.
 - Fachliche Lese- und Bearbeitungsrechte bleiben ausschliesslich serverseitig im AD Kalender; Menuesichtbarkeit ist keine Berechtigung.
 
-- Wiederverwendbare app-spezifische Learnings werden Simon zuerst im Standardformat vorgeschlagen.
-- Dauerhafte Ergaenzungen dieser Datei erfolgen nur nach ausdruecklicher Freigabe.
-- App-uebergreifende Regeln gehoeren in die Parent-`AGENTS.md`.
+- App-spezifische Kandidaten zielen auf diese Datei; app-uebergreifende Kandidaten werden dem Parent nur als unverbindlicher Vorschlag berichtet. Bewertung und Freigabe folgen dem lokalen Skill `work-in-nextcloud-app`.
