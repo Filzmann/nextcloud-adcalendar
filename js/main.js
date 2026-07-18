@@ -87,7 +87,7 @@
 
     function renderTable() {
         const employees = state.availableEmployees();
-        elements['filter-status'].textContent = state.selected.size ? `${employees.length} ausgewählt` : state.roles.size || state.areas.size ? `${employees.length} gefiltert` : 'Alle Personen';
+        elements['filter-status'].textContent = state.selected.size ? `${employees.length} ausgewählt` : state.isUnfiltered() ? 'Alle Personen' : `${employees.length} gefiltert`;
         weekTable.render(employees, state);
     }
 

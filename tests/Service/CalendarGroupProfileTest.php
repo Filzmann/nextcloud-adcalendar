@@ -21,5 +21,11 @@ $eb = $profiles->get(['ad-EB', 'ad-Bereich-West']);
 if ($eb['areas'] !== ['ad-Bereich-West']) throw new RuntimeException('EB-Bereich wurde nicht uebernommen.');
 $blNow = $profiles->get(['ad-BL', 'ad-Bereich-Nordost', 'ad-Bereich-West']);
 if ($blNow['roles'] !== ['ad-BL'] || $blNow['clusters'] !== ['ad-BL#ad-Bereich-Nordost', 'ad-BL#ad-Bereich-West']) throw new RuntimeException('BL NOW muss dynamisch in BL-NO und BL-W gefunden werden.');
+$blSouth = $profiles->get(['ad-BL', 'ad-Bereich-Sued']);
+if ($blSouth['clusters'] !== ['ad-BL#ad-Bereich-Sued']) throw new RuntimeException('BL Sued muss ihrem eigenen Buerobereich zugeordnet bleiben.');
+$deputyNortheast = $profiles->get(['ad-StvBL', 'ad-EB', 'ad-Bereich-Nordost']);
+if ($deputyNortheast['roles'] !== ['ad-StvBL', 'ad-EB'] || $deputyNortheast['clusters'] !== ['ad-StvBL#ad-Bereich-Nordost', 'ad-EB#ad-Bereich-Nordost']) {
+    throw new RuntimeException('Stellvertretende BL muss mit beiden Rollen dem passenden Buerobereich zugeordnet werden.');
+}
 
 echo "CalendarGroupProfileTest: OK\n";

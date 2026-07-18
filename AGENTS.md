@@ -12,6 +12,8 @@ Nextcloud-App-ID:
 
     adcalendar
 
+Die priorisierte Produktplanung und offene Entscheidungen stehen in `ROADMAP.md`; verbindliche Fach-, Sicherheits- und Architekturregeln bleiben in dieser Datei.
+
 ## Zielsetzung und Fachkontext
 
 AD Kalender uebertraegt den fachlichen Kern des bisherigen WordPress-Plugins `ad_calendar` in eine eigenstaendige Nextcloud-App. WordPress-Code, Rollen, Nonces, Shortcodes und die Abhaengigkeit `flz-wpdb-objects` werden nicht uebernommen.
@@ -26,6 +28,7 @@ Kernprozess:
 - Die Wochenmatrix verwendet für alle sichtbaren Zellen ein gemeinsames komprimiertes Tages-Zeitraster. Einträge werden dadurch zeitlich vergleichbar ausgerichtet; freie Intervalle erscheinen als Abstand, ohne die Ansicht auf eine starre 24-Stunden-Höhe aufzublähen.
 - Pro Mitarbeiter*in werden Dienstanzahl und gesamte Dienstzeit fuer den sichtbaren Zeitraum ausgewiesen.
 - Filter nach Mitarbeiter*innen und Nextcloud-Gruppen sollen die Ansicht begrenzen.
+- Rollen und Bereiche werden jeweils als ODER-Auswahl und miteinander als Schnittmenge ausgewertet. Ohne Rollenwahl zeigen gewählte Bereiche alle zugeordneten BL, stellvertretenden BL, BO und EB. Ohne Personen-, Rollen- und Bereichswahl erscheinen alle Personen mit einer im AD Kalender sichtbaren Planerrolle.
 - Ohne bewusst gespeicherten Standard startet die Ansicht mit den Fachrollen und Bereichen des eingeloggten Kontos. Die aktuelle Filter-/Personen-/Ansichtskonfiguration wird nur ueber „Zum Standard machen“ als persoenlicher Nextcloud-Benutzerwert gespeichert.
 - `ad-Stab-HR`, `ad-Stab-QMB`, `ad-AsdGF-Digi`, `ad-PDL`, beide GF-Rollen und `ad-Sekretariat` werden im Rollenfilter ueber einen gemeinsamen Anzeigen-/Ausblenden-Schalter gesteuert; der Schalter ist Teil des persoenlichen Standards. Diese Personen stehen in einem gemeinsamen Block und werden entlang der GF-AS- und GF-Digi-Hierarchie sortiert.
 - Eine Meeting-Lückensuche schneidet die Dienste der ausgewählten Personen innerhalb einer Kalenderwoche und zieht deren vorhandene Termine ab; die Mindestdauer ist frei wählbar und beträgt initial 60 Minuten. Bleibt eine Woche ohne Treffer, kann wochenweise weitergesucht oder eine Person direkt abgewählt werden.
@@ -42,9 +45,9 @@ Verbindliches Gruppenschema:
 
 Die folgenden Gruppen-IDs beschreiben ausschließlich die initiale Standardkonfiguration. Gruppen-IDs, sichtbare Namen, Bereiche, Reihenfolge, Peer-Fähigkeit, Assistenzteam-Konventionen und direkte Hierarchiekanten werden gemeinsam über `AdOrganizationDefinition` konfiguriert und im Nextcloud-Adminbereich der OrgSuite bearbeitet. App-Code darf daneben keine parallelen Rollenregister führen.
 
-- Rollen werden als eigenstaendige Nextcloud-Gruppen gepflegt: `ad-EB` und `ad-PFK`.
+- Rollen werden als eigenstaendige Nextcloud-Gruppen gepflegt. Bereichsgebundene Kalenderrollen sind insbesondere `ad-BL`, `ad-StvBL`, `ad-Buero` und `ad-EB`; bereichsunabhaengige Rollen wie `ad-PFK` bleiben davon getrennt.
 - Bereiche werden separat als `ad-Bereich-<Name>` gepflegt.
-- Nur `ad-Buero` und `ad-EB` werden einem Buero-Bereich zugeordnet. `ad-PFK`, `ad-Stab-HR` und `ad-Stab-QMB` sind bereichsunabhaengig; versehentliche Bereichsmitgliedschaften duerfen ihre Kalenderdarstellung oder Rechte nicht veraendern.
+- `ad-BL`, `ad-StvBL`, `ad-Buero` und `ad-EB` werden einem oder mehreren Buero-Bereichen zugeordnet. `ad-PFK`, `ad-Stab-HR` und `ad-Stab-QMB` sind bereichsunabhaengig; versehentliche Bereichsmitgliedschaften duerfen ihre Kalenderdarstellung oder Rechte nicht veraendern.
 - Kombinierte Gruppen sind abgeleitete Schnittmengen, zum Beispiel Mitgliedschaft in `ad-EB` und `ad-Bereich-Nordost`; es werden keine Kombinationsgruppen dupliziert.
 - `ad-EB` und `ad-PFK` sind Zielrollen im Kalender; die EB-Rolle allein verleiht keine globale Fremdbearbeitung.
 - `ad-EB` und `ad-Bereich-*` sind derselbe kanonische Rollen-/Bereichsvertrag wie im AdPlaner; kombinierte Altgruppen wie `ad-EB-*` werden nicht als Rollenquelle verwendet.
@@ -54,6 +57,7 @@ Die folgenden Gruppen-IDs beschreiben ausschließlich die initiale Standardkonfi
 - `ad-PDL` darf Eintraege von `ad-PFK` bearbeiten.
 - Bueroleitungen werden wie BO dynamisch aus `ad-BL` plus `ad-Bereich-*` gebildet. BL NOW ist Mitglied in `ad-BL`, `ad-Bereich-Nordost` und `ad-Bereich-West` und wird dadurch in BL-NO sowie BL-W gefunden.
 - Stellvertretungen werden aus `ad-StvBL` plus genau ihrem `ad-Bereich-*` gebildet; ihre zusaetzliche Hauptberufsrolle `ad-EB` bleibt davon getrennt.
+- Die Zahl der Bueroleitungen und Stellvertretungen wird nicht festgeschrieben. Eine bereichsuebergreifende BL erscheint als eine Person mit allen zugeordneten Bereichen und wird durch jeden passenden Bereichsfilter gefunden; sie wird nicht als doppelte Kalenderzeile dargestellt.
 - `ad-Stab-HR` und `ad-Stab-QMB` sind sichtbare Stabsstellen; gegenseitige Bearbeitung innerhalb der jeweiligen Gruppe wird ueber den Peer-Schalter gesteuert.
 - Peer-Bearbeitung kann im Nextcloud-Adminbereich der OrgSuite getrennt fuer die peer-fähigen Fachrollen aktiviert werden. Sie ist standardmaessig aus. Bei BO und EB gilt sie nur innerhalb mindestens eines gemeinsamen Buerobereichs; PFK und Stabsstellen bleiben mangels Buerobereich innerhalb ihrer Fachgruppe berechtigt.
 - Assistent*innen erscheinen nicht in dieser App; ihre Planung bleibt im AdPlaner.
@@ -73,6 +77,7 @@ Hierarchie fuer Fremdbearbeitung:
 Offene Fachentscheidungen:
 - Dienste derselben Person duerfen sich nicht ueberschneiden; dadurch bleibt die Terminzuordnung eindeutig.
 - Welche Auswertungszeitraeume neben der Woche benoetigt werden.
+- Die geplante nutzerbezogene Synchronisation mit privaten Nextcloud-Kalendern und externen Systemen ist mit ihren offenen Entscheidungen in `ROADMAP.md` beschrieben.
 
 Nicht Bestandteil:
 

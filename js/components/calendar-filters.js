@@ -39,12 +39,15 @@
         renderLeadershipStaffCheckbox() {
             const label = document.createElement('label');
             const input = document.createElement('input');
+            const unfiltered = this.state.isUnfiltered();
             input.type = 'checkbox';
-            input.checked = this.state.showLeadershipStaff;
+            input.checked = unfiltered || this.state.showLeadershipStaff;
+            input.disabled = unfiltered;
             input.addEventListener('change', () => {
                 this.state.showLeadershipStaff = input.checked;
+                if (!input.checked) this.state.leadershipStaffOnly = false;
                 if (!input.checked) for (const role of this.leadershipStaffRoles) this.state.roles.delete(role);
-                this.changed();
+                this.changed(true);
             });
             label.append(input, document.createTextNode(` ${this.organization().staffBlockLabel} anzeigen`));
             this.roles.append(label);
@@ -57,9 +60,9 @@
                 input.type = 'checkbox';
                 input.checked = selected.has(value);
                 input.addEventListener('change', () => {
-                    this.state.emptyOwnProfile = false;
+                    this.state.leadershipStaffOnly = false;
                     input.checked ? selected.add(value) : selected.delete(value);
-                    this.changed();
+                    this.changed(true);
                 });
                 label.append(input, document.createTextNode(` ${labelFor(value)}`));
                 return label;
@@ -78,7 +81,6 @@
                 const button = this.node('button', `${employee.displayName} entfernen`);
                 button.type = 'button';
                 button.addEventListener('click', () => {
-                    this.state.emptyOwnProfile = false;
                     this.state.selected.delete(employee.uid);
                     this.changed(true);
                 });
@@ -97,7 +99,7 @@
                 const button = this.node('button', `${employee.displayName} auswählen`);
                 button.type = 'button';
                 button.addEventListener('click', () => {
-                    this.state.emptyOwnProfile = false;
+                    this.state.leadershipStaffOnly = false;
                     this.state.selected.add(employee.uid);
                     this.clearSearch();
                     this.changed(true);
@@ -108,7 +110,6 @@
         }
 
         resetSelection() {
-            this.state.emptyOwnProfile = false;
             this.state.selected.clear();
             this.clearSearch();
             this.changed(true);
@@ -116,7 +117,7 @@
 
         changed(renderSelection = false) {
             this.state.persist();
-            if (renderSelection) this.renderSelected();
+            if (renderSelection) this.render();
             this.onChange();
         }
 

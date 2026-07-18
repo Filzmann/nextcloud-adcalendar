@@ -23,12 +23,20 @@ if ($service->filterDefault('demo', ['a'], ['ad-Buero'], ['ad-Bereich-Sued']) !=
 if ($service->storedShiftDefaults('demo') !== null) throw new RuntimeException('Nicht gespeicherte Dienstzeiten duerfen keine Kalenderdienste erzeugen.');
 $saved = $service->saveFilterDefault('demo', [
     'people' => ['a', 'fremd'], 'roles' => ['ad-Buero', 'ad-Unbekannt'],
-    'areas' => ['ad-Bereich-Sued', 'ad-Bereich-Fremd'], 'vertical' => false, 'empty' => false, 'showLeadershipStaff' => false,
+    'areas' => ['ad-Bereich-Sued', 'ad-Bereich-Fremd'], 'vertical' => false, 'empty' => true, 'showLeadershipStaff' => false,
 ], ['a'], ['ad-Buero'], ['ad-Bereich-Sued']);
-if ($saved !== ['people' => ['a'], 'roles' => ['ad-Buero'], 'areas' => ['ad-Bereich-Sued'], 'vertical' => false, 'empty' => false, 'showLeadershipStaff' => false]) {
+if ($saved !== ['people' => ['a'], 'roles' => ['ad-Buero'], 'areas' => ['ad-Bereich-Sued'], 'vertical' => false, 'showLeadershipStaff' => false, 'leadershipStaffOnly' => false]) {
     throw new RuntimeException('Persoenlicher Filterstandard wurde nicht auf erlaubte Werte begrenzt.');
 }
 if ($service->filterDefault('demo', ['a'], ['ad-Buero'], ['ad-Bereich-Sued']) !== $saved) throw new RuntimeException('Gespeicherter Filterstandard ist nicht lesbar.');
+$staffOnly = $service->saveFilterDefault('staff', [
+    'people' => [], 'roles' => [], 'areas' => [], 'empty' => 'true', 'showLeadershipStaff' => true,
+], ['a'], ['ad-Buero'], ['ad-Bereich-Sued']);
+if (!$staffOnly['leadershipStaffOnly']) throw new RuntimeException('Gespeicherter Leitungs-/Stabsstandard wurde nicht aus dem bisherigen Filtervertrag uebernommen.');
+$inconsistent = $service->saveFilterDefault('staff', [
+    'people' => ['a'], 'roles' => [], 'areas' => [], 'leadershipStaffOnly' => true, 'showLeadershipStaff' => true,
+], ['a'], ['ad-Buero'], ['ad-Bereich-Sued']);
+if ($inconsistent['leadershipStaffOnly']) throw new RuntimeException('Ein Personenfilter darf nicht zugleich als reiner Leitungs-/Stabsfilter gespeichert werden.');
 $shiftDefaults = $service->saveShiftDefaults('demo', [
     '1' => ['enabled' => true, 'start' => '07:30', 'end' => '15:45'],
     '2' => ['enabled' => false, 'start' => 'ungueltig', 'end' => '23:30'],

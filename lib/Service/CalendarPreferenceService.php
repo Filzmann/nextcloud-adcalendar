@@ -49,13 +49,21 @@ final class CalendarPreferenceService {
     }
 
     private function normalize(array $filters, array $employees, array $roles, array $areas): array {
+        $people = $this->allowedList($filters['people'] ?? [], $employees);
+        $selectedRoles = $this->allowedList($filters['roles'] ?? [], $roles);
+        $selectedAreas = $this->allowedList($filters['areas'] ?? [], $areas);
+        $showLeadershipStaff = filter_var($filters['showLeadershipStaff'] ?? true, FILTER_VALIDATE_BOOL);
+        $leadershipStaffOnlyRequested = filter_var(
+            $filters['leadershipStaffOnly'] ?? $filters['empty'] ?? false,
+            FILTER_VALIDATE_BOOL,
+        );
         return [
-            'people' => $this->allowedList($filters['people'] ?? [], $employees),
-            'roles' => $this->allowedList($filters['roles'] ?? [], $roles),
-            'areas' => $this->allowedList($filters['areas'] ?? [], $areas),
+            'people' => $people,
+            'roles' => $selectedRoles,
+            'areas' => $selectedAreas,
             'vertical' => filter_var($filters['vertical'] ?? true, FILTER_VALIDATE_BOOL),
-            'empty' => filter_var($filters['empty'] ?? false, FILTER_VALIDATE_BOOL),
-            'showLeadershipStaff' => filter_var($filters['showLeadershipStaff'] ?? true, FILTER_VALIDATE_BOOL),
+            'showLeadershipStaff' => $showLeadershipStaff,
+            'leadershipStaffOnly' => $leadershipStaffOnlyRequested && $showLeadershipStaff && $people === [] && $selectedRoles === [] && $selectedAreas === [],
         ];
     }
 

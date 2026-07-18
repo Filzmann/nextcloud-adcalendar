@@ -28,6 +28,7 @@ for (const contract of [
     'repository.saveShiftDefaults(defaults)',
     'meetingFinder.open(CalendarDate.isoDay(state.monday)',
     'meetingCapabilities.apply(data.entries, data.employees)',
+    "state.isUnfiltered() ? 'Alle Personen'",
     'const sequence = ++loadSequence',
     'if (sequence !== loadSequence) return;',
     'if (sequence === loadSequence) show(error, true)',
@@ -187,7 +188,47 @@ staffDefaultState.data = {
     employees: filterState.data.employees,
 };
 staffDefaultState.applyInitialFilters();
-if (!staffDefaultState.showLeadershipStaff || staffDefaultState.availableEmployees().map(employee => employee.uid).join(',') !== 'pdl') throw new Error('Mitglieder des gemeinsamen Leitungs-/Stabsblocks erhalten nicht ihren passenden Erststandard.');
+if (!staffDefaultState.showLeadershipStaff || !staffDefaultState.leadershipStaffOnly || staffDefaultState.availableEmployees().map(employee => employee.uid).join(',') !== 'pdl') throw new Error('Mitglieder des gemeinsamen Leitungs-/Stabsblocks erhalten nicht ihren passenden Erststandard.');
+const staffUrlCalls = [];
+staffDefaultState.history = { replaceState: (...args) => staffUrlCalls.push(args) };
+staffDefaultState.persist();
+if (!staffUrlCalls.at(-1)[2].includes('staffOnly=1')) throw new Error('Reiner Leitungs-/Stabsfilter wird nicht in der URL persistiert.');
+const restoredStaffState = new CalendarState(new Set(['ad-PDL']), { search: '?staff=visible&staffOnly=1', pathname: '/apps/adcalendar/' }, { replaceState() {} }).restore();
+restoredStaffState.data = staffDefaultState.data;
+restoredStaffState.applyInitialFilters();
+if (!restoredStaffState.leadershipStaffOnly || restoredStaffState.availableEmployees().map(employee => employee.uid).join(',') !== 'pdl') throw new Error('Reiner Leitungs-/Stabsfilter geht beim Seiten-Reload verloren.');
+
+const officeEmployees = [
+    { uid: 'bl-now', roles: ['ad-BL'], areas: ['ad-Bereich-Nordost', 'ad-Bereich-West'] },
+    { uid: 'bl-south', roles: ['ad-BL'], areas: ['ad-Bereich-Sued'] },
+    { uid: 'deputy-west', roles: ['ad-StvBL', 'ad-EB'], areas: ['ad-Bereich-West'] },
+    { uid: 'office-west', roles: ['ad-Buero'], areas: ['ad-Bereich-West'] },
+    { uid: 'eb-west', roles: ['ad-EB'], areas: ['ad-Bereich-West'] },
+    { uid: 'pfk', roles: ['ad-PFK'], areas: [] },
+    { uid: 'pdl', roles: ['ad-PDL'], areas: [] },
+];
+const westState = new CalendarState(new Set(['ad-PDL']), { search: '', pathname: '/apps/adcalendar/' }, { replaceState() {} }).restore();
+westState.data = {
+    defaultFilters: { people: [], roles: [], areas: ['ad-Bereich-West'], vertical: true, showLeadershipStaff: false },
+    currentUserProfile: { roles: [], areas: [] },
+    employees: officeEmployees,
+};
+westState.applyInitialFilters();
+if (westState.availableEmployees().map(employee => employee.uid).join(',') !== 'bl-now,deputy-west,office-west,eb-west') {
+    throw new Error('Ein reiner Buerobereichsfilter zeigt nicht BL, Stv. BL, BO und EB des gewaehlten Bueros.');
+}
+
+const emptyFilterState = new CalendarState(new Set(['ad-PDL']), { search: '', pathname: '/apps/adcalendar/' }, { replaceState() {} }).restore();
+emptyFilterState.data = {
+    defaultFilters: null,
+    currentUserProfile: { roles: [], areas: [] },
+    employees: officeEmployees,
+};
+emptyFilterState.applyInitialFilters();
+if (!emptyFilterState.isUnfiltered() || emptyFilterState.availableEmployees().map(employee => employee.uid).join(',') !== officeEmployees.map(employee => employee.uid).join(',')) {
+    throw new Error('Ohne Personen-, Rollen- oder Bereichsauswahl muessen alle Personen mit sichtbarer Planerrolle erscheinen.');
+}
+if ('empty' in emptyFilterState.toPreference()) throw new Error('Der ueberholte leere Eigengruppenfilter darf nicht mehr gespeichert werden.');
 
 const dialogContext = { window: {}, document: {}, Date };
 runInNewContext(entryDialog, dialogContext);
