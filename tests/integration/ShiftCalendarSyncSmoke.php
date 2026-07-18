@@ -7,6 +7,7 @@ require dirname(__DIR__, 4) . '/lib/base.php';
 use OCA\AdCalendar\CalendarSync\ShiftCalendarPublisher;
 use OCA\AdCalendar\Repository\CalendarEntryRepository;
 use OCA\AdCalendar\Service\CalendarService;
+use OCA\AdCalendar\Service\ShiftCalendarReconciliationService;
 use OCA\AdCalendar\Service\ShiftCalendarSyncService;
 use OCA\DAV\CalDAV\CalDavBackend;
 use OCP\IUserManager;
@@ -26,6 +27,7 @@ $users = \OCP\Server::get(IUserManager::class);
 $entries = \OCP\Server::get(CalendarEntryRepository::class);
 $calendar = \OCP\Server::get(CalendarService::class);
 $sync = \OCP\Server::get(ShiftCalendarSyncService::class);
+$reconciliation = \OCP\Server::get(ShiftCalendarReconciliationService::class);
 $publisher = \OCP\Server::get(ShiftCalendarPublisher::class);
 $backend = \OCP\Server::get(CalDavBackend::class);
 
@@ -67,6 +69,11 @@ try {
     $assert($object !== null, 'Der vorhandene AD-Dienst wurde beim Opt-in nicht veröffentlicht.');
     $vcalendar = Reader::read((string)$object['calendardata']);
     $assert((string)$vcalendar->VEVENT->SUMMARY === 'Synthetischer DAV-Dienst', 'Der veröffentlichte DAV-Titel ist falsch.');
+
+    $backend->deleteCalendarObject($calendarId, $uri, CalDavBackend::CALENDAR_TYPE_CALENDAR, true);
+    $assert($backend->getCalendarObject($calendarId, $uri) === null, 'Der DAV-Reparaturfall konnte nicht vorbereitet werden.');
+    $assert($reconciliation->reconcileEmployee($uid), 'Der gezielte periodische DAV-Abgleich meldet einen Fehler.');
+    $assert($backend->getCalendarObject($calendarId, $uri) !== null, 'Der periodische DAV-Abgleich hat den fehlenden Dienst nicht wiederhergestellt.');
 
     $calendar->save([
         'employeeUid' => $uid,

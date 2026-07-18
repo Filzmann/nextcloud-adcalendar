@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 if (!interface_exists('OCP\\Config\\IUserConfig')) {
-    eval('namespace OCP\\Config; interface IUserConfig { public function getValueString(string $userId, string $app, string $key, string $default = "", bool $lazy = false): string; public function setValueString(string $userId, string $app, string $key, string $value, bool $lazy = false, int $flags = 0): bool; }');
+    eval('namespace OCP\\Config; interface IUserConfig { public function getValueString(string $userId, string $app, string $key, string $default = "", bool $lazy = false): string; public function setValueString(string $userId, string $app, string $key, string $value, bool $lazy = false, int $flags = 0): bool; public function getValuesByUsers(string $app, string $key, mixed $typedAs = null, ?array $userIds = null): array; }');
 }
 if (!class_exists('OCA\\AdCalendar\\AppInfo\\Application')) {
     eval('namespace OCA\\AdCalendar\\AppInfo; final class Application { public const APP_ID = "adcalendar"; }');
@@ -17,6 +17,11 @@ $config = new class implements IUserConfig {
     public array $values = [];
     public function getValueString(string $userId, string $app, string $key, string $default = '', bool $lazy = false): string { return $this->values[$userId][$app][$key] ?? $default; }
     public function setValueString(string $userId, string $app, string $key, string $value, bool $lazy = false, int $flags = 0): bool { $this->values[$userId][$app][$key] = $value; return true; }
+    public function getValuesByUsers(string $app, string $key, mixed $typedAs = null, ?array $userIds = null): array {
+        $result = [];
+        foreach ($this->values as $uid => $apps) if (isset($apps[$app][$key])) $result[$uid] = $apps[$app][$key];
+        return $result;
+    }
 };
 $service = new CalendarPreferenceService($config);
 if ($service->filterDefault('demo', ['a'], ['ad-Buero'], ['ad-Bereich-Sued']) !== null) throw new RuntimeException('Fehlender persoenlicher Standard muss null bleiben.');
@@ -24,6 +29,10 @@ if ($service->storedShiftDefaults('demo') !== null) throw new RuntimeException('
 if ($service->shiftCalendarSyncEnabled('demo')) throw new RuntimeException('Private Kalendersynchronisation ist ohne Opt-in aktiv.');
 if (!$service->saveShiftCalendarSyncEnabled('demo', true) || !$service->shiftCalendarSyncEnabled('demo')) throw new RuntimeException('Persönliches Kalender-Opt-in wurde nicht gespeichert.');
 if ($service->saveShiftCalendarSyncEnabled('demo', false) || $service->shiftCalendarSyncEnabled('demo')) throw new RuntimeException('Persönliches Kalender-Opt-out wurde nicht gespeichert.');
+$service->saveShiftCalendarSyncEnabled('zwei', true);
+$service->saveShiftCalendarSyncEnabled('eins', true);
+$service->saveShiftCalendarSyncEnabled('aus', false);
+if ($service->shiftCalendarSyncEmployeeUids() !== ['eins', 'zwei']) throw new RuntimeException('Periodischer Abgleich erhält nicht genau die aktiven Opt-ins in stabiler Reihenfolge.');
 $saved = $service->saveFilterDefault('demo', [
     'people' => ['a', 'fremd'], 'roles' => ['ad-Buero', 'ad-Unbekannt'],
     'areas' => ['ad-Bereich-Sued', 'ad-Bereich-Fremd'], 'vertical' => false, 'empty' => true, 'showLeadershipStaff' => false,

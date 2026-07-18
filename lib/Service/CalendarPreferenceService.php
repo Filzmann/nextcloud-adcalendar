@@ -58,6 +58,16 @@ final class CalendarPreferenceService {
         return $enabled;
     }
 
+    /** @return list<string> */
+    public function shiftCalendarSyncEmployeeUids(): array {
+        $uids = [];
+        foreach ($this->config->getValuesByUsers(Application::APP_ID, self::SHIFT_CALENDAR_SYNC_KEY) as $uid => $enabled) {
+            if ((string)$enabled === '1' && trim((string)$uid) !== '') $uids[] = (string)$uid;
+        }
+        sort($uids, SORT_STRING);
+        return array_values(array_unique($uids));
+    }
+
     private function normalize(array $filters, array $employees, array $roles, array $areas): array {
         $people = $this->allowedList($filters['people'] ?? [], $employees);
         $selectedRoles = $this->allowedList($filters['roles'] ?? [], $roles);
