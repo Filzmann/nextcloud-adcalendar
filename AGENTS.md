@@ -57,6 +57,7 @@ Die folgenden Gruppen-IDs beschreiben ausschließlich die initiale Standardkonfi
 - `ad-PDL` darf Eintraege von `ad-PFK` bearbeiten.
 - Bueroleitungen werden wie BO dynamisch aus `ad-BL` plus `ad-Bereich-*` gebildet. BL NOW ist Mitglied in `ad-BL`, `ad-Bereich-Nordost` und `ad-Bereich-West` und wird dadurch in BL-NO sowie BL-W gefunden.
 - Stellvertretungen werden aus `ad-StvBL` plus genau ihrem `ad-Bereich-*` gebildet; ihre zusaetzliche Hauptberufsrolle `ad-EB` bleibt davon getrennt.
+- In der initialen Kalenderreihenfolge stehen Einsatzbegleitungen unter stellvertretenden Büroleitungen und über Büromitarbeiter*innen. Die im Adminbereich gespeicherte Organisationsreihenfolge ist maßgeblich; bei Mehrfachmitgliedschaft bleibt die erste passende Rolle die vorrangige Kalenderrolle.
 - Die Zahl der Bueroleitungen und Stellvertretungen wird nicht festgeschrieben. Eine bereichsuebergreifende BL erscheint als eine Person mit allen zugeordneten Bereichen und wird durch jeden passenden Bereichsfilter gefunden; sie wird nicht als doppelte Kalenderzeile dargestellt.
 - `ad-Stab-HR` und `ad-Stab-QMB` sind sichtbare Stabsstellen; gegenseitige Bearbeitung innerhalb der jeweiligen Gruppe wird ueber den Peer-Schalter gesteuert.
 - Peer-Bearbeitung kann im Nextcloud-Adminbereich der OrgSuite getrennt fuer die peer-fähigen Fachrollen aktiviert werden. Sie ist standardmaessig aus. Bei BO und EB gilt sie nur innerhalb mindestens eines gemeinsamen Buerobereichs; PFK und Stabsstellen bleiben mangels Buerobereich innerhalb ihrer Fachgruppe berechtigt.

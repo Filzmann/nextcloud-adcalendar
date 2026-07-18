@@ -13,7 +13,12 @@ final class CalendarGroupProfile {
 
     public function get(array $groupIds): array {
         $definition = $this->definition();
-        $roles = array_values(array_intersect($definition->roleGroupIds(static fn(array $role): bool => $role['calendarVisible']), $groupIds));
+        $calendarRoles = array_filter($definition->roles(), static fn(array $role): bool => $role['calendarVisible']);
+        uasort($calendarRoles, static function (array $left, array $right): int {
+            $order = $left['sortOrder'] <=> $right['sortOrder'];
+            return $order !== 0 ? $order : strcmp($left['groupId'], $right['groupId']);
+        });
+        $roles = array_values(array_intersect(array_column($calendarRoles, 'groupId'), $groupIds));
         $hasAreaRole = array_filter($roles, $definition->roleIsAreaScopedByGroup(...)) !== [];
         $areas = $hasAreaRole
             ? array_values(array_intersect($definition->areaGroupIds(), $groupIds))

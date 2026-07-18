@@ -27,5 +27,9 @@ $deputyNortheast = $profiles->get(['ad-StvBL', 'ad-EB', 'ad-Bereich-Nordost']);
 if ($deputyNortheast['roles'] !== ['ad-StvBL', 'ad-EB'] || $deputyNortheast['clusters'] !== ['ad-StvBL#ad-Bereich-Nordost', 'ad-EB#ad-Bereich-Nordost']) {
     throw new RuntimeException('Stellvertretende BL muss mit beiden Rollen dem passenden Buerobereich zugeordnet werden.');
 }
+$officeEb = $profiles->get(['ad-Buero', 'ad-EB', 'ad-Bereich-West']);
+if ($officeEb['roles'] !== ['ad-EB', 'ad-Buero'] || $officeEb['clusters'] !== ['ad-EB#ad-Bereich-West', 'ad-Buero#ad-Bereich-West']) {
+    throw new RuntimeException('Kalenderprofile muessen der administrativen Organisationsreihenfolge folgen.');
+}
 
 echo "CalendarGroupProfileTest: OK\n";
