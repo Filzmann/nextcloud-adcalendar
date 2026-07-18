@@ -17,6 +17,10 @@ $assert = static function (bool $expected, bool $actual, string $message): void 
 
 $assert(true, $policy->canManage('a', false, [], 'a', []), 'Eigene Eintraege muessen bearbeitbar sein.');
 $assert(true, $policy->canManage('pdl', false, ['ad-PDL'], 'pfk', ['ad-PFK']), 'PDL muss PFK bearbeiten duerfen.');
+$assert(true, $policy->canManage('stv-pdl', false, ['ad-StvPDL'], 'pfk', ['ad-PFK']), 'Stv. PDL muss PFK bearbeiten dürfen.');
+$assert(true, $policy->canManage('stv-pdl', false, ['ad-StvPDL'], 'pflegebuero', ['ad-Bueroorganisation-Pflege']), 'Stv. PDL muss Büroorganisation Pflege bearbeiten dürfen.');
+$assert(true, $policy->canManage('gf-digi', false, ['ad-GF-Digi'], 'fuhrpark', ['ad-Fahrzeugverwaltung']), 'GF-Digi muss Fahrzeugverwaltung bearbeiten dürfen.');
+$assert(true, $policy->canManage('sekretariat', false, ['ad-Sekretariat'], 'empfang', ['ad-Empfang']), 'Sekretariat muss Empfang bearbeiten dürfen.');
 $assert(false, $policy->canManage('pdl', false, ['ad-PDL'], 'eb', ['ad-EB', 'ad-Bereich-West']), 'PDL darf EB nicht bearbeiten.');
 $assert(true, $policy->canManage('bl', false, ['ad-BL', 'ad-Bereich-Nordost', 'ad-Bereich-West'], 'eb', ['ad-EB', 'ad-Bereich-West']), 'Gemeinsame BL muss West bearbeiten duerfen.');
 $assert(true, $policy->canManage('stv', false, ['ad-StvBL', 'ad-Bereich-Nordost'], 'buero', ['ad-Buero', 'ad-Bereich-Nordost']), 'StvBL muss eigenen Bereich bearbeiten duerfen.');

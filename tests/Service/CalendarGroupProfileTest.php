@@ -13,6 +13,8 @@ use OCA\AdCalendar\Service\CalendarGroupProfile;
 $profiles = new CalendarGroupProfile();
 $pfk = $profiles->get(['ad-PFK', 'ad-Bereich-Sued']);
 if ($pfk['areas'] !== [] || $pfk['clusters'] !== ['ad-PFK']) throw new RuntimeException('PFK darf keinem Buerobereich zugeordnet werden.');
+$care = $profiles->get(['ad-PFK', 'ad-Bueroorganisation-Pflege', 'ad-StvPDL']);
+if ($care['roles'] !== ['ad-StvPDL', 'ad-Bueroorganisation-Pflege', 'ad-PFK'] || $care['areas'] !== []) throw new RuntimeException('Stv. PDL steht im globalen Pflegeblock nicht an erster Stelle.');
 $staff = $profiles->get(['ad-Stab-HR', 'ad-Bereich-West']);
 if ($staff['areas'] !== [] || $staff['clusters'] !== ['ad-Stab-HR']) throw new RuntimeException('Stabsstellen duerfen keinem Buerobereich zugeordnet werden.');
 $office = $profiles->get(['ad-Buero', 'ad-Bereich-Nordost']);

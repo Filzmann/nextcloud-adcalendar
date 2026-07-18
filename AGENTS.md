@@ -49,7 +49,7 @@ Verbindliches Gruppenschema:
 
 Die folgenden Gruppen-IDs beschreiben ausschließlich die initiale Standardkonfiguration. Gruppen-IDs, sichtbare Namen, Bereiche, Reihenfolge, Peer-Fähigkeit, Assistenzteam-Konventionen und direkte Hierarchiekanten werden gemeinsam über `AdOrganizationDefinition` konfiguriert und im Nextcloud-Adminbereich der OrgSuite bearbeitet. App-Code darf daneben keine parallelen Rollenregister führen.
 
-- Rollen werden als eigenstaendige Nextcloud-Gruppen gepflegt. Bereichsgebundene Kalenderrollen sind insbesondere `ad-BL`, `ad-StvBL`, `ad-Buero` und `ad-EB`; bereichsunabhaengige Rollen wie `ad-PFK` bleiben davon getrennt.
+- Rollen werden als eigenständige Nextcloud-Gruppen gepflegt. Bereichsgebundene Kalenderrollen sind insbesondere `ad-BL`, `ad-StvBL`, `ad-Buero` und `ad-EB`; `ad-StvPDL`, `ad-Bueroorganisation-Pflege`, `ad-PFK`, `ad-Fahrzeugverwaltung` und `ad-Empfang` bleiben global.
 - Bereiche werden separat als `ad-Bereich-<Name>` gepflegt.
 - `ad-BL`, `ad-StvBL`, `ad-Buero` und `ad-EB` werden einem oder mehreren Buero-Bereichen zugeordnet. `ad-PFK`, `ad-Stab-HR` und `ad-Stab-QMB` sind bereichsunabhaengig; versehentliche Bereichsmitgliedschaften duerfen ihre Kalenderdarstellung oder Rechte nicht veraendern.
 - Kombinierte Gruppen sind abgeleitete Schnittmengen, zum Beispiel Mitgliedschaft in `ad-EB` und `ad-Bereich-Nordost`; es werden keine Kombinationsgruppen dupliziert.
@@ -58,10 +58,11 @@ Die folgenden Gruppen-IDs beschreiben ausschließlich die initiale Standardkonfi
 - Alle angemeldeten Nutzer*innen duerfen alle Kalenderdaten lesen; alle duerfen eigene Eintraege bearbeiten.
 - Alle angemeldeten Nutzer*innen duerfen aus den ohnehin sichtbaren Kalenderdaten gemeinsame Meetingluecken berechnen.
 - Das gemeinsame Blockieren nutzt ausschließlich bestehende Bearbeitungsrechte für jede einzelne ausgewählte Person; fehlt eines davon, wird kein Teil des Meetings gespeichert.
-- `ad-PDL` darf Eintraege von `ad-PFK` bearbeiten.
+- `ad-PDL` führt `ad-StvPDL`, `ad-Bueroorganisation-Pflege` und `ad-PFK`. `ad-StvPDL` führt Büroorganisation Pflege sowie Pflegefachkräfte und steht im Pflegebereich des Kalenders an erster Stelle.
 - Bueroleitungen werden wie BO dynamisch aus `ad-BL` plus `ad-Bereich-*` gebildet. BL NOW ist Mitglied in `ad-BL`, `ad-Bereich-Nordost` und `ad-Bereich-West` und wird dadurch in BL-NO sowie BL-W gefunden.
 - Stellvertretungen werden aus `ad-StvBL` plus genau ihrem `ad-Bereich-*` gebildet; ihre zusaetzliche Hauptberufsrolle `ad-EB` bleibt davon getrennt.
 - In der initialen Kalenderreihenfolge stehen Einsatzbegleitungen unter stellvertretenden Büroleitungen und über Büromitarbeiter*innen. Die im Adminbereich gespeicherte Organisationsreihenfolge ist maßgeblich; bei Mehrfachmitgliedschaft bleibt die erste passende Rolle die vorrangige Kalenderrolle.
+- Fahrzeugverwaltung folgt initial auf IT und ist GF-Digi unterstellt. Empfang folgt auf das Sekretariat und ist diesem direkt unterstellt. Beide Teams bleiben außerhalb des gemeinsamen Leitungs-/Stabsblocks.
 - Die Zahl der Bueroleitungen und Stellvertretungen wird nicht festgeschrieben. Eine bereichsuebergreifende BL erscheint als eine Person mit allen zugeordneten Bereichen und wird durch jeden passenden Bereichsfilter gefunden; sie wird nicht als doppelte Kalenderzeile dargestellt.
 - `ad-Stab-HR` und `ad-Stab-QMB` sind sichtbare Stabsstellen; gegenseitige Bearbeitung innerhalb der jeweiligen Gruppe wird ueber den Peer-Schalter gesteuert.
 - Peer-Bearbeitung kann im Nextcloud-Adminbereich der OrgSuite getrennt fuer die peer-fähigen Fachrollen aktiviert werden. Sie ist standardmaessig aus. Bei BO und EB gilt sie nur innerhalb mindestens eines gemeinsamen Buerobereichs; PFK und Stabsstellen bleiben mangels Buerobereich innerhalb ihrer Fachgruppe berechtigt.
@@ -71,9 +72,9 @@ Die folgenden Gruppen-IDs beschreiben ausschließlich die initiale Standardkonfi
 Hierarchie fuer Fremdbearbeitung:
 
 - `ad-GF-AS` fuehrt PDL, beide Bueroleitungen, deren Stellvertretungen, PFK, BO, EB, HR, QMB und das Sekretariat direkt oder indirekt.
-- `ad-GF-Digi` fuehrt `ad-AsdGF-Digi`, `ad-Leitung-Finanzen-Lohn`, `ad-Finanzen-Lohn`, IT und das Sekretariat direkt oder indirekt.
+- `ad-GF-Digi` führt `ad-AsdGF-Digi`, `ad-Leitung-Finanzen-Lohn`, `ad-Finanzen-Lohn`, IT, Fahrzeugverwaltung, das Sekretariat und darüber den Empfang direkt oder indirekt.
 - `ad-AsdGF-Digi` fuehrt `ad-IT`; `ad-Leitung-Finanzen-Lohn` fuehrt `ad-Finanzen-Lohn`.
-- `ad-PDL` fuehrt `ad-PFK`.
+- `ad-PDL` führt die stellvertretende PDL, Büroorganisation Pflege und PFK; die stellvertretende PDL führt Büroorganisation Pflege und PFK.
 - Bueroleitungen und ihre bereichsbezogenen Stellvertretungen fuehren ausschliesslich BO und EB im passenden Buerobereich, nicht PFK.
 - `ad-Sekretariat` ist beiden Geschaeftsfuehrungen direkt zugeordnet.
 - Leitungsrollen schuetzen immer vor Peer-Bearbeitung durch unterstellte Hauptberufsgruppen. Eine StvBL kann zum Beispiel zugleich EB sein, darf aber niemals durch normale EBs bearbeitet werden.
