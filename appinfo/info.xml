@@ -5,7 +5,7 @@
     <name>AD Kalender</name>
     <summary>Dienst- und Terminplanung für Mitarbeiter*innen im Büro.</summary>
     <description>Zeigt Dienste, darin liegende Termine, externe Sperrtermine und Dienstsummen in einer gemeinsamen Wochenübersicht.</description>
-    <version>0.12.0-rc.4</version>
+    <version>0.12.0-rc.5</version>
     <licence>agpl</licence>
     <author>Simon</author>
     <website>https://github.com/Filzmann/ad-suite</website>

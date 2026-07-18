@@ -11,7 +11,7 @@ use OCP\BackgroundJob\IJob;
 use OCP\BackgroundJob\TimedJob;
 use Override;
 
-/** Zweck: Startet den fehlertoleranten DAV-Konsistenzlauf für alle persönlichen Opt-ins alle 15 Minuten. */
+/** Zweck: Startet den fehlertoleranten DAV-Konsistenzlauf für alle standardmäßig aktiven persönlichen Dienstkalender alle 15 Minuten. */
 final class ReconcileShiftCalendarsJob extends TimedJob {
     public function __construct(
         ITimeFactory $time,

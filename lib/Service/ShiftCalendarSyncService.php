@@ -10,7 +10,7 @@ use OCA\AdCalendar\Model\CalendarEntry;
 use OCA\AdCalendar\Repository\CalendarEntryRepository;
 use Psr\Log\LoggerInterface;
 
-/** Zweck: Orchestriert persönliches Opt-in und fehlertolerante, ausschließlich ausgehende Dienstveröffentlichung. */
+/** Zweck: Orchestriert den standardmäßig aktiven persönlichen Abgleich, Opt-out und die fehlertolerante ausgehende Dienstveröffentlichung. */
 final class ShiftCalendarSyncService {
     public function __construct(
         private CalendarEntryRepository $entries,

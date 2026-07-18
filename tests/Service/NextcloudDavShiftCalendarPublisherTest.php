@@ -66,7 +66,7 @@ namespace {
     $backend = new CalDavBackend();
     $publisher = new NextcloudDavShiftCalendarPublisher($backend, new ShiftCalendarEventSerializer());
     $publisher->replaceAll('sync-person', [$shift(7), $shift(8)]);
-    if (count($backend->calendars) !== 1 || count($backend->createdObjects) !== 2) throw new RuntimeException('Opt-in legt Kalender und vorhandene Dienste nicht an.');
+    if (count($backend->calendars) !== 1 || count($backend->createdObjects) !== 2) throw new RuntimeException('Vollständiger Abgleich legt Kalender und vorhandene Dienste nicht an.');
     $calendarId = (int)array_key_first($backend->calendars);
     if (($backend->calendars[$calendarId]['{DAV:}displayname'] ?? '') !== 'AD Dienste') throw new RuntimeException('Dedizierter Kalendername fehlt.');
 

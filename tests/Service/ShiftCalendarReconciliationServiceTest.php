@@ -11,15 +11,18 @@ namespace Psr\Log {
 namespace OCA\AdCalendar\Repository {
     final class CalendarEntryRepository {
         public array $shifts = [];
+        public array $uids = [];
         public function findShiftsForEmployee(string $uid): array { return $this->shifts[$uid] ?? []; }
+        public function findEmployeeUidsWithShifts(): array { return $this->uids; }
     }
 }
 
 namespace OCA\AdCalendar\Service {
     final class CalendarPreferenceService {
         public array $uids = [];
+        public array $disabled = [];
         public function shiftCalendarSyncEmployeeUids(): array { return $this->uids; }
-        public function shiftCalendarSyncEnabled(string $uid): bool { return in_array($uid, $this->uids, true); }
+        public function shiftCalendarSyncEnabled(string $uid): bool { return !in_array($uid, $this->disabled, true); }
     }
 }
 
@@ -36,8 +39,10 @@ namespace {
     use Psr\Log\LoggerInterface;
 
     $preferences = new CalendarPreferenceService();
-    $preferences->uids = ['person-a', 'person-b', 'person-c'];
+    $preferences->uids = ['person-c'];
+    $preferences->disabled = ['person-disabled'];
     $entries = new CalendarEntryRepository();
+    $entries->uids = ['person-disabled', 'person-b', 'person-a'];
     $entries->shifts['person-a'] = [CalendarEntry::get([
         'id' => 1,
         'employeeUid' => 'person-a',
@@ -64,10 +69,11 @@ namespace {
     $service = new ShiftCalendarReconciliationService($entries, $preferences, $publisher, $logger);
     $result = $service->reconcileAll();
     if ($result !== ['attempted' => 3, 'succeeded' => 2, 'failed' => 1]) throw new RuntimeException('Abgleichszähler bilden Erfolg und Fehler nicht korrekt ab.');
-    if (array_column($publisher->replaced, 0) !== ['person-a', 'person-b', 'person-c']) throw new RuntimeException('Ein DAV-Fehler verhindert den Abgleich nachfolgender Opt-ins.');
+    if (array_column($publisher->replaced, 0) !== ['person-a', 'person-b', 'person-c']) throw new RuntimeException('Ein DAV-Fehler verhindert den Abgleich nachfolgender aktiver Konten.');
     if (count($publisher->replaced[0][1] ?? []) !== 1 || ($publisher->replaced[2][1] ?? null) !== []) throw new RuntimeException('Abgleich verwendet nicht den vollständigen führenden Dienstbestand je Person.');
     if (count($logger->errors) !== 1 || str_contains(json_encode($logger->errors), 'person-b')) throw new RuntimeException('Abgleichsfehler wird nicht sicher und datensparsam protokolliert.');
-    if ($service->reconcileEmployee('person-disabled') || count($publisher->replaced) !== 3) throw new RuntimeException('Gezielter Abgleich veröffentlicht ohne persönliches Opt-in.');
+    if ($service->reconcileEmployee('person-disabled') || count($publisher->replaced) !== 3) throw new RuntimeException('Gezielter Abgleich ignoriert den persönlichen Opt-out nicht.');
+    if (!$service->reconcileEmployee('person-default') || count($publisher->replaced) !== 4) throw new RuntimeException('Gezielter Abgleich verwendet den standardmäßig aktiven Dienstkalender nicht.');
 
     echo "ShiftCalendarReconciliationServiceTest: OK\n";
 }

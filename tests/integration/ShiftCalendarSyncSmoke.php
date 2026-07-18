@@ -15,7 +15,7 @@ use Sabre\VObject\Reader;
 
 /**
  * Zweck: Prüft den einseitigen Dienstabgleich gegen den realen internen Nextcloud-DAV-Adapter.
- * Vertrag: Opt-in erzeugt den privaten Kalender; Änderungen und Löschungen folgen der führenden AD-Datenquelle.
+ * Vertrag: Der standardmäßig aktive Abgleich erzeugt den privaten Kalender; Opt-out, Änderungen und Löschungen folgen der führenden AD-Datenquelle.
  * Datenschutz: Der Test verwendet ausschließlich ein temporäres synthetisches Konto und räumt alle Daten auf.
  */
 
@@ -56,17 +56,16 @@ try {
         'type' => 'shift',
         'title' => 'Synthetischer DAV-Dienst',
     ], null, $uid);
-    $assert($findCalendar() === null, 'Ohne persönliches Opt-in wurde bereits ein DAV-Kalender angelegt.');
-
-    $status = $sync->configure($uid, true);
-    $assert(($status['enabled'] ?? false) === true, 'Persönliches DAV-Opt-in wurde nicht aktiviert.');
+    $assert(in_array($uid, $entries->findEmployeeUidsWithShifts(), true), 'Das Konto mit Dienst fehlt in der Standardabgleichsauswahl.');
+    $status = $sync->status($uid);
+    $assert(($status['enabled'] ?? false) === true, 'Der persönliche DAV-Abgleich ist nicht standardmäßig aktiv.');
     $createdCalendar = $findCalendar();
-    $assert($createdCalendar !== null, 'Der private Kalender „AD Dienste“ wurde nicht angelegt.');
+    $assert($createdCalendar !== null, 'Der standardmäßig aktive private Kalender „AD Dienste“ wurde nicht angelegt.');
     $calendarId = (int)$createdCalendar['id'];
 
     $uri = 'adcalendar-shift-' . $entryId . '.ics';
     $object = $backend->getCalendarObject($calendarId, $uri);
-    $assert($object !== null, 'Der vorhandene AD-Dienst wurde beim Opt-in nicht veröffentlicht.');
+    $assert($object !== null, 'Der vorhandene AD-Dienst wurde beim standardmäßig aktiven Abgleich nicht veröffentlicht.');
     $vcalendar = Reader::read((string)$object['calendardata']);
     $assert((string)$vcalendar->VEVENT->SUMMARY === 'Synthetischer DAV-Dienst', 'Der veröffentlichte DAV-Titel ist falsch.');
 
@@ -93,7 +92,7 @@ try {
 
     $status = $sync->configure($uid, false);
     $calendarId = null;
-    $assert(($status['enabled'] ?? true) === false, 'Persönliches DAV-Opt-in wurde nicht deaktiviert.');
+    $assert(($status['enabled'] ?? true) === false, 'Persönliches DAV-Opt-out wurde nicht gespeichert.');
     $assert($findCalendar() === null, 'Der leere private AD-Kalender wurde beim Opt-out nicht entfernt.');
 
     echo "AD Kalender/DAV DDEV-Integration: OK\n";

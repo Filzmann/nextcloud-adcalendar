@@ -166,7 +166,7 @@ let savedSync = null;
 const syncComponent = new syncContext.window.AdCalendar.components.ShiftCalendarSync({ onSave: async enabled => { savedSync = enabled; } });
 syncComponent.set({ enabled: true, calendarName: 'AD Dienste' });
 await syncForm.listener({ preventDefault() {} });
-if (!syncInput.checked || !syncStatus.textContent.includes('AD Dienste') || savedSync !== true) throw new Error('Persönliches Kalender-Opt-in ist nicht tastaturbedienbar oder zeigt seinen Zustand nicht an.');
+if (!syncInput.checked || !syncStatus.textContent.includes('AD Dienste') || savedSync !== true) throw new Error('Persönliche Kalenderaktivierung ist nicht tastaturbedienbar oder zeigt ihren Zustand nicht an.');
 for (const contract of ['class EntryDialog', 'this.dialog.showModal()', 'this.updateType()', 'this.nextFreeShift', 'setCustomValidity(message)', 'Boolean(entry?.meetingUid)', "entry.type === 'shift'", 'start < new Date(entry.end)', 'end > new Date(entry.start)']) {
     if (!entryDialog.includes(contract)) throw new Error(`Eintragsdialog-Vertrag fehlt: ${contract}`);
 }

@@ -69,7 +69,7 @@ namespace {
     $access->user = new class implements IUser { public function getUID(): string { return 'sync-person'; } };
     $response = $controller->saveCalendarSync(true);
     if ($response->getStatus() !== 200 || ($response->getData()['calendarSync']['enabled'] ?? null) !== true || $sync->configured !== [['sync-person', true]]) {
-        throw new RuntimeException('Persönliches Opt-in wird nicht dem angemeldeten Konto zugeordnet.');
+        throw new RuntimeException('Persönliche Kalenderaktivierung wird nicht dem angemeldeten Konto zugeordnet.');
     }
     $sync->fail = true;
     $failure = $controller->saveCalendarSync(false);

@@ -50,7 +50,7 @@ final class CalendarPreferenceService {
     }
 
     public function shiftCalendarSyncEnabled(string $uid): bool {
-        return $this->config->getValueString($uid, Application::APP_ID, self::SHIFT_CALENDAR_SYNC_KEY, '0') === '1';
+        return $this->config->getValueString($uid, Application::APP_ID, self::SHIFT_CALENDAR_SYNC_KEY, '1') === '1';
     }
 
     public function saveShiftCalendarSyncEnabled(string $uid, bool $enabled): bool {
@@ -58,7 +58,7 @@ final class CalendarPreferenceService {
         return $enabled;
     }
 
-    /** @return list<string> */
+    /** Liefert ausdrücklich aktivierte Konten; standardmäßig aktive Konten mit Diensten ergänzt der Abgleichservice. @return list<string> */
     public function shiftCalendarSyncEmployeeUids(): array {
         $uids = [];
         foreach ($this->config->getValuesByUsers(Application::APP_ID, self::SHIFT_CALENDAR_SYNC_KEY) as $uid => $enabled) {

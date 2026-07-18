@@ -1,7 +1,7 @@
 (function() {
     'use strict';
 
-    /** Zweck: Bedient das persönliche Opt-in für den privaten Nextcloud-Kalender „AD Dienste“. */
+    /** Zweck: Bedient den standardmäßig aktiven persönlichen Abgleich und dessen Opt-out für „AD Dienste“. */
     class ShiftCalendarSync {
         constructor(options) {
             this.form = document.getElementById('adc-calendar-sync-form');

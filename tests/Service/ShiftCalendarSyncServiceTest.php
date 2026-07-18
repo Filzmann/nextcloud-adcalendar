@@ -18,7 +18,7 @@ namespace OCA\AdCalendar\Repository {
 namespace OCA\AdCalendar\Service {
     final class CalendarPreferenceService {
         public array $enabled = [];
-        public function shiftCalendarSyncEnabled(string $uid): bool { return $this->enabled[$uid] ?? false; }
+        public function shiftCalendarSyncEnabled(string $uid): bool { return $this->enabled[$uid] ?? true; }
         public function saveShiftCalendarSyncEnabled(string $uid, bool $enabled): bool { return $this->enabled[$uid] = $enabled; }
     }
 }
@@ -57,9 +57,9 @@ namespace {
     $preferences = new CalendarPreferenceService();
     $service = new ShiftCalendarSyncService($repository, $preferences, $publisher, $logger);
 
-    if ($service->status('sync-person') !== ['enabled' => false, 'calendarName' => 'AD Dienste']) throw new RuntimeException('Sicherer Opt-in-Standard fehlt.');
+    if ($service->status('sync-person') !== ['enabled' => true, 'calendarName' => 'AD Dienste']) throw new RuntimeException('Standardmäßig aktive Dienstkalendersynchronisation fehlt.');
     $enabled = $service->configure('sync-person', true);
-    if (!$enabled['enabled'] || count($publisher->replaced) !== 1 || !$preferences->enabled['sync-person']) throw new RuntimeException('Opt-in synchronisiert vorhandene Dienste nicht atomar vor dem Aktivieren.');
+    if (!$enabled['enabled'] || count($publisher->replaced) !== 1 || !$preferences->enabled['sync-person']) throw new RuntimeException('Erneutes Aktivieren synchronisiert vorhandene Dienste nicht atomar vor dem Speichern.');
     if (!$service->publish($shift) || count($publisher->published) !== 1) throw new RuntimeException('Aktiver Dienst wurde nicht veröffentlicht.');
     if ($service->publish($appointment) || count($publisher->published) !== 1) throw new RuntimeException('Termin wurde unzulässig als Dienst veröffentlicht.');
     if (!$service->remove($shift) || $publisher->removed !== [['sync-person', 9]]) throw new RuntimeException('Aktiver Dienst wurde nicht aus dem Zielkalender entfernt.');
@@ -71,13 +71,14 @@ namespace {
     if ($disabled['enabled'] || $publisher->removedCalendars !== ['sync-person'] || $preferences->enabled['sync-person']) throw new RuntimeException('Opt-out entfernt den app-eigenen Kalender nicht vor dem Deaktivieren.');
 
     $publisher->fail = true;
+    $preferences->saveShiftCalendarSyncEnabled('failed-person', false);
     try {
         $service->configure('failed-person', true);
-        throw new RuntimeException('Fehlgeschlagener Opt-in wurde gespeichert.');
+        throw new RuntimeException('Fehlgeschlagene Aktivierung wurde gespeichert.');
     } catch (RuntimeException $error) {
-        if ($error->getMessage() === 'Fehlgeschlagener Opt-in wurde gespeichert.') throw $error;
+        if ($error->getMessage() === 'Fehlgeschlagene Aktivierung wurde gespeichert.') throw $error;
     }
-    if ($preferences->shiftCalendarSyncEnabled('failed-person')) throw new RuntimeException('Fehlgeschlagener Opt-in bleibt aktiv.');
+    if ($preferences->shiftCalendarSyncEnabled('failed-person')) throw new RuntimeException('Fehlgeschlagene Aktivierung bleibt aktiv.');
 
     echo "ShiftCalendarSyncServiceTest: OK\n";
 }

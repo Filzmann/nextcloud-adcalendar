@@ -26,13 +26,13 @@ $config = new class implements IUserConfig {
 $service = new CalendarPreferenceService($config);
 if ($service->filterDefault('demo', ['a'], ['ad-Buero'], ['ad-Bereich-Sued']) !== null) throw new RuntimeException('Fehlender persoenlicher Standard muss null bleiben.');
 if ($service->storedShiftDefaults('demo') !== null) throw new RuntimeException('Nicht gespeicherte Dienstzeiten duerfen keine Kalenderdienste erzeugen.');
-if ($service->shiftCalendarSyncEnabled('demo')) throw new RuntimeException('Private Kalendersynchronisation ist ohne Opt-in aktiv.');
-if (!$service->saveShiftCalendarSyncEnabled('demo', true) || !$service->shiftCalendarSyncEnabled('demo')) throw new RuntimeException('Persönliches Kalender-Opt-in wurde nicht gespeichert.');
+if (!$service->shiftCalendarSyncEnabled('demo')) throw new RuntimeException('Private Dienstkalendersynchronisation ist ohne gespeicherten Opt-out nicht standardmäßig aktiv.');
+if (!$service->saveShiftCalendarSyncEnabled('demo', true) || !$service->shiftCalendarSyncEnabled('demo')) throw new RuntimeException('Persönliche Kalenderaktivierung wurde nicht gespeichert.');
 if ($service->saveShiftCalendarSyncEnabled('demo', false) || $service->shiftCalendarSyncEnabled('demo')) throw new RuntimeException('Persönliches Kalender-Opt-out wurde nicht gespeichert.');
 $service->saveShiftCalendarSyncEnabled('zwei', true);
 $service->saveShiftCalendarSyncEnabled('eins', true);
 $service->saveShiftCalendarSyncEnabled('aus', false);
-if ($service->shiftCalendarSyncEmployeeUids() !== ['eins', 'zwei']) throw new RuntimeException('Periodischer Abgleich erhält nicht genau die aktiven Opt-ins in stabiler Reihenfolge.');
+if ($service->shiftCalendarSyncEmployeeUids() !== ['eins', 'zwei']) throw new RuntimeException('Periodischer Abgleich erhält explizit aktivierte Konten nicht in stabiler Reihenfolge.');
 $saved = $service->saveFilterDefault('demo', [
     'people' => ['a', 'fremd'], 'roles' => ['ad-Buero', 'ad-Unbekannt'],
     'areas' => ['ad-Bereich-Sued', 'ad-Bereich-Fremd'], 'vertical' => false, 'empty' => true, 'showLeadershipStaff' => false,
