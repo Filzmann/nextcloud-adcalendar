@@ -2,11 +2,58 @@
     max-width: 900px;
 }
 
+.adc-admin > .adc-admin-panel + .adc-admin-panel {
+    margin-top: 18px;
+}
+
 .adc-admin-panel {
     padding: 18px;
     border: 1px solid var(--color-border);
     border-radius: var(--border-radius-large);
     background: var(--color-main-background);
+}
+
+.adc-sync-state {
+    margin: 12px 0;
+    padding-inline-start: 10px;
+    border-inline-start: 4px solid var(--color-text-maxcontrast);
+}
+
+.adc-sync-state--success {
+    border-inline-start-color: var(--color-success);
+}
+
+.adc-sync-state--warning {
+    border-inline-start-color: var(--color-warning);
+}
+
+.adc-sync-summary {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 12px 0;
+}
+
+.adc-sync-summary > div {
+    min-width: 8rem;
+    padding: 8px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+}
+
+.adc-sync-summary dt {
+    color: var(--color-text-maxcontrast);
+}
+
+.adc-sync-summary dd {
+    margin: 2px 0 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.adc-sync-privacy {
+    color: var(--color-text-maxcontrast);
+    font-size: var(--font-size-small);
 }
 
 .adc-demo-confirm {

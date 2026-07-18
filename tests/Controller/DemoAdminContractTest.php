@@ -15,7 +15,10 @@ foreach (['/api/admin/demo-pack/install', "'verb' => 'POST'"] as $contract) if (
 foreach (['<admin>OCA\\AdCalendar\\Settings\\Admin</admin>', '<admin-section>OCA\\AdCalendar\\Settings\\AdminSection</admin-section>'] as $contract) if (!str_contains($info, $contract)) throw new RuntimeException("Adminregistrierung fehlt: {$contract}");
 foreach (['CalendarDemoPackService', 'private function isAdmin()', '$this->groups->isAdmin(', 'Http::STATUS_FORBIDDEN'] as $contract) if (!str_contains($controller, $contract)) throw new RuntimeException("Serverseitiger Demo-Adminschutz fehlt: {$contract}");
 if (str_contains($controller, 'NoCSRFRequired')) throw new RuntimeException('Demo-Installation darf den CSRF-Schutz nicht umgehen.');
-foreach (['id="adc-demo-confirm"', 'id="adc-demo-install"', 'nicht automatisch'] as $contract) if (!str_contains($template, $contract)) throw new RuntimeException("Demo-Adminoberfläche fehlt: {$contract}");
+foreach (['id="adc-demo-confirm"', 'id="adc-demo-install"', 'nicht automatisch', 'Dienstkalender-Abgleich', 'calendarSyncStatus', 'Keine Konten- oder Kalenderkennungen'] as $contract) if (!str_contains($template, $contract)) throw new RuntimeException("Demo- oder DAV-Adminoberfläche fehlt: {$contract}");
 foreach (['adc-demo-confirm', 'adc-demo-install', "client.request('/api/admin/demo-pack/install'"] as $contract) if (!str_contains($script, $contract)) throw new RuntimeException("Demo-Admininteraktion fehlt: {$contract}");
+
+$settings = file_get_contents($root . '/lib/Settings/Admin.php');
+foreach (['ShiftCalendarReconciliationStatusService', 'IDateTimeFormatter', "'calendarSyncStatus'", "'lastRunLabel'"] as $contract) if ($settings === false || !str_contains($settings, $contract)) throw new RuntimeException("Aggregierter DAV-Adminstatus fehlt: {$contract}");
 
 echo "DemoAdminContractTest: OK\n";

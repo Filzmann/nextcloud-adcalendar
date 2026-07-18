@@ -17,6 +17,7 @@ Diese Datei bündelt geplante Erweiterungen und offene Produktentscheidungen. Ve
 - Der interne Nextcloud-DAV-Zugriff ist in einem austauschbaren Provideradapter isoliert. Fremde Objekte in „AD Dienste“ bleiben unangetastet; beim Opt-out wird der Kalender nur entfernt, wenn danach keine fremden Objekte verbleiben.
 - AD Kalender bleibt auch bei einem DAV-Fehler führend. Die fachliche Änderung wird gespeichert und der Übertragungsfehler sicher protokolliert.
 - Ein nicht paralleler Nextcloud-Hintergrundjob wird alle 15 Minuten erneut fällig und gleicht dann alle persönlichen Opt-ins vollständig mit dem führenden AD-Dienstbestand ab; der tatsächliche Start hängt von der konfigurierten Nextcloud-Cron-Ausführung ab. Bei einem späteren bidirektionalen Ausbau bleibt dieser Lauf als ausgehender Konsistenzschritt nach Import und Konfliktauflösung erhalten.
+- Der Adminbereich zeigt den letzten Lauf nur aggregiert mit Zeitpunkt sowie geprüften, erfolgreichen und fehlgeschlagenen Abgleichen. Es werden keine Konto- oder Kalenderkennungen persistiert; die gespeicherte Richtung erlaubt später getrennte Import-/Export-Aggregate.
 
 ## Geplante Erweiterungen
 

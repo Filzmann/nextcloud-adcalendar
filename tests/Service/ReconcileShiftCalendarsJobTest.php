@@ -20,7 +20,11 @@ namespace OCP\BackgroundJob {
 namespace OCA\AdCalendar\Service {
     final class ShiftCalendarReconciliationService {
         public int $calls = 0;
-        public function reconcileAll(): array { $this->calls++; return ['attempted' => 0, 'succeeded' => 0, 'failed' => 0]; }
+        public function reconcileAll(): array { $this->calls++; return ['attempted' => 2, 'succeeded' => 1, 'failed' => 1]; }
+    }
+    final class ShiftCalendarReconciliationStatusService {
+        public array $recorded = [];
+        public function record(array $result): void { $this->recorded[] = $result; }
     }
 }
 
@@ -29,17 +33,20 @@ namespace {
 
     use OCA\AdCalendar\BackgroundJob\ReconcileShiftCalendarsJob;
     use OCA\AdCalendar\Service\ShiftCalendarReconciliationService;
+    use OCA\AdCalendar\Service\ShiftCalendarReconciliationStatusService;
     use OCP\AppFramework\Utility\ITimeFactory;
     use OCP\BackgroundJob\IJob;
 
     $time = new class implements ITimeFactory {};
     $reconciliation = new ShiftCalendarReconciliationService();
-    $job = new ReconcileShiftCalendarsJob($time, $reconciliation);
+    $status = new ShiftCalendarReconciliationStatusService();
+    $job = new ReconcileShiftCalendarsJob($time, $reconciliation, $status);
     if ($job->interval !== 15 * 60 || $job->sensitivity !== IJob::TIME_INSENSITIVE || $job->allowParallel) {
         throw new RuntimeException('DAV-Abgleich ist nicht als nicht-paralleler, zeitunkritischer 15-Minuten-Job konfiguriert.');
     }
     $job->trigger();
     if ($reconciliation->calls !== 1) throw new RuntimeException('Background-Job startet den vollständigen DAV-Abgleich nicht.');
+    if ($status->recorded !== [['attempted' => 2, 'succeeded' => 1, 'failed' => 1]]) throw new RuntimeException('Background-Job schreibt keinen aggregierten DAV-Laufstatus.');
 
     $info = file_get_contents(__DIR__ . '/../../appinfo/info.xml');
     if ($info === false || !str_contains($info, '<job>OCA\AdCalendar\BackgroundJob\ReconcileShiftCalendarsJob</job>')) {
