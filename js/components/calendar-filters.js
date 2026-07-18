@@ -27,9 +27,11 @@
             const organization = this.organization();
             const roles = [...new Set(employees.flatMap(employee => employee.roles))]
                 .filter(role => !this.leadershipStaffRoles.has(role))
-                .sort((a, b) => organization.roleOrder(a) - organization.roleOrder(b));
+                .sort((a, b) => organization.roleOrder(a) - organization.roleOrder(b)
+                    || organization.roleLabel(a).localeCompare(organization.roleLabel(b), 'de'));
             const areas = [...new Set(employees.flatMap(employee => employee.areas))]
-                .sort((a, b) => organization.areaLabel(a).localeCompare(organization.areaLabel(b), 'de'));
+                .sort((a, b) => organization.areaOrder(a) - organization.areaOrder(b)
+                    || organization.areaLabel(a).localeCompare(organization.areaLabel(b), 'de'));
             this.renderCheckboxes(this.roles, roles, this.state.roles, value => organization.roleLabel(value));
             this.renderLeadershipStaffCheckbox();
             this.renderCheckboxes(this.areas, areas, this.state.areas, value => organization.areaLabel(value));

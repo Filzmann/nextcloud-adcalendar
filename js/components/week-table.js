@@ -17,8 +17,9 @@
 
         render(employees, state) {
             const days = this.days(state.monday);
-            if (state.vertical) this.vertical(employees, state, days);
-            else this.horizontal(employees, state, days);
+            const orderedEmployees = this.orderedEmployees(employees);
+            if (state.vertical) this.vertical(orderedEmployees, state, days);
+            else this.horizontal(orderedEmployees, state, days);
         }
 
         vertical(employees, state, days) {
@@ -28,7 +29,7 @@
 
             const rows = [];
             let previousCluster = null;
-            for (const employee of employees.slice().sort((a, b) => this.employeeOrder(a, b))) {
+            for (const employee of employees) {
                 const cluster = this.clusterLabel(employee);
                 if (!state.selected.size && cluster !== previousCluster) {
                     const groupRow = document.createElement('tr');
@@ -79,17 +80,47 @@
             const organization = this.organization();
             const staffRoles = new Set(organization.staffRoleGroups());
             if (employee.roles.some(role => staffRoles.has(role))) return organization.staffBlockLabel;
-            const roleNames = employee.roles.map(value => organization.roleLabel(value));
+            const roleNames = employee.roles.slice()
+                .sort((a, b) => organization.roleOrder(a) - organization.roleOrder(b))
+                .map(value => organization.roleLabel(value));
             const roles = roleNames.length > 1 ? `${roleNames[0]} (${roleNames.slice(1).join(', ')})` : roleNames[0] || 'Ohne Fachrolle';
-            const areas = employee.areas.map(value => organization.areaLabel(value)).join(' / ');
+            const areas = employee.areas.slice()
+                .sort((a, b) => organization.areaOrder(a) - organization.areaOrder(b))
+                .map(value => organization.areaLabel(value)).join(' / ');
             return areas ? `${roles} · ${areas}` : roles;
         }
 
+        orderedEmployees(employees) {
+            return employees.slice().sort((a, b) => this.employeeOrder(a, b));
+        }
+
         employeeOrder(a, b) {
+            const roleComparison = this.groupRoleRank(a) - this.groupRoleRank(b);
+            if (roleComparison !== 0) return roleComparison;
+            const areaComparison = this.groupAreaRank(a) - this.groupAreaRank(b);
+            if (areaComparison !== 0) return areaComparison;
             const clusterComparison = this.clusterLabel(a).localeCompare(this.clusterLabel(b), 'de');
             if (clusterComparison !== 0) return clusterComparison;
             const hierarchyComparison = this.staffRank(a) - this.staffRank(b);
             return hierarchyComparison || a.displayName.localeCompare(b.displayName, 'de');
+        }
+
+        groupRoleRank(employee) {
+            const organization = this.organization();
+            const staffRoles = organization.staffRoleGroups();
+            const staffRoleSet = new Set(staffRoles);
+            if (employee.roles.some(role => staffRoleSet.has(role))) {
+                return Math.min(...staffRoles.map(role => organization.roleOrder(role)));
+            }
+            return this.staffRank(employee);
+        }
+
+        groupAreaRank(employee) {
+            const organization = this.organization();
+            const staffRoles = new Set(organization.staffRoleGroups());
+            if (employee.roles.some(role => staffRoles.has(role))) return Number.MIN_SAFE_INTEGER;
+            const ranks = employee.areas.map(area => organization.areaOrder(area));
+            return ranks.length ? Math.min(...ranks) : Number.MAX_SAFE_INTEGER;
         }
 
         staffRank(employee) {

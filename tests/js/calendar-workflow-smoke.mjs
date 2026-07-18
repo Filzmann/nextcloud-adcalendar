@@ -56,13 +56,13 @@ if (mixedMeeting.some(entry => entry.canManageMeeting !== false)) throw new Erro
 const manageableMeeting = [{ employeeUid: 'a', meetingUid: 'meeting-2' }, { employeeUid: 'b', meetingUid: 'meeting-2' }];
 capabilities.apply(manageableMeeting, [{ uid: 'a', canManage: true }, { uid: 'b', canManage: true }]);
 if (manageableMeeting.some(entry => entry.canManageMeeting !== true)) throw new Error('Vollständig bearbeitbares Meeting wurde in der UI gesperrt.');
-for (const contract of ['class CalendarFilters', 'this.renderLeadershipStaffCheckbox()', 'this.state.selected.clear()', 'this.state.persist()', 'this.onChange()', 'Keine explizite Auswahl – Gruppenfilter gelten.', 'this.organization().staffBlockLabel']) {
+for (const contract of ['class CalendarFilters', 'this.renderLeadershipStaffCheckbox()', 'this.state.selected.clear()', 'this.state.persist()', 'this.onChange()', 'Keine explizite Auswahl – Gruppenfilter gelten.', 'this.organization().staffBlockLabel', 'organization.areaOrder(a) - organization.areaOrder(b)']) {
     if (!calendarFilters.includes(contract)) throw new Error(`Kalenderfilter-Komponentenvertrag fehlt: ${contract}`);
 }
 for (const contract of ['class TabNavigation', "addEventListener('click'", "this.show('settings')", "this.onChange(active)"]) {
     if (!tabNavigation.includes(contract)) throw new Error(`Tab-Komponentenvertrag fehlt: ${contract}`);
 }
-for (const contract of ['class WeekTable', 'adc-group-heading', 'this.calendarCell.render(entries, employee, absences, layout, day, this.timeline)', 'this.timeline.layout(employeeEntries, days)', 'this.timeline.layout(dayEntries, [day])', 'organization.staffBlockLabel', 'organization.roleLabel(value)', 'organization.areaLabel(value)', 'groupCell.colSpan = 8', 'this.staffRank(a) - this.staffRank(b)', 'roleNames.slice(1)', "join(' / ')"]) {
+for (const contract of ['class WeekTable', 'adc-group-heading', 'this.calendarCell.render(entries, employee, absences, layout, day, this.timeline)', 'this.timeline.layout(employeeEntries, days)', 'this.timeline.layout(dayEntries, [day])', 'organization.staffBlockLabel', 'organization.roleLabel(value)', 'organization.areaLabel(value)', 'groupCell.colSpan = 8', 'this.orderedEmployees(employees)', 'this.staffRank(a) - this.staffRank(b)', 'roleNames.slice(1)', "join(' / ')"]) {
     if (!weekTable.includes(contract)) throw new Error(`Wochenmatrix-Komponentenvertrag fehlt: ${contract}`);
 }
 const timelineContext = { window: {}, Date, Set, Math };
@@ -97,9 +97,23 @@ const tableContext = { window: {}, document: {}, Date, Number };
 runInNewContext(dateSource, tableContext);
 runInNewContext(weekTable, tableContext);
 const clusterTable = Object.create(tableContext.window.AdCalendar.components.WeekTable.prototype);
-clusterTable.organization = () => ({ staffRoleGroups: () => [], staffBlockLabel: 'Leitungen', roleLabel: value => ({'ad-EB':'Einsatzbegleitung','ad-StvBL':'Stellvertretende Büroleitung'}[value] || value), areaLabel: () => 'Nordost', roleOrder: () => 1 });
-if (clusterTable.clusterLabel({ roles: ['ad-EB', 'ad-StvBL'], areas: ['ad-Bereich-Nordost'] }) !== 'Einsatzbegleitung (Stellvertretende Büroleitung) · Nordost') {
-    throw new Error('Mehrfachrollen werden im Gruppentitel nicht in Klammern dargestellt.');
+clusterTable.organization = () => ({
+    staffRoleGroups: () => [], staffBlockLabel: 'Leitungen',
+    roleLabel: value => ({'ad-EB':'Einsatzbegleitung','ad-StvBL':'Stellvertretende Büroleitung','ad-Buero':'Büroorganisation'}[value] || value),
+    areaLabel: value => ({'ad-Bereich-Nordost':'Nordost','ad-Bereich-West':'West'}[value] || value),
+    roleOrder: value => ({'ad-EB':10,'ad-Buero':20,'ad-StvBL':30}[value] ?? 999),
+    areaOrder: value => ({'ad-Bereich-West':10,'ad-Bereich-Nordost':20}[value] ?? 999),
+});
+if (clusterTable.clusterLabel({ roles: ['ad-StvBL', 'ad-EB'], areas: ['ad-Bereich-Nordost', 'ad-Bereich-West'] }) !== 'Einsatzbegleitung (Stellvertretende Büroleitung) · West / Nordost') {
+    throw new Error('Mehrfachrollen und -bereiche folgen im Gruppentitel nicht der Backend-Reihenfolge.');
+}
+const backendOrderedEmployees = clusterTable.orderedEmployees([
+    { uid: 'office-ne', displayName: 'Büro Nordost', roles: ['ad-Buero'], areas: ['ad-Bereich-Nordost'] },
+    { uid: 'eb-ne', displayName: 'EB Nordost', roles: ['ad-EB'], areas: ['ad-Bereich-Nordost'] },
+    { uid: 'eb-west', displayName: 'EB West', roles: ['ad-EB'], areas: ['ad-Bereich-West'] },
+]);
+if (backendOrderedEmployees.map(employee => employee.uid).join(',') !== 'eb-west,eb-ne,office-ne') {
+    throw new Error('Kalendergruppen folgen nicht der im Backend festgelegten Rollen- und Bereichsreihenfolge.');
 }
 for (const contract of ["params.set('people'", "params.set('roles'", "params.set('areas'", 'this.data.defaultFilters ||', 'this.data.currentUserProfile?.roles', 'if (this.selected.size) return this.selected.has(employee.uid)', 'showLeadershipStaff: this.showLeadershipStaff']) {
     if (!stateSource.includes(contract)) throw new Error(`Kalenderzustandsvertrag fehlt: ${contract}`);
@@ -109,8 +123,17 @@ if (source.includes('state.data.summaries')) throw new Error('Entfernter Gesamt-
 for (const contract of ['extends BaseRepository', 'savePreferences(filters)', 'saveShiftDefaults(shiftDefaults)', 'meetingGaps(start, employeeUids, durationMinutes)', 'blockMeeting(start, end, employeeUids, title)', 'updateMeeting(meetingUid, start, end, title)', 'removeMeeting(meetingUid)', "method: id == null ? 'POST' : 'PUT'"]) {
     if (!repository.includes(contract)) throw new Error(`Repository-Vertrag fehlt: ${contract}`);
 }
-for (const contract of ['class Organization extends BaseModel', 'roleLabel(groupId)', 'areaLabel(groupId)', 'staffRoleGroups()', 'roleOrder(groupId)', 'toArray()']) {
+for (const contract of ['class Organization extends BaseModel', 'roleLabel(groupId)', 'areaLabel(groupId)', 'staffRoleGroups()', 'roleOrder(groupId)', 'areaOrder(groupId)', 'toArray()']) {
     if (!organizationModel.includes(contract)) throw new Error(`Organisationsmodell-Vertrag fehlt: ${contract}`);
+}
+const organizationContext = { window: { LocalBase: { models: { Model: class {} } } }, Number, String, JSON };
+runInNewContext(organizationModel, organizationContext);
+const sortableOrganization = new organizationContext.window.AdCalendar.models.Organization({
+    roles: { office: { groupId: 'ad-Buero', label: 'Büro', sortOrder: 20 } },
+    areas: { northeast: { groupId: 'ad-Bereich-Nordost', label: 'Nordost', sortOrder: 30 } },
+});
+if (sortableOrganization.roleOrder('ad-Buero') !== 20 || sortableOrganization.areaOrder('ad-Bereich-Nordost') !== 30) {
+    throw new Error('Das Kalender-Organisationsmodell übernimmt die Backend-Reihenfolge nicht.');
 }
 for (const contract of ['window.LocalBase.models.Model', 'extends BaseModel', 'toArray()', 'this.defaultDate', 'this.defaultModified', 'this.defaultDeleted', 'this.meetingUid', 'this.canManageMeeting']) {
     if (!model.includes(contract)) throw new Error(`Modell-Vertrag fehlt: ${contract}`);

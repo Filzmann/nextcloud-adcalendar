@@ -38,6 +38,11 @@
             return role ? Number(role.sortOrder) : Number.MAX_SAFE_INTEGER;
         }
 
+        areaOrder(groupId) {
+            const area = Object.values(this.areas).find(item => item.groupId === groupId);
+            return area ? Number(area.sortOrder) : Number.MAX_SAFE_INTEGER;
+        }
+
         toArray() {
             return JSON.parse(JSON.stringify({
                 version: this.version,
