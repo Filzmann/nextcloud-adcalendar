@@ -222,8 +222,8 @@ restoredStaffState.applyInitialFilters();
 if (!restoredStaffState.leadershipStaffOnly || restoredStaffState.availableEmployees().map(employee => employee.uid).join(',') !== 'pdl') throw new Error('Reiner Leitungs-/Stabsfilter geht beim Seiten-Reload verloren.');
 
 const officeEmployees = [
-    { uid: 'bl-now', roles: ['ad-BL'], areas: ['ad-Bereich-Nordost', 'ad-Bereich-West'] },
-    { uid: 'bl-south', roles: ['ad-BL'], areas: ['ad-Bereich-Sued'] },
+    { uid: 'bl-now', roles: ['ad-BL', 'ad-Buero'], areas: ['ad-Bereich-Nordost', 'ad-Bereich-West'] },
+    { uid: 'bl-south', roles: ['ad-BL', 'ad-Buero'], areas: ['ad-Bereich-Sued'] },
     { uid: 'deputy-west', roles: ['ad-StvBL', 'ad-EB'], areas: ['ad-Bereich-West'] },
     { uid: 'office-west', roles: ['ad-Buero'], areas: ['ad-Bereich-West'] },
     { uid: 'eb-west', roles: ['ad-EB'], areas: ['ad-Bereich-West'] },
@@ -239,6 +239,28 @@ westState.data = {
 westState.applyInitialFilters();
 if (westState.availableEmployees().map(employee => employee.uid).join(',') !== 'bl-now,deputy-west,office-west,eb-west') {
     throw new Error('Ein reiner Buerobereichsfilter zeigt nicht BL, Stv. BL, BO und EB des gewaehlten Bueros.');
+}
+
+const officeRoleState = new CalendarState(new Set(['ad-PDL']), { search: '', pathname: '/apps/adcalendar/' }, { replaceState() {} }).restore();
+officeRoleState.data = {
+    defaultFilters: { people: [], roles: ['ad-Buero'], areas: [], vertical: true, showLeadershipStaff: false },
+    currentUserProfile: { roles: [], areas: [] },
+    employees: officeEmployees,
+};
+officeRoleState.applyInitialFilters();
+if (officeRoleState.availableEmployees().map(employee => employee.uid).join(',') !== 'office-west') {
+    throw new Error('Der reine Büromitarbeiter*innen-Filter zeigt Personen mit vorrangiger Büroleitungsrolle.');
+}
+
+const ebRoleState = new CalendarState(new Set(['ad-PDL']), { search: '', pathname: '/apps/adcalendar/' }, { replaceState() {} }).restore();
+ebRoleState.data = {
+    defaultFilters: { people: [], roles: ['ad-EB'], areas: [], vertical: true, showLeadershipStaff: false },
+    currentUserProfile: { roles: [], areas: [] },
+    employees: officeEmployees,
+};
+ebRoleState.applyInitialFilters();
+if (ebRoleState.availableEmployees().map(employee => employee.uid).join(',') !== 'eb-west') {
+    throw new Error('Der reine Einsatzbegleitungsfilter zeigt Personen mit vorrangiger Stellvertretungsrolle.');
 }
 
 const emptyFilterState = new CalendarState(new Set(['ad-PDL']), { search: '', pathname: '/apps/adcalendar/' }, { replaceState() {} }).restore();

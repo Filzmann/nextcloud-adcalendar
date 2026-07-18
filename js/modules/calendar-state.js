@@ -82,7 +82,7 @@
                 if (this.selected.size) return this.selected.has(employee.uid) && (!isLeadershipStaff || this.showLeadershipStaff);
                 if (this.leadershipStaffOnly) return isLeadershipStaff;
                 if (isLeadershipStaff) return this.showLeadershipStaff;
-                if (this.roles.size && !employee.roles.some(role => this.roles.has(role))) return false;
+                if (this.roles.size && !this.roles.has(employee.roles[0] || '')) return false;
                 if (this.areas.size && !employee.areas.some(area => this.areas.has(area))) return false;
                 return true;
             });
