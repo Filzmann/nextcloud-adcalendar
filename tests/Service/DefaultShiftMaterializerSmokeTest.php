@@ -26,7 +26,7 @@ $migration = file_get_contents(__DIR__ . '/../../lib/Migration/Version000004Date
 foreach ([$materializer, $repository, $calendar, $meetings, $migration] as $source) {
     if ($source === false) throw new RuntimeException('Standarddienst-Vertragsdatei konnte nicht gelesen werden.');
 }
-foreach (['storedShiftDefaults', 'findDefaultOccurrence', 'defaultDeleted()', 'defaultModified()', 'removeGeneratedDefault', 'attachContainedAppointments'] as $contract) {
+foreach (['storedShiftDefaults', 'findDefaultOccurrence', 'defaultDeleted()', 'defaultModified()', 'removeGeneratedDefault', 'attachContainedAppointments', 'ShiftCalendarSyncService'] as $contract) {
     if (!str_contains($materializer, $contract)) throw new RuntimeException("Materialisierungsvertrag fehlt: {$contract}");
 }
 foreach (['absence->approved()', 'absence->overlaps'] as $contract) if (!str_contains($materializer, $contract)) throw new RuntimeException("Urlaubsblockade fehlt: {$contract}");
@@ -43,6 +43,9 @@ if (!str_contains($repository, '$qb->getLastInsertId()') || str_contains($reposi
 }
 if (substr_count($calendar, 'defaultShifts->syncWeek') !== 1 || substr_count($meetings, 'defaultShifts->syncWeek') !== 1 || !str_contains($calendar, "'defaultModified' => true")) {
     throw new RuntimeException('Wochenansicht, Meetinglücken oder individuelle Bearbeitung umgehen Standarddienste.');
+}
+if (substr_count($materializer, 'shiftSync->publish') !== 1 || substr_count($materializer, 'shiftSync->remove') < 2) {
+    throw new RuntimeException('Materialisierte oder entfernte Standarddienste werden nicht im privaten Kalender gespiegelt.');
 }
 
 echo "DefaultShiftMaterializerSmokeTest: OK\n";

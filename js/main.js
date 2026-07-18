@@ -40,6 +40,7 @@
         onBlocked: async () => { await load(); show('Meeting wurde für alle ausgewählten Personen blockiert.'); },
     });
     const shiftDefaults = new window.AdCalendar.components.ShiftDefaults({ onSave: saveShiftDefaults });
+    const shiftCalendarSync = new window.AdCalendar.components.ShiftCalendarSync({ onSave: saveCalendarSync });
     const calendarFilters = new window.AdCalendar.components.CalendarFilters({
         state,
         organization: () => organization,
@@ -66,6 +67,7 @@
         calendarFilters.render();
         entryDialog.setEmployees(state.data.employees.filter(employee => employee.canManage));
         shiftDefaults.set(state.data.shiftDefaults || {});
+        shiftCalendarSync.set(state.data.calendarSync || {});
         document.getElementById('adc-open-meeting-finder').disabled = false;
     }
 
@@ -76,6 +78,15 @@
             shiftDefaults.set(response.shiftDefaults);
             await load();
             show('Persönliche Standard-Dienstzeiten gespeichert.');
+        } catch (error) { show(error, true); }
+    }
+
+    async function saveCalendarSync(enabled) {
+        try {
+            const response = await repository.saveCalendarSync(enabled);
+            state.data.calendarSync = response.calendarSync;
+            shiftCalendarSync.set(response.calendarSync);
+            show(enabled ? 'Der private Kalender „AD Dienste“ ist aktiviert.' : 'Die private Dienstkalender-Synchronisation ist deaktiviert.');
         } catch (error) { show(error, true); }
     }
 

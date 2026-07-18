@@ -37,7 +37,8 @@ Kernprozess:
 - Jedes angemeldete Konto kann im eigenen Einstellungs-Tab Standard-Dienstzeiten je Wochentag speichern. Sie dienen als Vorschlag beim Anlegen; ein Ende vor dem Beginn bildet einen Dienst bis zum Folgetag.
 - Bewusst gespeicherte Standard-Dienstzeiten werden beim Aufruf einer Woche als normale Dienste materialisiert. Individuell bearbeitete Vorkommen bleiben einmalige Abweichungen; ein geloeschtes Vorkommen bleibt fuer genau dieses Datum dauerhaft unterdrueckt.
 - Zeitwerte werden serverseitig eindeutig gespeichert und fuer die Anzeige in der konfigurierten Nextcloud-Zeitzone formatiert.
-- AD Kalender bleibt bei der geplanten Kalendersynchronisation zunächst die alleinige Quelle der Wahrheit. Dienste werden ausschließlich aus AD Kalender in angebundene Kalender übertragen; ein Rückimport ist nicht Bestandteil der ersten Ausbaustufe. Provideradapter und stabile Zuordnungskennungen müssen einen späteren bidirektionalen Ausbau ermöglichen, ohne die heutige Fachdatenhaltung zu umgehen.
+- AD Kalender bleibt bei der Kalendersynchronisation zunächst die alleinige Quelle der Wahrheit. Ein persönliches Opt-in erzeugt den privaten Nextcloud-Kalender „AD Dienste“ und veröffentlicht dort ausschließlich Dienste der angemeldeten Person; Termine und Urlaube werden nicht übertragen. Bestehende Dienste werden beim Aktivieren übernommen, spätere erlaubte Änderungen durch die Person selbst oder berechtigte Planer*innen werden idempotent nachgeführt. Ein Rückimport ist nicht Bestandteil dieser Ausbaustufe.
+- Das Opt-out entfernt alle von AD Kalender erzeugten Dienstobjekte. Fremde Objekte im reservierten Kalender bleiben unangetastet; der Kalender selbst wird nur gelöscht, wenn er danach leer ist. DAV-Fehler nach einer fachlichen Mutation rollen die führenden AD-Daten nicht zurück, sondern werden sicher protokolliert. Provideradapter und deterministische Kalender-, Objekt- und Ereigniskennungen halten einen späteren bidirektionalen Ausbau offen.
 - Das Kalender-Demo-Pack wird ausschließlich nach ausdrücklicher Bestätigung im app-eigenen Nextcloud-Adminabschnitt installiert; `adcalendar:demo:seed` delegiert auf denselben Service. Es synchronisiert neutrale, benannte Demokonten für jede Kalenderrolle und jeden Bürobereich. Namen tragen die fachliche Demo-Zuordnung in Klammern; Mehrfachrollen werden auch in Gruppentiteln als Hauptrolle mit weiteren Rollen in Klammern dargestellt.
 - Demo-Provisioning übernimmt niemals ein vorhandenes fremdes oder LDAP-verwaltetes Konto. Read-only LDAP-Gruppen brechen das Pack im Preflight vor der ersten Mutation ab; eigene lokale Demokonten werden explizit in LocalBase registriert.
 - Ist `adurlaub` aktiviert, erscheinen geplante Urlaube read-only als `U?` ohne Blockade. Genehmigte Urlaube erscheinen als `U`, blockieren neue Dienste/Termine, verhindern Standarddienst-Materialisierung und werden aus Meetingluecken entfernt. Genehmigungen mit bestehenden Eintraegen werden ueber einen read-only Konfliktvertrag bereits in `adurlaub` abgelehnt.
@@ -79,7 +80,7 @@ Hierarchie fuer Fremdbearbeitung:
 Offene Fachentscheidungen:
 - Dienste derselben Person duerfen sich nicht ueberschneiden; dadurch bleibt die Terminzuordnung eindeutig.
 - Welche Auswertungszeitraeume neben der Woche benoetigt werden.
-- Die geplante nutzerbezogene Synchronisation mit privaten Nextcloud-Kalendern und externen Systemen ist mit ihren offenen Entscheidungen in `ROADMAP.md` beschrieben.
+- Die offenen Entscheidungen für externe Systeme, Wiederholungsmechanismen und einen möglichen späteren Rückimport sind in `ROADMAP.md` beschrieben.
 
 Nicht Bestandteil:
 
@@ -96,6 +97,7 @@ Es gilt deny by default fuer schreibende Zugriffe:
 - Jeder API-Endpunkt prueft die Berechtigung serverseitig ueber einen zentralen `CalendarAccessService`.
 - UI-Ausblendungen sind Komfort und niemals die einzige Zugriffskontrolle.
 - Der Einstellungs-Tab ist fuer alle sichtbar und enthält nur persönliche Einstellungen des eingeloggten Kontos. Organisationsweite Gruppenbearbeitungsrechte werden ausschließlich im Nextcloud-Adminbereich der OrgSuite gelesen und geändert.
+- Das Kalender-Opt-in kann ausschließlich für das angemeldete Konto geändert werden. Es erweitert keine Planungs- oder Leserechte; berechtigte Fremdänderungen lösen nur die Veröffentlichung des ohnehin erlaubten Dienstes im bereits aktivierten Kalender der Zielperson aus.
 - Listen werden bereits serverseitig auf den erlaubten Personenkreis eingeschraenkt.
 - Allow- und Deny-Faelle sowie direkte unberechtigte API-Aufrufe werden getestet.
 
@@ -120,6 +122,7 @@ Urlaubsansichten sind dynamisch ergänzbare Rollen-/Bereichsschnitte. Die Standa
 - API-Zugriffe liegen im Frontend in Repositories, Daten in Modellen/ViewModels und Rendering/Eventbindung in Komponenten.
 - Der Frontend-Unterbau nutzt die vorhandenen LocalBase-Vertraege `ApiClient`, `Repository`, `Model` und `Notice`; AD-Kalender-spezifische API-Pfade, Modelle und Renderinglogik bleiben in diesem Repo.
 - Sichtbare Gruppenbezeichnungen, Filter, Leitungsblock, Hierarchiedarstellung und Demo-Gruppenzuordnungen werden aus der gemeinsamen Organisationsdefinition abgeleitet.
+- Die Fachschicht spricht für den persönlichen Dienstabgleich ausschließlich `ShiftCalendarPublisher` an. Der bewusst freigegebene interne Nextcloud-DAV-Vertrag `OCA\DAV\CalDAV\CalDavBackend` bleibt auf `NextcloudDavShiftCalendarPublisher` begrenzt und kann durch einen anderen Provideradapter ersetzt werden.
 - Die UI bleibt per Tastatur bedienbar, verwendet semantische Tabellen/Listen, sichtbare Fokuszustaende und Textkennzeichnungen zusaetzlich zu Farben.
 - Keine vorsorgliche gemeinsame Library und keine WordPress-Kompatibilitaetsschicht.
 
@@ -152,6 +155,7 @@ Geplante Checks:
 - Serverseitiger Rechte-Smoke: `ADC_BASE_URL=... ADC_USER=... ADC_PASSWORD=... ADC_EXPECTED='uid=true,...' tests/access-http-smoke.sh`
 - Selbstaufräumende DDEV-Rollenmatrix: `ADC_BASE_URL=https://nextcloud-dev.ddev.site tests/access-matrix-ddev-smoke.sh`
 - Reale Tombstone-/Urlaubsintegration in DDEV: `ddev exec -d /var/www/html/html php custom_apps/adcalendar/tests/integration/DefaultShiftVacationSmoke.php`
+- Selbstaufräumender persönlicher DAV-Dienstabgleich in DDEV: `ddev exec -d /var/www/html/html php custom_apps/adcalendar/tests/integration/ShiftCalendarSyncSmoke.php`
 
 ## Learnings
 

@@ -6,6 +6,7 @@ namespace OCA\AdCalendar\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\AdCalendar\Model\CalendarEntry;
 use OCA\AdCalendar\Repository\CalendarEntryRepository;
 use OCP\Config\IUserConfig;
 use OCP\IConfig;
@@ -22,6 +23,7 @@ final class DefaultShiftMaterializer {
         private DefaultShiftOccurrenceFactory $factory,
         private IConfig $config,
         private IUserConfig $userConfig,
+        private ShiftCalendarSyncService $shiftSync,
     ) {}
 
     /** @param list<string> $employeeUids */
@@ -42,7 +44,10 @@ final class DefaultShiftMaterializer {
         $existing = $this->entries->findDefaultOccurrence($employeeUid, $date);
         if ($existing?->defaultDeleted() || $existing?->defaultModified()) return;
         if (!$rule['enabled']) {
-            if ($existing !== null) $this->entries->removeGeneratedDefault((int)$existing->id());
+            if ($existing !== null) {
+                $this->entries->removeGeneratedDefault((int)$existing->id());
+                $this->shiftSync->remove($existing);
+            }
             return;
         }
 
@@ -55,6 +60,7 @@ final class DefaultShiftMaterializer {
 
             if ($existing !== null) {
                 $this->entries->removeGeneratedDefault((int)$existing->id());
+                $this->shiftSync->remove($existing);
             }
             return;
         }
@@ -63,6 +69,7 @@ final class DefaultShiftMaterializer {
 
         $id = $this->entries->save($occurrence, $employeeUid);
         $this->entries->attachContainedAppointments($id, $employeeUid, $occurrence->start(), $occurrence->end());
+        $this->shiftSync->publish(CalendarEntry::get(array_replace($occurrence->toArray(), ['id' => $id])));
     }
 
     private function timezone(string $employeeUid): DateTimeZone {

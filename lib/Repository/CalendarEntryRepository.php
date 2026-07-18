@@ -51,6 +51,17 @@ final class CalendarEntryRepository {
     }
 
     /** @return list<CalendarEntry> */
+    public function findShiftsForEmployee(string $employeeUid): array {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select(...self::COLUMNS)->from('adc_entries')
+            ->where($qb->expr()->eq('employee_uid', $qb->createNamedParameter($employeeUid)))
+            ->andWhere($qb->expr()->eq('entry_type', $qb->createNamedParameter(CalendarEntry::TYPE_SHIFT)))
+            ->andWhere($qb->expr()->eq('default_deleted', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)))
+            ->orderBy('id', 'ASC');
+        return CalendarEntry::get_all(array_map([$this, 'mapRow'], $qb->executeQuery()->fetchAllAssociative()));
+    }
+
+    /** @return list<CalendarEntry> */
     public function findMeeting(string $meetingUid): array {
         $qb = $this->db->getQueryBuilder();
         $qb->select(...self::COLUMNS)->from('adc_entries')

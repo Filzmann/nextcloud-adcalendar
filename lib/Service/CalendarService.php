@@ -19,6 +19,7 @@ final class CalendarService {
         private DefaultShiftMaterializer $defaultShifts,
         private AbsenceService $absences,
         private ContainingShiftAssignment $shiftAssignment,
+        private ShiftCalendarSyncService $shiftSync,
     ) {}
 
     public function week(DateTimeImmutable $start, array $employees): array {
@@ -36,8 +37,9 @@ final class CalendarService {
     }
 
     public function save(array $payload, ?int $id, string $actorUid): int {
+        $previous = null;
         if ($id !== null) {
-            $existing = $this->existing($id);
+            $existing = $previous = $this->existing($id);
             if ($existing->meetingUid() !== null) {
                 throw new InvalidArgumentException('Gemeinsame Meetings werden zusammen bearbeitet.');
             }
@@ -56,6 +58,11 @@ final class CalendarService {
         $entry = $this->assignContainingShift($entry);
         $savedId = $this->entries->save($entry, $actorUid);
         $this->detachChildrenOutsideShift($entry, $savedId);
+        $saved = CalendarEntry::get(array_replace($entry->toArray(), ['id' => $savedId]));
+        if ($previous?->type() === CalendarEntry::TYPE_SHIFT && $previous->employeeUid() !== $saved->employeeUid()) {
+            $this->shiftSync->remove($previous);
+        }
+        if ($saved->type() === CalendarEntry::TYPE_SHIFT) $this->shiftSync->publish($saved);
         return $savedId;
     }
 
@@ -85,9 +92,11 @@ final class CalendarService {
         $childMode = $children === [] ? 'detach' : $childMode;
         if ($entry->defaultDate() !== null) {
             $this->entries->deleteDefaultShift($id, $childMode);
+            $this->shiftSync->remove($entry);
             return;
         }
         $this->entries->deleteShift($id, $childMode);
+        $this->shiftSync->remove($entry);
     }
 
     private function serializeEntry(CalendarEntry $entry): array {

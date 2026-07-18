@@ -16,6 +16,7 @@
 \OCP\Util::addScript('adcalendar', 'components/entry-dialog');
 \OCP\Util::addScript('adcalendar', 'components/meeting-finder');
 \OCP\Util::addScript('adcalendar', 'components/shift-defaults');
+\OCP\Util::addScript('adcalendar', 'components/shift-calendar-sync');
 \OCP\Util::addScript('adcalendar', 'components/tab-navigation');
 \OCP\Util::addScript('adcalendar', 'components/week-navigation');
 \OCP\Util::addScript('adcalendar', 'components/week-table');

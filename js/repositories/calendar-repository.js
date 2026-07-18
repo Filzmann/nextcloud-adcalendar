@@ -31,6 +31,10 @@
             return this.request('/api/preferences/shifts', { method: 'PUT', body: JSON.stringify({ shiftDefaults }) });
         }
 
+        saveCalendarSync(enabled) {
+            return this.request('/api/preferences/calendar-sync', { method: 'PUT', body: JSON.stringify({ enabled }) });
+        }
+
         meetingGaps(start, employeeUids, durationMinutes) {
             return this.request('/api/meeting-gaps', {
                 method: 'POST',

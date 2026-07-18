@@ -11,6 +11,7 @@ use OCA\AdCalendar\Service\CalendarAccessService;
 use OCA\AdCalendar\Service\CalendarService;
 use OCA\AdCalendar\Service\CalendarSettingsService;
 use OCA\AdCalendar\Service\CalendarPreferenceService;
+use OCA\AdCalendar\Service\ShiftCalendarSyncService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -26,6 +27,7 @@ final class ApiController extends Controller {
         private CalendarService $calendar,
         private CalendarSettingsService $settingsService,
         private CalendarPreferenceService $preferences,
+        private ShiftCalendarSyncService $shiftSync,
         private LoggerInterface $logger,
     ) {
         parent::__construct(Application::APP_ID, $request);
@@ -42,6 +44,7 @@ final class ApiController extends Controller {
             $response['currentUserProfile'] = $this->access->currentProfile();
             $response['defaultFilters'] = $this->preferencesFor($employees);
             $response['shiftDefaults'] = $this->preferences->shiftDefaults($this->access->currentUser()?->getUID() ?? '');
+            $response['calendarSync'] = $this->shiftSync->status($this->access->currentUser()?->getUID() ?? '');
             $response['organization'] = $this->settingsService->organization();
             return new JSONResponse($response);
         } catch (\Throwable $error) {
@@ -94,7 +97,11 @@ final class ApiController extends Controller {
     public function preferences(): JSONResponse {
         if (!$this->access->canView()) return $this->denied();
         $user = $this->access->currentUser();
-        return new JSONResponse(['filters' => $this->preferencesFor($this->access->visibleEmployees()), 'shiftDefaults' => $this->preferences->shiftDefaults($user?->getUID() ?? '')]);
+        return new JSONResponse([
+            'filters' => $this->preferencesFor($this->access->visibleEmployees()),
+            'shiftDefaults' => $this->preferences->shiftDefaults($user?->getUID() ?? ''),
+            'calendarSync' => $this->shiftSync->status($user?->getUID() ?? ''),
+        ]);
     }
 
     #[NoAdminRequired]
@@ -111,6 +118,18 @@ final class ApiController extends Controller {
         $user = $this->access->currentUser();
         if ($user === null) return $this->denied();
         return new JSONResponse(['shiftDefaults' => $this->preferences->saveShiftDefaults($user->getUID(), $shiftDefaults)]);
+    }
+
+    #[NoAdminRequired]
+    public function saveCalendarSync(bool $enabled): JSONResponse {
+        $user = $this->access->currentUser();
+        if ($user === null) return $this->denied();
+        try {
+            return new JSONResponse(['calendarSync' => $this->shiftSync->configure($user->getUID(), $enabled)]);
+        } catch (\Throwable $error) {
+            $this->logger->error('Persönliche Kalendersynchronisation konnte nicht geändert werden.', ['exception' => $error]);
+            return new JSONResponse(['error' => 'Die persönliche Kalendersynchronisation konnte nicht geändert werden.'], Http::STATUS_BAD_REQUEST);
+        }
     }
 
     private function save(?int $id, array $payload): JSONResponse {

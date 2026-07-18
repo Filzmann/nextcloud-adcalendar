@@ -29,8 +29,10 @@
 .adc-notice--error { color: var(--color-error); font-weight: 600; }
 .adc-settings { margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--color-border); }
 #adc-peer-settings { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0; }
-.adc-settings-view { width: 100%; max-width: none; box-sizing: border-box; padding: 14px 2px 30px; }
+.adc-settings-view { display: grid; gap: 12px; width: 100%; max-width: none; box-sizing: border-box; padding: 14px 2px 30px; }
 .adc-settings-view > section { width: 100%; box-sizing: border-box; padding: 12px 14px; border: 1px solid var(--color-border); border-radius: var(--border-radius-large); background: var(--color-main-background); }
+.adc-calendar-sync-form { display: grid; justify-items: start; gap: 8px; }
+.adc-calendar-sync-form p { margin: 0; color: var(--color-text-maxcontrast); }
 .adc-shift-default-row { display: grid; grid-template-columns: minmax(9rem, 1fr) minmax(9rem, auto) minmax(9rem, auto); gap: 8px 14px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--color-border); }
 .adc-shift-default-row:last-child { border-bottom: 0; }
 .adc-shift-default-row label { display: flex; align-items: center; gap: 5px; }

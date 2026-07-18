@@ -10,6 +10,7 @@ const calendarFilters = readFileSync(new URL('../../js/components/calendar-filte
 const entryDialog = readFileSync(new URL('../../js/components/entry-dialog.js', import.meta.url), 'utf8');
 const meetingFinder = readFileSync(new URL('../../js/components/meeting-finder.js', import.meta.url), 'utf8');
 const shiftDefaults = readFileSync(new URL('../../js/components/shift-defaults.js', import.meta.url), 'utf8');
+const shiftCalendarSync = readFileSync(new URL('../../js/components/shift-calendar-sync.js', import.meta.url), 'utf8');
 const dateSource = readFileSync(new URL('../../js/modules/calendar-date.js', import.meta.url), 'utf8');
 const timelineSource = readFileSync(new URL('../../js/modules/calendar-timeline.js', import.meta.url), 'utf8');
 const stateSource = readFileSync(new URL('../../js/modules/calendar-state.js', import.meta.url), 'utf8');
@@ -26,6 +27,8 @@ for (const contract of [
     'tabs.show(state.activeTab, false)',
     'shiftDefaults.set(state.data.shiftDefaults || {})',
     'repository.saveShiftDefaults(defaults)',
+    'shiftCalendarSync.set(state.data.calendarSync || {})',
+    'repository.saveCalendarSync(enabled)',
     'meetingFinder.open(CalendarDate.isoDay(state.monday)',
     'meetingCapabilities.apply(data.entries, data.employees)',
     "state.isUnfiltered() ? 'Alle Personen'",
@@ -120,7 +123,7 @@ for (const contract of ["params.set('people'", "params.set('roles'", "params.set
 }
 if (weekTable.includes("header.append(this.node('th', 'Gesamt'))")) throw new Error('Entfernte Gesamtspalte wird noch gerendert.');
 if (source.includes('state.data.summaries')) throw new Error('Entfernter Gesamt-Payload wird noch verwendet.');
-for (const contract of ['extends BaseRepository', 'savePreferences(filters)', 'saveShiftDefaults(shiftDefaults)', 'meetingGaps(start, employeeUids, durationMinutes)', 'blockMeeting(start, end, employeeUids, title)', 'updateMeeting(meetingUid, start, end, title)', 'removeMeeting(meetingUid)', "method: id == null ? 'POST' : 'PUT'"]) {
+for (const contract of ['extends BaseRepository', 'savePreferences(filters)', 'saveShiftDefaults(shiftDefaults)', 'saveCalendarSync(enabled)', 'meetingGaps(start, employeeUids, durationMinutes)', 'blockMeeting(start, end, employeeUids, title)', 'updateMeeting(meetingUid, start, end, title)', 'removeMeeting(meetingUid)', "method: id == null ? 'POST' : 'PUT'"]) {
     if (!repository.includes(contract)) throw new Error(`Repository-Vertrag fehlt: ${contract}`);
 }
 for (const contract of ['class Organization extends BaseModel', 'roleLabel(groupId)', 'areaLabel(groupId)', 'staffRoleGroups()', 'roleOrder(groupId)', 'areaOrder(groupId)', 'toArray()']) {
@@ -147,6 +150,23 @@ for (const contract of ['class MeetingFinder', 'this.selected = new Set(selected
 for (const contract of ['class ShiftDefaults', 'Array.from({ length: 7 }', 'data-field="enabled"', 'this.onSave(this.collect())']) {
     if (!shiftDefaults.includes(contract)) throw new Error(`Dienstzeiten-Komponentenvertrag fehlt: ${contract}`);
 }
+for (const contract of ['class ShiftCalendarSync', 'this.onSave(this.input.checked)', 'status.calendarName', 'Kalender ist aktiv']) {
+    if (!shiftCalendarSync.includes(contract)) throw new Error(`Dienstkalender-Komponentenvertrag fehlt: ${contract}`);
+}
+const syncInput = { checked: false };
+const syncStatus = { textContent: '' };
+const syncForm = { listener: null, addEventListener(type, listener) { this.listener = listener; }, reportValidity: () => true };
+const syncContext = { window: {}, document: { getElementById: id => ({
+    'adc-calendar-sync-form': syncForm,
+    'adc-calendar-sync-enabled': syncInput,
+    'adc-calendar-sync-status': syncStatus,
+}[id]) } };
+runInNewContext(shiftCalendarSync, syncContext);
+let savedSync = null;
+const syncComponent = new syncContext.window.AdCalendar.components.ShiftCalendarSync({ onSave: async enabled => { savedSync = enabled; } });
+syncComponent.set({ enabled: true, calendarName: 'AD Dienste' });
+await syncForm.listener({ preventDefault() {} });
+if (!syncInput.checked || !syncStatus.textContent.includes('AD Dienste') || savedSync !== true) throw new Error('Persönliches Kalender-Opt-in ist nicht tastaturbedienbar oder zeigt seinen Zustand nicht an.');
 for (const contract of ['class EntryDialog', 'this.dialog.showModal()', 'this.updateType()', 'this.nextFreeShift', 'setCustomValidity(message)', 'Boolean(entry?.meetingUid)', "entry.type === 'shift'", 'start < new Date(entry.end)', 'end > new Date(entry.start)']) {
     if (!entryDialog.includes(contract)) throw new Error(`Eintragsdialog-Vertrag fehlt: ${contract}`);
 }

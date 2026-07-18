@@ -14,6 +14,7 @@ use OCP\Config\IUserConfig;
 final class CalendarPreferenceService {
     private const FILTER_KEY = 'filter_default';
     private const SHIFT_KEY = 'shift_defaults';
+    private const SHIFT_CALENDAR_SYNC_KEY = 'shift_calendar_sync_enabled';
 
     public function __construct(private IUserConfig $config) {}
 
@@ -46,6 +47,15 @@ final class CalendarPreferenceService {
         $normalized = $this->normalizeShiftDefaults($defaults);
         $this->config->setValueString($uid, Application::APP_ID, self::SHIFT_KEY, json_encode($normalized, JSON_THROW_ON_ERROR));
         return $normalized;
+    }
+
+    public function shiftCalendarSyncEnabled(string $uid): bool {
+        return $this->config->getValueString($uid, Application::APP_ID, self::SHIFT_CALENDAR_SYNC_KEY, '0') === '1';
+    }
+
+    public function saveShiftCalendarSyncEnabled(string $uid, bool $enabled): bool {
+        $this->config->setValueString($uid, Application::APP_ID, self::SHIFT_CALENDAR_SYNC_KEY, $enabled ? '1' : '0');
+        return $enabled;
     }
 
     private function normalize(array $filters, array $employees, array $roles, array $areas): array {

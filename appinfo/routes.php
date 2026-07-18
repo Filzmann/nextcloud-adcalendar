@@ -10,6 +10,7 @@ return [
         ['name' => 'api#preferences', 'url' => '/api/preferences', 'verb' => 'GET'],
         ['name' => 'api#savePreferences', 'url' => '/api/preferences', 'verb' => 'PUT'],
         ['name' => 'api#saveShiftDefaults', 'url' => '/api/preferences/shifts', 'verb' => 'PUT'],
+        ['name' => 'api#saveCalendarSync', 'url' => '/api/preferences/calendar-sync', 'verb' => 'PUT'],
         ['name' => 'meeting#gaps', 'url' => '/api/meeting-gaps', 'verb' => 'POST'],
         ['name' => 'meeting#block', 'url' => '/api/meetings', 'verb' => 'POST'],
         ['name' => 'meeting#update', 'url' => '/api/meetings/{meetingUid}', 'verb' => 'PUT'],
