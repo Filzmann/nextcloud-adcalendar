@@ -13,9 +13,15 @@ Diese Datei bündelt geplante Erweiterungen und offene Produktentscheidungen. Ve
 - Dieselben Dienste sollen optional mit externen Kalendersystemen wie Kopano synchronisiert werden können.
 - Benötigte Auswertungszeiträume über die bestehende Wochenansicht hinaus werden nach einem konkreten Fachbedarf festgelegt.
 
+## Festgelegte Synchronisationsleitplanken
+
+- AD Kalender bleibt zunächst die alleinige Quelle der Wahrheit; Dienste werden nur aus AD Kalender in angebundene Kalender übertragen.
+- Die erste Ausbaustufe importiert keine Änderungen aus privaten Nextcloud- oder externen Kalendern.
+- Provideradapter und stabile Zuordnungskennungen halten eine spätere bidirektionale Synchronisation offen.
+
 ## Vor der Kalendersynchronisation zu klären
 
-- Quelle der Wahrheit und Synchronisationsrichtung.
+- Zielkalender und persönliches Opt-in: eigener privater AD-Dienste-Kalender oder ein durch die Nutzerin beziehungsweise den Nutzer gewählter bestehender Kalender.
 - Providerneutrale Anbindung, Authentifizierung und sichere Ablage notwendiger Zugangsdaten.
 - Stabile externe Kennungen sowie Verhalten bei Änderung, Löschung, Wiederholung und Konflikten.
 - Zeitzonen, Einwilligung, Datenschutz, Protokollierung und Fehlerbehandlung.
