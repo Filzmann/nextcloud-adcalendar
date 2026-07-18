@@ -17,4 +17,8 @@ AD Kalender funktioniert einzeln. Ohne AD Urlaub stehen manuelle Sperrtermine zu
 
 Der Befehl `adcalendar:demo:seed` ist ausschließlich für synthetische Testdaten gedacht und darf auf einem realitätsnahen Staging-System nicht ohne bewusste Entscheidung ausgeführt werden.
 
+## Roadmap
+
+Geplante Erweiterungen und offene Produktentscheidungen stehen in der [Roadmap](ROADMAP.md).
+
 Installations-, Betriebs- und Abnahmeunterlagen stehen im öffentlichen [AD-Suite-Projekt](https://github.com/Filzmann/ad-suite).
