@@ -8,7 +8,8 @@ Diese Datei bündelt geplante Erweiterungen und offene Produktentscheidungen. Ve
 - Rollen-, Bereichs- und Personenfilter einschließlich bereichsübergreifender Leitungen in der sichtbaren Oberfläche prüfen.
 - Die ergänzten globalen Gruppen Stv. PDL, Büroorganisation Pflege, Fahrzeugverwaltung und Empfang mit ihrer Backend-Reihenfolge und Hierarchie im Kalender abnehmen.
 - Den einseitigen Abgleich persönlicher Dienste in den privaten Nextcloud-Kalender „AD Dienste“ fachlich abnehmen.
-- Persönliche Kopano-, Google-, Apple- und manuelle CalDAV-Verbindungen mit realen Testkonten auf Staging fachlich abnehmen.
+- Persönliche Kopano- und manuelle CalDAV-Verbindungen mit realen Testkonten auf Staging fachlich abnehmen.
+- Die fachliche Abnahme der Google- und Apple-Verbindungen ist auf Mitte bis Ende August 2026 verschoben.
 
 ## Umgesetzte Synchronisationsstufe
 
@@ -25,6 +26,7 @@ Diese Datei bündelt geplante Erweiterungen und offene Produktentscheidungen. Ve
 - CalDAV-Zugangsdaten und Google-Refresh-Tokens werden mit Nextclouds `ICrypto` verschlüsselt und als sensible persönliche Konfiguration gespeichert. Statusantworten und Logs enthalten keine Geheimnisse oder Kontokennungen.
 - Google verwendet Webserver-OAuth mit einmaligem, nutzergebundenem Statuswert, Offline-Zugriff und dem auf app-erzeugte Kalender begrenzten Scope. Ohne systemweit hinterlegten OAuth-Client bleibt die persönliche Schaltfläche sichtbar, aber deaktiviert.
 - Providerfehler bleiben voneinander und von der führenden AD-Mutation isoliert. Der Hintergrundlauf bezieht verbundene externe Konten auch dann ein, wenn ihr interner Nextcloud-Kalender deaktiviert wurde.
+- Der Adminbereich enthält einen rein lesenden Kopano-CalDAV-Verbindungstest. Er verwendet denselben URL-Vertrag wie der persönliche Connector, speichert keine Testzugangsdaten und erklärt insbesondere einen vom Betreiber abgewiesenen HTTP-405-Zugriff.
 
 ## Umgesetzte Terminserien
 
@@ -36,23 +38,17 @@ Diese Datei bündelt geplante Erweiterungen und offene Produktentscheidungen. Ve
 ## Umgesetzte Ansichtszeiträume
 
 - Zwischen Wochen- und Monatsansicht kann direkt in der Kalendernavigation umgeschaltet werden; der Zeitraum ist Teil des persönlichen Standards.
-- Die Monatsansicht zeigt die betroffenen Wochenblöcke untereinander, hält Personen als Zeilen und dimmt Tage außerhalb des gewählten Monats.
-- Die Personenspalte bleibt beim horizontalen Scrollen sichtbar. Anlegen, Bearbeiten und Löschen verwenden unverändert den bestehenden serverseitigen Rechtevertrag.
+- Der Wechsel „Tage als Zeilen / Personen als Zeilen“ steht in Wochen- und Monatsansicht zur Verfügung und ist bereits Teil des persönlichen Standards.
+- Die Monatsansicht zeigt die betroffenen Wochenblöcke untereinander und dimmt Tage außerhalb des gewählten Monats.
+- Die zu den Personen gehörende Kopfzeile beziehungsweise erste Spalte bleibt in beiden Ausrichtungen beim Scrollen sichtbar.
+- Samstag und Sonntag sind in beiden Ansichten und Ausrichtungen als Wochenendflächen und zusätzlich mit dem Text „Wochenende“ gekennzeichnet. Anlegen, Bearbeiten und Löschen verwenden unverändert den bestehenden serverseitigen Rechtevertrag.
+- Gesetzliche Berliner Feiertage erscheinen in beiden Ansichten und Ausrichtungen mit Namen und eigener Markierung. Die Regeln werden lokal aus § 1 Feiertagsgesetz Berlin einschließlich beweglicher Feiertage berechnet; der einmalige Feiertag am 17. Juni 2028 ist berücksichtigt. Feiertage verändern weder Dienste noch Termine, Verfügbarkeit oder Berechtigungen.
 - Die Meeting-Lückensuche bleibt bewusst auf die ausgewählte Wochenansicht begrenzt.
 
 ## Geplante Erweiterungen
 
-- Der vorhandene Wechsel „Tage als Zeilen / Personen als Zeilen“ soll auch in der Monatsansicht verfügbar sein. In beiden Ausrichtungen bleibt die zu den Personen gehörende Kopfzeile beziehungsweise erste Spalte beim Scrollen sichtbar; die Monatsansicht darf Personen weder horizontal noch vertikal aus dem sichtbaren Zuordnungskontext verlieren.
-- Samstag und Sonntag sollen in Wochen- und Monatsansicht als eigene Tagesarten erkennbar sein. Die Kennzeichnung darf nicht ausschließlich über Farbe erfolgen und muss auch bei fixierten Kopfzeilen sowie in beiden Zeilen-/Spaltenausrichtungen eindeutig bleiben.
-- Gesetzliche Feiertage sollen zusätzlich mit Namen und einer barrierefrei verständlichen Kennzeichnung erscheinen. Sie verändern zunächst weder Dienste noch Termine, Verfügbarkeit oder Berechtigungen, sondern bilden eine reine Anzeigeebene.
 - Für den Produktivbetrieb ist noch festzulegen, wie fehlgeschlagene Hintergrundläufe überwacht und administrativ sichtbar gemacht werden.
 - Weitere Auswertungszeiträume über Woche und Monat hinaus werden nach einem konkreten Fachbedarf festgelegt.
-
-## Vor den neuen Kalenderkennzeichnungen zu klären
-
-- Welches Bundesland beziehungsweise welcher konfigurierbare Standort für gesetzliche Feiertage maßgeblich ist; für die Berliner Organisation liegt Berlin als initialer Standard nahe, ist aber vor der Umsetzung fachlich zu bestätigen.
-- Aus welcher nachvollziehbaren Quelle Feiertage bezogen oder nach welchen geprüften Regeln sie berechnet werden, wie bewegliche Feiertage getestet werden und wie die Anzeige ohne erreichbaren externen Dienst funktioniert.
-- Ob die gewählte Zeilen-/Spaltenausrichtung nur für die aktuelle Sitzung oder als persönliche Nextcloud-Einstellung gespeichert wird; sie erweitert keine Lese- oder Bearbeitungsrechte.
 
 ## Festgelegte Synchronisationsleitplanken
 

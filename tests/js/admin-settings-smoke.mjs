@@ -14,6 +14,12 @@ const status = element();
 const remove = element();
 const copy = element();
 const redirect = element('https://cloud.example.test/callback');
+const calDavForm = element();
+const calDavUrl = element('https://calendar.example.test');
+const calDavUsername = element('person-a');
+const calDavPassword = element('connection-secret');
+const calDavStatus = element();
+const calDavSubmit = element();
 const elements = {
     'adc-google-oauth-form': form,
     'adc-google-client-id': clientId,
@@ -22,11 +28,22 @@ const elements = {
     'adc-google-oauth-remove': remove,
     'adc-google-copy-redirect': copy,
     'adc-google-redirect-uri': redirect,
+    'adc-kopano-test-form': calDavForm,
+    'adc-kopano-test-url': calDavUrl,
+    'adc-kopano-test-username': calDavUsername,
+    'adc-kopano-test-password': calDavPassword,
+    'adc-kopano-test-status': calDavStatus,
+    'adc-kopano-test-submit': calDavSubmit,
 };
 const calls = [];
+let failCalDav = false;
 class ApiClient {
     async request(path, options) {
         calls.push([path, options]);
+        if (path.includes('/external-calendars/caldav/test')) {
+            if (failCalDav) throw new Error('Der Kopano-Betreiber erlaubt keine CalDAV-Verbindung.');
+            return { message: 'Kopano-CalDAV-Verbindung erfolgreich geprüft (HTTP 207).' };
+        }
         return { googleOAuth: options.method === 'DELETE'
             ? { configured: false, clientId: '', secretConfigured: false, redirectUri: redirect.value }
             : { configured: true, clientId: clientId.value, secretConfigured: true, redirectUri: redirect.value } };
@@ -47,5 +64,12 @@ await copy.listeners.click();
 if (copied !== redirect.value) throw new Error('Google-Redirect-URI kann nicht kopiert werden.');
 await remove.listeners.click();
 if (calls[1][1].method !== 'DELETE' || !remove.disabled || clientId.value !== '') throw new Error('Google-OAuth-Konfiguration kann nicht sicher entfernt werden.');
+await calDavForm.listeners.submit({ preventDefault() {} });
+const calDavCall = calls[2];
+if (calDavCall[0] !== '/api/admin/external-calendars/caldav/test' || calDavCall[1].method !== 'POST' || JSON.parse(calDavCall[1].body).password !== 'connection-secret') throw new Error('Administrativer Kopano-Test verwendet nicht den geschützten API-Pfad.');
+if (calDavPassword.value !== '' || calDavSubmit.disabled || !calDavStatus.textContent.includes('erfolgreich geprüft')) throw new Error('Administrativer Kopano-Test behält das Passwort oder zeigt kein Ergebnis.');
+failCalDav = true; calDavPassword.value = 'retry-secret';
+await calDavForm.listeners.submit({ preventDefault() {} });
+if (calDavPassword.value !== '' || calDavSubmit.disabled || !calDavStatus.textContent.includes('Kopano-Betreiber')) throw new Error('Fehlgeschlagener Kopano-Test räumt das Passwort nicht auf oder verschweigt die Providerdiagnose.');
 
 console.log('Admin settings smoke: OK');
