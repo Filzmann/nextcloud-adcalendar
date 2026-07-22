@@ -31,6 +31,43 @@ final class GoogleOAuthService {
         return $this->clientId() !== '' && $this->clientSecret() !== '';
     }
 
+    /** Liefert ausschließlich nicht geheime Werte für den Nextcloud-Adminbereich. */
+    public function adminStatus(): array {
+        return [
+            'configured' => $this->configured(),
+            'clientId' => $this->clientId(),
+            'secretConfigured' => $this->clientSecret() !== '',
+            'redirectUri' => $this->redirectUri(),
+        ];
+    }
+
+    public function saveConfiguration(string $clientId, string $clientSecret = ''): array {
+        $clientId = trim($clientId);
+        $clientSecret = trim($clientSecret);
+        if ($clientId === '' || strlen($clientId) > 512) throw new InvalidArgumentException('Eine gültige Google-Client-ID ist erforderlich.');
+        if (strlen($clientSecret) > 4096) throw new InvalidArgumentException('Das Google-Client-Secret ist zu lang.');
+
+        $currentId = $this->clientId();
+        $storedSecret = $this->clientSecret();
+        if ($clientSecret === '') {
+            if ($storedSecret === '') throw new InvalidArgumentException('Das Google-Client-Secret ist erforderlich.');
+            if ($currentId !== '' && $currentId !== $clientId) {
+                throw new InvalidArgumentException('Bei einer Änderung der Client-ID muss das zugehörige Client-Secret erneut eingegeben werden.');
+            }
+            $clientSecret = $storedSecret;
+        }
+
+        $this->appConfig->setValueString(Application::APP_ID, self::CLIENT_ID_KEY, $clientId, true);
+        $this->appConfig->setValueString(Application::APP_ID, self::CLIENT_SECRET_KEY, $clientSecret, true, true);
+        return $this->adminStatus();
+    }
+
+    public function removeConfiguration(): array {
+        $this->appConfig->deleteKey(Application::APP_ID, self::CLIENT_ID_KEY);
+        $this->appConfig->deleteKey(Application::APP_ID, self::CLIENT_SECRET_KEY);
+        return $this->adminStatus();
+    }
+
     public function authorizationUrl(string $uid): string {
         $this->assertConfigured();
         $state = $this->connections->createOAuthState($uid);

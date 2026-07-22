@@ -3,7 +3,11 @@
 declare(strict_types=1);
 
 namespace OCP {
-    interface IAppConfig { public function getValueString(string $app, string $key, string $default = '', bool $lazy = false): string; }
+    interface IAppConfig {
+        public function getValueString(string $app, string $key, string $default = '', bool $lazy = false): string;
+        public function setValueString(string $app, string $key, string $value, bool $lazy = false, bool $sensitive = false): bool;
+        public function deleteKey(string $app, string $key): void;
+    }
     interface IURLGenerator { public function linkToRouteAbsolute(string $routeName, array $arguments = []): string; }
 }
 namespace OCP\Http\Client {
@@ -35,7 +39,11 @@ namespace {
     use OCP\IURLGenerator;
 
     $config = new class implements IAppConfig {
-        public function getValueString(string $app, string $key, string $default = '', bool $lazy = false): string { return ['google_oauth_client_id' => 'client-id', 'google_oauth_client_secret' => 'client-secret'][$key] ?? $default; }
+        public array $values = ['google_oauth_client_id' => 'client-id', 'google_oauth_client_secret' => 'client-secret'];
+        public array $writes = [];
+        public function getValueString(string $app, string $key, string $default = '', bool $lazy = false): string { return $this->values[$key] ?? $default; }
+        public function setValueString(string $app, string $key, string $value, bool $lazy = false, bool $sensitive = false): bool { $this->values[$key] = $value; $this->writes[] = [$key, $value, $lazy, $sensitive]; return true; }
+        public function deleteKey(string $app, string $key): void { unset($this->values[$key]); }
     };
     $urls = new class implements IURLGenerator { public function linkToRouteAbsolute(string $routeName, array $arguments = []): string { return 'https://cloud.example.test/apps/adcalendar/oauth/google/callback'; } };
     $response = static fn(array $data): IResponse => new class($data) implements IResponse {
@@ -66,6 +74,25 @@ namespace {
     if ($token !== 'access-b' || ($store->saved[1] ?? '') !== 'google' || ($store->saved[2]['refreshToken'] ?? '') !== 'refresh-a') throw new RuntimeException('Google-Refresh-Token wird nicht sicher erneuert und bewahrt.');
     $requests = json_encode($client->calls, JSON_THROW_ON_ERROR);
     if (!str_contains($requests, 'authorization_code') || !str_contains($requests, 'refresh_token')) throw new RuntimeException('Google-Tokenflows sind unvollständig.');
+
+    $status = $oauth->adminStatus();
+    if (!$status['configured'] || !$status['secretConfigured'] || $status['clientId'] !== 'client-id' || $status['redirectUri'] !== 'https://cloud.example.test/apps/adcalendar/oauth/google/callback' || str_contains(json_encode($status), 'client-secret')) {
+        throw new RuntimeException('Google-Adminstatus fehlt oder gibt das Client-Secret aus.');
+    }
+    $oauth->saveConfiguration('client-id', '');
+    if ($config->values['google_oauth_client_secret'] !== 'client-secret') throw new RuntimeException('Leeres Secret ersetzt die bestehende Google-Konfiguration.');
+    try {
+        $oauth->saveConfiguration('new-client-id', '');
+        throw new RuntimeException('Geänderte Client-ID wurde ohne neues Secret akzeptiert.');
+    } catch (InvalidArgumentException) {}
+    $savedStatus = $oauth->saveConfiguration('new-client-id', 'new-client-secret');
+    if (!$savedStatus['configured'] || $config->writes[array_key_last($config->writes)] !== ['google_oauth_client_secret', 'new-client-secret', true, true]) {
+        throw new RuntimeException('Google-Secret wird nicht lazy und sensitiv gespeichert.');
+    }
+    $oauth->removeConfiguration();
+    if ($oauth->configured() || isset($config->values['google_oauth_client_id'], $config->values['google_oauth_client_secret'])) {
+        throw new RuntimeException('Google-OAuth-Konfiguration wurde nicht vollständig entfernt.');
+    }
 
     echo "GoogleOAuthServiceTest: OK\n";
 }

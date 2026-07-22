@@ -28,11 +28,15 @@ Jede angemeldete Person verwaltet Kopano-, Google-, Apple- und manuelle CalDAV-V
 - CalDAV-Ziele müssen HTTPS verwenden. Nextclouds HTTP-Client erzwingt zusätzlich seine serverseitige SSRF-Sperre.
 - Persönliche Passwörter und Google-Tokens liegen verschlüsselt und als sensible Nextcloud-Benutzerkonfiguration vor.
 
-Google benötigt einmalig einen systemweiten Web-OAuth-Client. Die Administration hinterlegt `google_oauth_client_id` und `google_oauth_client_secret` für die App `adcalendar`; das Secret muss als `lazy` und `sensitive` über den geschützten Deploymentweg gesetzt werden und darf nicht in Repository, Shell-Historie oder Dokumentation gelangen. Als autorisierte Redirect-URI dient die von der Zielinstallation erzeugte Route:
+Google benötigt einmalig einen systemweiten Web-OAuth-Client. Nextcloud-Admins hinterlegen ihn unter `Administrationseinstellungen` → `AD Kalender` → `Google Calendar OAuth`. Die Oberfläche zeigt die installationsspezifische Redirect-URI, speichert das Secret als `lazy` und `sensitive` und gibt es nach dem Speichern nicht wieder aus.
+
+In Google Cloud sind die Google Calendar API, ein OAuth-Zustimmungsbildschirm und ein OAuth-Client vom Typ `Webanwendung` erforderlich. Als autorisierte Redirect-URI wird exakt der Wert aus dem AD-Kalender-Adminabschnitt übernommen. Technisch verwendet die App die Schlüssel `google_oauth_client_id` und `google_oauth_client_secret` sowie den eng begrenzten Scope für app-erzeugte Kalender.
+
+Die allgemeine Form der Weiterleitungsroute lautet:
 
     <NEXTCLOUD-BASIS>/index.php/apps/adcalendar/oauth/google/callback
 
-Bei installationsweit aktivem Pretty-URL-Rewriting kann `index.php` entfallen. Maßgeblich ist immer die reale Nextcloud-Basis- und Routingkonfiguration.
+Bei installationsweit aktivem Pretty-URL-Rewriting kann `index.php` entfallen. Maßgeblich ist ausschließlich der in der Adminoberfläche angezeigte Wert.
 
 ## Roadmap
 

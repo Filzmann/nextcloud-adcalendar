@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.0-rc.9
+
+- Google-OAuth-Konfiguration im Nextcloud-Adminabschnitt von AD Kalender ergänzt.
+- Client-ID, nur schreibbares sensitives Secret, automatisch erzeugte Redirect-URI, Konfigurationsstatus und Entfernen-Funktion umgesetzt.
+- Aufklappbare Schritt-für-Schritt-Anleitung für Google-Cloud-Projekt, API, Zielgruppe, Scope, Webclient und exakte Redirect-URI im Adminbereich ergänzt.
+- Speicherung und Entfernung zusätzlich zur Nextcloud-Adminroute serverseitig auf aktive Administrator*innen begrenzt und CSRF-geschützt.
+- Secret-, Allow-/Deny-, Controller- und ausführbare Admin-UI-Tests ergänzt.
+
 ## 0.12.0-rc.8
 
 - Umschalter zwischen Wochen- und Monatsansicht ergänzt.

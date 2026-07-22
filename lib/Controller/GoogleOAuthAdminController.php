@@ -1,0 +1,59 @@
+<?php
+
+declare(strict_types=1);
+
+namespace OCA\AdCalendar\Controller;
+
+use OCA\AdCalendar\AppInfo\Application;
+use OCA\AdCalendar\CalendarSync\GoogleOAuthService;
+use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\JSONResponse;
+use OCP\IGroupManager;
+use OCP\IRequest;
+use OCP\IUserSession;
+use Psr\Log\LoggerInterface;
+
+/** Speichert globale Google-OAuth-Daten ausschließlich für bestätigte Nextcloud-Admins. */
+final class GoogleOAuthAdminController extends Controller {
+    public function __construct(
+        IRequest $request,
+        private IUserSession $session,
+        private IGroupManager $groups,
+        private GoogleOAuthService $oauth,
+        private LoggerInterface $logger,
+    ) {
+        parent::__construct(Application::APP_ID, $request);
+    }
+
+    public function save(string $clientId, string $clientSecret = ''): JSONResponse {
+        if (!$this->isAdmin()) return $this->denied();
+        try {
+            return new JSONResponse(['googleOAuth' => $this->oauth->saveConfiguration($clientId, $clientSecret)]);
+        } catch (\InvalidArgumentException $error) {
+            return new JSONResponse(['error' => $error->getMessage()], Http::STATUS_BAD_REQUEST);
+        } catch (\Throwable $error) {
+            $this->logger->error('Google-OAuth-Konfiguration konnte nicht gespeichert werden.', ['exception' => $error]);
+            return new JSONResponse(['error' => 'Die Google-OAuth-Konfiguration konnte nicht gespeichert werden.'], Http::STATUS_BAD_REQUEST);
+        }
+    }
+
+    public function remove(): JSONResponse {
+        if (!$this->isAdmin()) return $this->denied();
+        try {
+            return new JSONResponse(['googleOAuth' => $this->oauth->removeConfiguration()]);
+        } catch (\Throwable $error) {
+            $this->logger->error('Google-OAuth-Konfiguration konnte nicht entfernt werden.', ['exception' => $error]);
+            return new JSONResponse(['error' => 'Die Google-OAuth-Konfiguration konnte nicht entfernt werden.'], Http::STATUS_BAD_REQUEST);
+        }
+    }
+
+    private function isAdmin(): bool {
+        $user = $this->session->getUser();
+        return $user !== null && $this->groups->isAdmin($user->getUID());
+    }
+
+    private function denied(): JSONResponse {
+        return new JSONResponse(['error' => 'Keine Berechtigung.'], Http::STATUS_FORBIDDEN);
+    }
+}

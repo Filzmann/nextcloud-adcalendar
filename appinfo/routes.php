@@ -22,5 +22,7 @@ return [
         ['name' => 'meeting#update', 'url' => '/api/meetings/{meetingUid}', 'verb' => 'PUT'],
         ['name' => 'meeting#delete', 'url' => '/api/meetings/{meetingUid}', 'verb' => 'DELETE'],
         ['name' => 'demo_admin#install', 'url' => '/api/admin/demo-pack/install', 'verb' => 'POST'],
+        ['name' => 'google_oauth_admin#save', 'url' => '/api/admin/google-oauth', 'verb' => 'PUT'],
+        ['name' => 'google_oauth_admin#remove', 'url' => '/api/admin/google-oauth', 'verb' => 'DELETE'],
     ],
 ];

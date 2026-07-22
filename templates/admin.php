@@ -3,6 +3,7 @@
 \OCP\Util::addScript('adcalendar', 'admin');
 \OCP\Util::addStyle('adcalendar', 'admin');
 $calendarSyncStatus = $_['calendarSyncStatus'] ?? ['hasRun' => false, 'lastRunAt' => 0, 'lastRunLabel' => 'Noch kein Hintergrundlauf erfasst', 'attempted' => 0, 'succeeded' => 0, 'failed' => 0, 'state' => 'pending'];
+$googleOAuth = $_['googleOAuth'] ?? ['configured' => false, 'clientId' => '', 'secretConfigured' => false, 'redirectUri' => ''];
 ?>
 <section id="adcalendar-admin" class="section adc-admin" aria-labelledby="adc-admin-heading">
     <h2 id="adc-admin-heading">AD Kalender</h2>
@@ -20,6 +21,53 @@ $calendarSyncStatus = $_['calendarSyncStatus'] ?? ['hasRun' => false, 'lastRunAt
             <p class="adc-sync-state"><?php p($calendarSyncStatus['lastRunLabel']); ?>.</p>
         <?php endif; ?>
         <p class="adc-sync-privacy">Keine Konten- oder Kalenderkennungen werden in diesem Status gespeichert oder angezeigt.</p>
+    </section>
+    <section class="adc-admin-panel" aria-labelledby="adc-google-oauth-heading">
+        <h3 id="adc-google-oauth-heading">Google Calendar OAuth</h3>
+        <p>Diese systemweite Webclient-Konfiguration ermöglicht allen Nutzer*innen, ihr eigenes Google-Konto im persönlichen Einstellungs-Tab zu verbinden.</p>
+        <details class="adc-google-registration-guide">
+            <summary>Google-App registrieren – Schritt für Schritt</summary>
+            <div class="adc-google-registration-guide__content">
+                <p>Für die Registrierung wird ein Google-Cloud-Projekt benötigt. Die folgenden Schritte werden einmalig von einer Administration ausgeführt:</p>
+                <ol>
+                    <li>In der <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer">Google Cloud Console</a> ein Projekt auswählen oder neu anlegen.</li>
+                    <li>Unter <strong>APIs und Dienste → Bibliothek</strong> die <strong>Google Calendar API</strong> suchen und aktivieren.</li>
+                    <li>Unter <strong>Google Auth Platform → Branding</strong> App-Name, Support-E-Mail und Kontaktadresse eintragen.</li>
+                    <li>Unter <strong>Google Auth Platform → Zielgruppe</strong> <strong>Intern</strong> wählen, wenn ausschließlich Konten derselben Google-Workspace-Organisation zugreifen. Andernfalls <strong>Extern</strong> wählen. Im Testmodus müssen die vorgesehenen Konten als <strong>Testnutzer*innen</strong> eingetragen werden; Refresh-Tokens können dann bereits nach sieben Tagen ablaufen.</li>
+                    <li>Unter <strong>Google Auth Platform → Datenzugriff</strong> exakt den Scope <code>https://www.googleapis.com/auth/calendar.app.created</code> hinzufügen. Er erlaubt AD Kalender nur den Zugriff auf von der App erstellte sekundäre Kalender und deren Termine.</li>
+                    <li>Die unten angezeigte <strong>Autorisierte Weiterleitungs-URI</strong> über „URI kopieren“ übernehmen.</li>
+                    <li>Unter <strong>Google Auth Platform → Clients</strong> einen OAuth-Client vom Typ <strong>Webanwendung</strong> erstellen und die kopierte URI exakt unter <strong>Autorisierte Weiterleitungs-URIs</strong> eintragen. Keine autorisierten JavaScript-Quellen hinzufügen.</li>
+                    <li>Google-Client-ID und Google-Client-Secret hier eintragen und speichern. Das Secret wird anschließend nicht mehr angezeigt.</li>
+                    <li>Danach können Nutzer*innen in <strong>AD Kalender → Einstellungen → Externe Kalender</strong> bei Google auf „Verbinden“ klicken.</li>
+                </ol>
+                <p><strong>Wichtig:</strong> Protokoll, Domain, Pfad und ein möglicher abschließender Schrägstrich der Weiterleitungs-URI müssen exakt übereinstimmen. Für eine externe produktive App kann Google zusätzlich eine Verifizierung verlangen.</p>
+                <p class="adc-google-registration-guide__sources">Offizielle Dokumentation: <a href="https://developers.google.com/workspace/calendar/api/auth" target="_blank" rel="noopener noreferrer">Calendar-Berechtigungen</a> · <a href="https://developers.google.com/identity/protocols/oauth2/web-server" target="_blank" rel="noopener noreferrer">OAuth für Webserver-Anwendungen</a></p>
+            </div>
+        </details>
+        <p id="adc-google-oauth-status" class="adc-google-oauth-status" role="status" aria-live="polite" data-configured="<?php p($googleOAuth['configured'] ? 'true' : 'false'); ?>">
+            <?php p($googleOAuth['configured'] ? 'Google OAuth ist konfiguriert.' : 'Google OAuth ist noch nicht konfiguriert.'); ?>
+        </p>
+        <form id="adc-google-oauth-form" class="adc-google-oauth-form">
+            <label for="adc-google-redirect-uri">Autorisierte Weiterleitungs-URI</label>
+            <div class="adc-google-redirect-row">
+                <input id="adc-google-redirect-uri" type="url" value="<?php p($googleOAuth['redirectUri']); ?>" readonly>
+                <button id="adc-google-copy-redirect" type="button">URI kopieren</button>
+            </div>
+            <small>Diese URI muss im Google-Cloud-OAuth-Client exakt als autorisierte Weiterleitungs-URI hinterlegt werden.</small>
+
+            <label for="adc-google-client-id">Google-Client-ID</label>
+            <input id="adc-google-client-id" type="text" value="<?php p($googleOAuth['clientId']); ?>" maxlength="512" autocomplete="off" spellcheck="false" required>
+
+            <label for="adc-google-client-secret">Google-Client-Secret</label>
+            <input id="adc-google-client-secret" type="password" value="" maxlength="4096" autocomplete="new-password" <?php if (!$googleOAuth['secretConfigured']): ?>required<?php endif; ?>>
+            <small><?php p($googleOAuth['secretConfigured'] ? 'Ein Secret ist sicher gespeichert. Leer lassen, um es unverändert zu behalten.' : 'Das Secret wird sensitiv und lazy in der Nextcloud-AppConfig gespeichert und nie wieder angezeigt.'); ?></small>
+
+            <div class="adc-google-oauth-actions">
+                <button type="submit" class="primary">Google-Konfiguration speichern</button>
+                <button id="adc-google-oauth-remove" type="button" <?php if (!$googleOAuth['configured']): ?>disabled<?php endif; ?>>Konfiguration entfernen</button>
+            </div>
+        </form>
+        <p class="adc-sync-privacy">Beim Entfernen werden Client-ID und Client-Secret aus Nextcloud gelöscht. Bereits bei Google erteilte Nutzerfreigaben werden dadurch nicht automatisch widerrufen.</p>
     </section>
     <section class="adc-admin-panel" aria-labelledby="adc-demo-heading">
         <h3 id="adc-demo-heading">Demo-Pack</h3>
