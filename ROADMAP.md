@@ -42,8 +42,17 @@ Diese Datei bündelt geplante Erweiterungen und offene Produktentscheidungen. Ve
 
 ## Geplante Erweiterungen
 
+- Der vorhandene Wechsel „Tage als Zeilen / Personen als Zeilen“ soll auch in der Monatsansicht verfügbar sein. In beiden Ausrichtungen bleibt die zu den Personen gehörende Kopfzeile beziehungsweise erste Spalte beim Scrollen sichtbar; die Monatsansicht darf Personen weder horizontal noch vertikal aus dem sichtbaren Zuordnungskontext verlieren.
+- Samstag und Sonntag sollen in Wochen- und Monatsansicht als eigene Tagesarten erkennbar sein. Die Kennzeichnung darf nicht ausschließlich über Farbe erfolgen und muss auch bei fixierten Kopfzeilen sowie in beiden Zeilen-/Spaltenausrichtungen eindeutig bleiben.
+- Gesetzliche Feiertage sollen zusätzlich mit Namen und einer barrierefrei verständlichen Kennzeichnung erscheinen. Sie verändern zunächst weder Dienste noch Termine, Verfügbarkeit oder Berechtigungen, sondern bilden eine reine Anzeigeebene.
 - Für den Produktivbetrieb ist noch festzulegen, wie fehlgeschlagene Hintergrundläufe überwacht und administrativ sichtbar gemacht werden.
 - Weitere Auswertungszeiträume über Woche und Monat hinaus werden nach einem konkreten Fachbedarf festgelegt.
+
+## Vor den neuen Kalenderkennzeichnungen zu klären
+
+- Welches Bundesland beziehungsweise welcher konfigurierbare Standort für gesetzliche Feiertage maßgeblich ist; für die Berliner Organisation liegt Berlin als initialer Standard nahe, ist aber vor der Umsetzung fachlich zu bestätigen.
+- Aus welcher nachvollziehbaren Quelle Feiertage bezogen oder nach welchen geprüften Regeln sie berechnet werden, wie bewegliche Feiertage getestet werden und wie die Anzeige ohne erreichbaren externen Dienst funktioniert.
+- Ob die gewählte Zeilen-/Spaltenausrichtung nur für die aktuelle Sitzung oder als persönliche Nextcloud-Einstellung gespeichert wird; sie erweitert keine Lese- oder Bearbeitungsrechte.
 
 ## Festgelegte Synchronisationsleitplanken
 
