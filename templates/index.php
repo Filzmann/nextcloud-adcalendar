@@ -17,6 +17,7 @@
 \OCP\Util::addScript('adcalendar', 'components/meeting-finder');
 \OCP\Util::addScript('adcalendar', 'components/shift-defaults');
 \OCP\Util::addScript('adcalendar', 'components/shift-calendar-sync');
+\OCP\Util::addScript('adcalendar', 'components/external-calendars');
 \OCP\Util::addScript('adcalendar', 'components/tab-navigation');
 \OCP\Util::addScript('adcalendar', 'components/week-navigation');
 \OCP\Util::addScript('adcalendar', 'components/week-table');
@@ -28,7 +29,7 @@
     <header class="adc-header">
         <div>
             <h1>AD Kalender</h1>
-            <p>Dienste, Termine und Sperrtermine im Wochenüberblick</p>
+            <p>Dienste, Termine und Sperrtermine im Wochen- oder Monatsüberblick</p>
         </div>
     </header>
     <div id="adc-notice" role="status" aria-live="polite"></div>
@@ -63,22 +64,21 @@
       <section class="adc-overview" aria-labelledby="adc-overview-heading">
         <div class="adc-overview-header">
             <h2 id="adc-overview-heading">Wochenplan</h2>
-            <nav aria-label="Kalenderwoche" class="adc-navigation">
-                <button type="button" id="adc-previous-week">Vorherige Woche</button>
+            <nav aria-label="Kalendernavigation" class="adc-navigation">
+                <div class="adc-period-toggle" role="group" aria-label="Ansichtszeitraum">
+                    <button type="button" id="adc-period-week" aria-pressed="true">Woche</button>
+                    <button type="button" id="adc-period-month" aria-pressed="false">Monat</button>
+                </div>
+                <button type="button" id="adc-previous-period">Vorherige Woche</button>
                 <output id="adc-week-label" aria-live="polite"></output>
-                <label>KW <input id="adc-week-number" type="week"></label>
-                <button type="button" id="adc-next-week">Nächste Woche</button>
+                <label id="adc-week-picker">KW <input id="adc-week-number" type="week"></label>
+                <label id="adc-month-picker" hidden>Monat <input id="adc-month-number" type="month"></label>
+                <button type="button" id="adc-next-period">Nächste Woche</button>
                 <button type="button" id="adc-toggle-view" aria-pressed="false">Tage als Zeilen</button>
             </nav>
         </div>
-        <div class="adc-table-wrap">
-            <table class="adc-calendar">
-                <caption>Geplante Dienste und Termine je Mitarbeiter*in</caption>
-                <thead id="adc-calendar-head"></thead>
-                <tbody id="adc-calendar-body">
-                    <tr><td>Daten werden geladen.</td></tr>
-                </tbody>
-            </table>
+        <div id="adc-calendar-tables" class="adc-calendar-tables">
+            <p>Daten werden geladen.</p>
         </div>
       </section>
     </section>

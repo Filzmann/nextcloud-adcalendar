@@ -82,6 +82,7 @@ final class CalendarPreferenceService {
             'roles' => $selectedRoles,
             'areas' => $selectedAreas,
             'vertical' => filter_var($filters['vertical'] ?? true, FILTER_VALIDATE_BOOL),
+            'period' => ($filters['period'] ?? 'week') === 'month' ? 'month' : 'week',
             'showLeadershipStaff' => $showLeadershipStaff,
             'leadershipStaffOnly' => $leadershipStaffOnlyRequested && $showLeadershipStaff && $people === [] && $selectedRoles === [] && $selectedAreas === [],
         ];

@@ -22,6 +22,14 @@ namespace OCA\AdCalendar\Service {
         public function saveShiftCalendarSyncEnabled(string $uid, bool $enabled): bool { return $this->enabled[$uid] = $enabled; }
     }
 }
+namespace OCA\AdCalendar\CalendarSync {
+    final class ExternalCalendarConnectionStore { public bool $connected = false; public function hasConnections(string $uid): bool { return $this->connected; } }
+    final class ExternalShiftCalendarPublisher {
+        public array $published = []; public array $removed = [];
+        public function publish(\OCA\AdCalendar\Model\CalendarEntry $entry): void { $this->published[] = $entry; }
+        public function remove(string $uid, int $id): void { $this->removed[] = [$uid, $id]; }
+    }
+}
 
 namespace {
     require_once __DIR__ . '/../../lib/Model/CalendarEntry.php';
@@ -29,6 +37,8 @@ namespace {
     require_once __DIR__ . '/../../lib/Service/ShiftCalendarSyncService.php';
 
     use OCA\AdCalendar\CalendarSync\ShiftCalendarPublisher;
+    use OCA\AdCalendar\CalendarSync\ExternalCalendarConnectionStore;
+    use OCA\AdCalendar\CalendarSync\ExternalShiftCalendarPublisher;
     use OCA\AdCalendar\Model\CalendarEntry;
     use OCA\AdCalendar\Repository\CalendarEntryRepository;
     use OCA\AdCalendar\Service\CalendarPreferenceService;
@@ -55,7 +65,9 @@ namespace {
     $repository = new CalendarEntryRepository();
     $repository->shifts['sync-person'] = [$shift];
     $preferences = new CalendarPreferenceService();
-    $service = new ShiftCalendarSyncService($repository, $preferences, $publisher, $logger);
+    $external = new ExternalShiftCalendarPublisher();
+    $externalConnections = new ExternalCalendarConnectionStore();
+    $service = new ShiftCalendarSyncService($repository, $preferences, $publisher, $external, $externalConnections, $logger);
 
     if ($service->status('sync-person') !== ['enabled' => true, 'calendarName' => 'AD Dienste']) throw new RuntimeException('Standardmäßig aktive Dienstkalendersynchronisation fehlt.');
     $enabled = $service->configure('sync-person', true);
@@ -69,6 +81,9 @@ namespace {
     $publisher->fail = false;
     $disabled = $service->configure('sync-person', false);
     if ($disabled['enabled'] || $publisher->removedCalendars !== ['sync-person'] || $preferences->enabled['sync-person']) throw new RuntimeException('Opt-out entfernt den app-eigenen Kalender nicht vor dem Deaktivieren.');
+    $externalConnections->connected = true;
+    if (!$service->publish($shift) || count($external->published) !== 1 || count($publisher->published) !== 1) throw new RuntimeException('Externe Verbindung arbeitet unabhängig vom Nextcloud-Opt-out.');
+    $externalConnections->connected = false;
 
     $publisher->fail = true;
     $preferences->saveShiftCalendarSyncEnabled('failed-person', false);

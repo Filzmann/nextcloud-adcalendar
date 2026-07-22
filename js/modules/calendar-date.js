@@ -18,6 +18,29 @@
             return result;
         }
 
+        static startOfMonth(value) {
+            const result = new Date(value);
+            result.setDate(1);
+            result.setHours(0, 0, 0, 0);
+            return result;
+        }
+
+        static monthValue(value) {
+            return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        static monthRange(value) {
+            const month = this.startOfMonth(value);
+            const start = this.startOfWeek(month);
+            const afterMonth = new Date(month);
+            afterMonth.setMonth(afterMonth.getMonth() + 1);
+            let end = this.startOfWeek(afterMonth);
+            if (end < afterMonth) end.setDate(end.getDate() + 7);
+            const weeks = [];
+            for (let week = new Date(start); week < end; week.setDate(week.getDate() + 7)) weeks.push(new Date(week));
+            return { start, end, weeks };
+        }
+
         static isoWeekValue(date) {
             const value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
             const day = value.getUTCDay() || 7;

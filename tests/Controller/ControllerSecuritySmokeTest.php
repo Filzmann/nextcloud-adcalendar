@@ -19,6 +19,9 @@ if (preg_match('/#\[NoCSRFRequired\]\s+#\[NoAdminRequired\]\s+public function (c
 foreach (['canView()', 'canManage('] as $guard) {
     if (!str_contains($source, $guard)) throw new RuntimeException("Berechtigungspruefung {$guard} fehlt.");
 }
+if (!preg_match('/#\[NoAdminRequired\]\s+#\[NoCSRFRequired\]\s+public function range\b/s', $source) || !str_contains($routes, "'api#range'")) {
+    throw new RuntimeException('Lesender, geschützter Monatsbereichs-Endpunkt fehlt.');
+}
 foreach (['saveSettings', 'saveOrganizationSettings'] as $method) if (str_contains($source, "function {$method}")) throw new RuntimeException("Organisationsweite Einstellung {$method} liegt noch in der Fachapp.");
 foreach (['preferences', 'savePreferences', 'saveShiftDefaults', 'saveCalendarSync'] as $method) {
     if (!preg_match('/#\[NoAdminRequired\]\s+public function ' . $method . '\b/s', $source)) {
@@ -35,6 +38,9 @@ if (!str_contains($routes, "'api#saveCalendarSync'")) throw new RuntimeException
 foreach (['currentUser()', 'shiftSync->configure'] as $contract) if (!str_contains($source, $contract)) throw new RuntimeException("Persönlicher Synchronisationsschutz fehlt: {$contract}");
 foreach (['meetingGaps', 'blockMeeting'] as $removed) if (str_contains($source, "function {$removed}")) throw new RuntimeException("Meetinglogik liegt noch im allgemeinen ApiController: {$removed}");
 if (substr_count($source, 'Gemeinsame Meetings werden zusammen') < 2) throw new RuntimeException('Einzel-API blockiert keine isolierte Bearbeitung verknüpfter Meetings.');
+foreach (['RecurringAppointmentService', "seriesScope === 'series'", 'seriesEntries', 'canManage($seriesEntry->employeeUid())'] as $contract) {
+    if (!str_contains($source, $contract)) throw new RuntimeException("Serverseitiger Serienvertrag fehlt: {$contract}");
+}
 if (str_contains($source, 'Response::STATUS_') || !str_contains($source, 'Http::STATUS_BAD_REQUEST')) {
     throw new RuntimeException('Controller verwendet nicht den Nextcloud-HTTP-Statusvertrag.');
 }

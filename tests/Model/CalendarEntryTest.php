@@ -39,6 +39,11 @@ if ($meeting->meetingUid() !== 'meeting_2026-07-13_demo' || $meeting->toArray()[
     throw new RuntimeException('Gemeinsame Meeting-Referenz ging bei Hydration oder Serialisierung verloren.');
 }
 
+$series = CalendarEntry::get(array_merge($appointment->toArray(), ['seriesUid' => 'series_2026_demo', 'seriesTimezone' => 'Europe/Berlin']));
+if ($series->seriesUid() !== 'series_2026_demo' || $series->seriesTimezone() !== 'Europe/Berlin' || $series->toArray()['seriesUid'] !== 'series_2026_demo') {
+    throw new RuntimeException('Serienreferenz ging bei Hydration oder Serialisierung verloren.');
+}
+
 $defaultShift = CalendarEntry::get(array_merge($shift->toArray(), ['defaultDate' => '2026-07-13']));
 if ($defaultShift->defaultDate() !== '2026-07-13' || $defaultShift->defaultModified() || $defaultShift->defaultDeleted()) {
     throw new RuntimeException('Standarddienst-Metadaten wurden nicht stabil hydratisiert.');
@@ -54,6 +59,20 @@ try {
     CalendarEntry::get(array_merge($shift->toArray(), ['meetingUid' => 'unzulässig']));
     throw new RuntimeException('Dienst oder ungültige Meeting-Kennung wurde akzeptiert.');
 } catch (InvalidArgumentException) {
+}
+
+
+foreach ([
+    array_merge($shift->toArray(), ['seriesUid' => 'series_demo', 'seriesTimezone' => 'Europe/Berlin']),
+    array_merge($appointment->toArray(), ['seriesUid' => 'series_demo']),
+    array_merge($appointment->toArray(), ['seriesUid' => 'series_demo', 'seriesTimezone' => 'Keine/Zeitzone']),
+    array_merge($appointment->toArray(), ['meetingUid' => 'meeting_demo', 'seriesUid' => 'series_demo', 'seriesTimezone' => 'Europe/Berlin']),
+] as $invalidSeries) {
+    try {
+        CalendarEntry::get($invalidSeries);
+        throw new RuntimeException('Ungültige Serienreferenz wurde akzeptiert.');
+    } catch (InvalidArgumentException) {
+    }
 }
 
 try {

@@ -18,6 +18,8 @@
             this.title = String(data.title || '');
             this.parentEntryId = data.parentEntryId == null ? null : Number(data.parentEntryId);
             this.meetingUid = data.meetingUid == null ? null : String(data.meetingUid);
+            this.seriesUid = data.seriesUid == null ? null : String(data.seriesUid);
+            this.seriesTimezone = data.seriesTimezone == null ? null : String(data.seriesTimezone);
             this.canManageMeeting = data.canManageMeeting !== false;
             this.isBlocked = Boolean(data.isBlocked);
             this.defaultDate = data.defaultDate == null ? null : String(data.defaultDate);
@@ -35,6 +37,8 @@
                 title: this.title,
                 parentEntryId: this.parentEntryId,
                 meetingUid: this.meetingUid,
+                seriesUid: this.seriesUid,
+                seriesTimezone: this.seriesTimezone,
                 isBlocked: this.isBlocked,
                 defaultDate: this.defaultDate,
                 defaultModified: this.defaultModified,

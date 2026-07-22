@@ -14,7 +14,7 @@ use OCP\IDBConnection;
 final class CalendarEntryRepository {
     private const COLUMNS = [
         'id', 'employee_uid', 'start_at', 'end_at', 'entry_type', 'title', 'parent_entry_id',
-        'meeting_uid', 'default_date', 'default_modified', 'default_deleted',
+        'meeting_uid', 'series_uid', 'series_timezone', 'default_date', 'default_modified', 'default_deleted',
     ];
 
     public function __construct(private IDBConnection $db) {}
@@ -81,12 +81,23 @@ final class CalendarEntryRepository {
         return CalendarEntry::get_all(array_map([$this, 'mapRow'], $qb->executeQuery()->fetchAllAssociative()));
     }
 
+    /** @return list<CalendarEntry> */
+    public function findSeries(string $seriesUid): array {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select(...self::COLUMNS)->from('adc_entries')
+            ->where($qb->expr()->eq('series_uid', $qb->createNamedParameter($seriesUid)))
+            ->andWhere($qb->expr()->eq('default_deleted', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)))
+            ->orderBy('start_at', 'ASC');
+        return CalendarEntry::get_all(array_map([$this, 'mapRow'], $qb->executeQuery()->fetchAllAssociative()));
+    }
+
     public function save(CalendarEntry $entry, string $actorUid): int {
         $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
         $values = [
             'employee_uid' => $entry->employeeUid(), 'start_at' => $entry->start(), 'end_at' => $entry->end(),
             'entry_type' => $entry->type(), 'title' => $entry->title(), 'parent_entry_id' => $entry->parentEntryId(),
             'meeting_uid' => $entry->meetingUid(), 'default_date' => $entry->defaultDate(), 'default_modified' => $entry->defaultModified(),
+            'series_uid' => $entry->seriesUid(), 'series_timezone' => $entry->seriesTimezone(),
             'default_deleted' => $entry->defaultDeleted(), 'updated_at' => $now,
         ];
         $types = [
@@ -94,6 +105,7 @@ final class CalendarEntryRepository {
             'end_at' => IQueryBuilder::PARAM_DATETIME_IMMUTABLE, 'entry_type' => IQueryBuilder::PARAM_STR,
             'title' => IQueryBuilder::PARAM_STR, 'parent_entry_id' => IQueryBuilder::PARAM_INT,
             'meeting_uid' => IQueryBuilder::PARAM_STR, 'default_date' => IQueryBuilder::PARAM_STR, 'default_modified' => IQueryBuilder::PARAM_BOOL,
+            'series_uid' => IQueryBuilder::PARAM_STR, 'series_timezone' => IQueryBuilder::PARAM_STR,
             'default_deleted' => IQueryBuilder::PARAM_BOOL, 'updated_at' => IQueryBuilder::PARAM_DATETIME_IMMUTABLE,
         ];
         $qb = $this->db->getQueryBuilder();
@@ -136,6 +148,13 @@ final class CalendarEntryRepository {
         $qb = $this->db->getQueryBuilder();
         $qb->delete('adc_entries')
             ->where($qb->expr()->eq('meeting_uid', $qb->createNamedParameter($meetingUid)))
+            ->executeStatement();
+    }
+
+    public function deleteSeries(string $seriesUid): void {
+        $qb = $this->db->getQueryBuilder();
+        $qb->delete('adc_entries')
+            ->where($qb->expr()->eq('series_uid', $qb->createNamedParameter($seriesUid)))
             ->executeStatement();
     }
 
@@ -278,6 +297,8 @@ final class CalendarEntryRepository {
             'end' => (string)$row['end_at'], 'type' => $row['entry_type'], 'title' => $row['title'],
             'parentEntryId' => $row['parent_entry_id'] === null ? null : (int)$row['parent_entry_id'],
             'meetingUid' => $row['meeting_uid'] === null ? null : (string)$row['meeting_uid'],
+            'seriesUid' => $row['series_uid'] === null ? null : (string)$row['series_uid'],
+            'seriesTimezone' => $row['series_timezone'] === null ? null : (string)$row['series_timezone'],
             'defaultDate' => $row['default_date'] === null ? null : (string)$row['default_date'],
             'defaultModified' => (bool)$row['default_modified'], 'defaultDeleted' => (bool)$row['default_deleted'],
         ];

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\AdCalendar\Model;
 
 use DateTimeImmutable;
+use DateTimeZone;
 use InvalidArgumentException;
 
 /**
@@ -24,6 +25,8 @@ final class CalendarEntry {
         private readonly string $title,
         private readonly ?int $parentEntryId,
         private readonly ?string $meetingUid,
+        private readonly ?string $seriesUid,
+        private readonly ?string $seriesTimezone,
         private readonly ?string $defaultDate,
         private readonly bool $defaultModified,
         private readonly bool $defaultDeleted,
@@ -58,6 +61,21 @@ final class CalendarEntry {
         if ($meetingUid !== null && ($type !== self::TYPE_APPOINTMENT || preg_match('/^[a-zA-Z0-9_-]{1,64}$/', $meetingUid) !== 1)) {
             throw new InvalidArgumentException('Eine Meeting-Referenz benötigt einen Termin und eine gültige Kennung.');
         }
+        $seriesUid = isset($payload['seriesUid']) && $payload['seriesUid'] !== null ? trim((string)$payload['seriesUid']) : null;
+        if ($seriesUid === '') $seriesUid = null;
+        $seriesTimezone = isset($payload['seriesTimezone']) && $payload['seriesTimezone'] !== null ? trim((string)$payload['seriesTimezone']) : null;
+        if ($seriesTimezone === '') $seriesTimezone = null;
+        if (($seriesUid === null) !== ($seriesTimezone === null)
+            || ($seriesUid !== null && ($type !== self::TYPE_APPOINTMENT || $meetingUid !== null || preg_match('/^[a-zA-Z0-9_-]{1,64}$/', $seriesUid) !== 1))) {
+            throw new InvalidArgumentException('Eine Serienreferenz benötigt einen einzelnen Termin, eine gültige Kennung und eine Zeitzone.');
+        }
+        if ($seriesTimezone !== null) {
+            try {
+                new DateTimeZone($seriesTimezone);
+            } catch (\Throwable) {
+                throw new InvalidArgumentException('Die Zeitzone der Terminserie ist ungültig.');
+            }
+        }
         $defaultDate = isset($payload['defaultDate']) && $payload['defaultDate'] !== null ? (string)$payload['defaultDate'] : null;
         if ($defaultDate !== null && ($type !== self::TYPE_SHIFT || preg_match('/^\d{4}-\d{2}-\d{2}$/', $defaultDate) !== 1)) {
             throw new InvalidArgumentException('Eine Standarddienst-Referenz benötigt einen Dienst und ein gültiges Datum.');
@@ -71,6 +89,8 @@ final class CalendarEntry {
             $title,
             $parentEntryId,
             $meetingUid,
+            $seriesUid,
+            $seriesTimezone,
             $defaultDate,
             filter_var($payload['defaultModified'] ?? false, FILTER_VALIDATE_BOOL),
             filter_var($payload['defaultDeleted'] ?? false, FILTER_VALIDATE_BOOL),
@@ -113,6 +133,8 @@ final class CalendarEntry {
     public function title(): string { return $this->title; }
     public function parentEntryId(): ?int { return $this->parentEntryId; }
     public function meetingUid(): ?string { return $this->meetingUid; }
+    public function seriesUid(): ?string { return $this->seriesUid; }
+    public function seriesTimezone(): ?string { return $this->seriesTimezone; }
     public function defaultDate(): ?string { return $this->defaultDate; }
     public function defaultModified(): bool { return $this->defaultModified; }
     public function defaultDeleted(): bool { return $this->defaultDeleted; }
@@ -127,6 +149,8 @@ final class CalendarEntry {
             'title' => $this->title,
             'parentEntryId' => $this->parentEntryId,
             'meetingUid' => $this->meetingUid,
+            'seriesUid' => $this->seriesUid,
+            'seriesTimezone' => $this->seriesTimezone,
             'defaultDate' => $this->defaultDate,
             'defaultModified' => $this->defaultModified,
             'defaultDeleted' => $this->defaultDeleted,

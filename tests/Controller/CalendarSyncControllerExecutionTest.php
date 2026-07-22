@@ -32,6 +32,7 @@ namespace OCA\AdCalendar\Service {
     class CalendarService {}
     class CalendarSettingsService {}
     class CalendarPreferenceService {}
+    class RecurringAppointmentService {}
     class ShiftCalendarSyncService {
         public bool $fail = false;
         public array $configured = [];
@@ -51,6 +52,7 @@ namespace {
     use OCA\AdCalendar\Service\CalendarPreferenceService;
     use OCA\AdCalendar\Service\CalendarService;
     use OCA\AdCalendar\Service\CalendarSettingsService;
+    use OCA\AdCalendar\Service\RecurringAppointmentService;
     use OCA\AdCalendar\Service\ShiftCalendarSyncService;
     use OCP\IRequest;
     use OCP\IUser;
@@ -63,7 +65,7 @@ namespace {
         public array $errors = [];
         public function error(string|\Stringable $message, array $context = []): void { $this->errors[] = [(string)$message, $context]; }
     };
-    $controller = new ApiController($request, $access, new CalendarService(), new CalendarSettingsService(), new CalendarPreferenceService(), $sync, $logger);
+    $controller = new ApiController($request, $access, new CalendarService(), new CalendarSettingsService(), new CalendarPreferenceService(), new RecurringAppointmentService(), $sync, $logger);
 
     if ($controller->saveCalendarSync(true)->getStatus() !== 403) throw new RuntimeException('Nicht angemeldete Person kann die Synchronisation aktivieren.');
     $access->user = new class implements IUser { public function getUID(): string { return 'sync-person'; } };

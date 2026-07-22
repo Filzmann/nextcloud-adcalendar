@@ -25,6 +25,17 @@ namespace OCA\AdCalendar\Service {
         public function shiftCalendarSyncEnabled(string $uid): bool { return !in_array($uid, $this->disabled, true); }
     }
 }
+namespace OCA\AdCalendar\CalendarSync {
+    final class ExternalCalendarConnectionStore {
+        public array $uids = [];
+        public function connectedEmployeeUids(): array { return $this->uids; }
+        public function hasConnections(string $uid): bool { return in_array($uid, $this->uids, true); }
+    }
+    final class ExternalShiftCalendarPublisher {
+        public array $replaced = [];
+        public function replaceAll(string $uid, array $shifts): void { $this->replaced[] = [$uid, $shifts]; }
+    }
+}
 
 namespace {
     require_once __DIR__ . '/../../lib/Model/CalendarEntry.php';
@@ -32,6 +43,8 @@ namespace {
     require_once __DIR__ . '/../../lib/Service/ShiftCalendarReconciliationService.php';
 
     use OCA\AdCalendar\CalendarSync\ShiftCalendarPublisher;
+    use OCA\AdCalendar\CalendarSync\ExternalCalendarConnectionStore;
+    use OCA\AdCalendar\CalendarSync\ExternalShiftCalendarPublisher;
     use OCA\AdCalendar\Model\CalendarEntry;
     use OCA\AdCalendar\Repository\CalendarEntryRepository;
     use OCA\AdCalendar\Service\CalendarPreferenceService;
@@ -66,7 +79,9 @@ namespace {
         public function error(string|\Stringable $message, array $context = []): void { $this->errors[] = [(string)$message, $context]; }
     };
 
-    $service = new ShiftCalendarReconciliationService($entries, $preferences, $publisher, $logger);
+    $external = new ExternalShiftCalendarPublisher();
+    $externalConnections = new ExternalCalendarConnectionStore();
+    $service = new ShiftCalendarReconciliationService($entries, $preferences, $publisher, $external, $externalConnections, $logger);
     $result = $service->reconcileAll();
     if ($result !== ['attempted' => 3, 'succeeded' => 2, 'failed' => 1]) throw new RuntimeException('Abgleichszähler bilden Erfolg und Fehler nicht korrekt ab.');
     if (array_column($publisher->replaced, 0) !== ['person-a', 'person-b', 'person-c']) throw new RuntimeException('Ein DAV-Fehler verhindert den Abgleich nachfolgender aktiver Konten.');

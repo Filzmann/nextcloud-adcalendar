@@ -35,12 +35,14 @@ $service->saveShiftCalendarSyncEnabled('aus', false);
 if ($service->shiftCalendarSyncEmployeeUids() !== ['eins', 'zwei']) throw new RuntimeException('Periodischer Abgleich erhält explizit aktivierte Konten nicht in stabiler Reihenfolge.');
 $saved = $service->saveFilterDefault('demo', [
     'people' => ['a', 'fremd'], 'roles' => ['ad-Buero', 'ad-Unbekannt'],
-    'areas' => ['ad-Bereich-Sued', 'ad-Bereich-Fremd'], 'vertical' => false, 'empty' => true, 'showLeadershipStaff' => false,
+    'areas' => ['ad-Bereich-Sued', 'ad-Bereich-Fremd'], 'vertical' => false, 'period' => 'month', 'empty' => true, 'showLeadershipStaff' => false,
 ], ['a'], ['ad-Buero'], ['ad-Bereich-Sued']);
-if ($saved !== ['people' => ['a'], 'roles' => ['ad-Buero'], 'areas' => ['ad-Bereich-Sued'], 'vertical' => false, 'showLeadershipStaff' => false, 'leadershipStaffOnly' => false]) {
+if ($saved !== ['people' => ['a'], 'roles' => ['ad-Buero'], 'areas' => ['ad-Bereich-Sued'], 'vertical' => false, 'period' => 'month', 'showLeadershipStaff' => false, 'leadershipStaffOnly' => false]) {
     throw new RuntimeException('Persoenlicher Filterstandard wurde nicht auf erlaubte Werte begrenzt.');
 }
 if ($service->filterDefault('demo', ['a'], ['ad-Buero'], ['ad-Bereich-Sued']) !== $saved) throw new RuntimeException('Gespeicherter Filterstandard ist nicht lesbar.');
+$invalidPeriod = $service->saveFilterDefault('period', ['period' => 'jahr'], ['a'], ['ad-Buero'], ['ad-Bereich-Sued']);
+if ($invalidPeriod['period'] !== 'week') throw new RuntimeException('Unbekannter Ansichtszeitraum wurde als persönlicher Standard akzeptiert.');
 $staffOnly = $service->saveFilterDefault('staff', [
     'people' => [], 'roles' => [], 'areas' => [], 'empty' => 'true', 'showLeadershipStaff' => true,
 ], ['a'], ['ad-Buero'], ['ad-Bereich-Sued']);

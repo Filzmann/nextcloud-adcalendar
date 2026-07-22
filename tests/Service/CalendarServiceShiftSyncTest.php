@@ -76,5 +76,15 @@ namespace {
     $service->save(['employeeUid' => 'person-a', 'start' => '2026-07-20T10:00:00+02:00', 'end' => '2026-07-20T11:00:00+02:00', 'type' => CalendarEntry::TYPE_APPOINTMENT, 'title' => 'Termin'], null, 'planner');
     if (count($sync->published) !== 2 || count($sync->removed) !== 2) throw new RuntimeException('Termin wurde unzulässig an die Dienstsynchronisation übergeben.');
 
+    $repository->found = CalendarEntry::get([
+        'id' => 42, 'employeeUid' => 'person-a', 'start' => '2026-07-20T10:00:00+02:00', 'end' => '2026-07-20T11:00:00+02:00',
+        'type' => CalendarEntry::TYPE_APPOINTMENT, 'title' => 'Serientermin', 'seriesUid' => 'series_demo', 'seriesTimezone' => 'Europe/Berlin',
+    ]);
+    $service->save(['employeeUid' => 'person-a', 'start' => '2026-07-20T10:30:00+02:00', 'end' => '2026-07-20T11:30:00+02:00', 'type' => CalendarEntry::TYPE_APPOINTMENT, 'title' => 'Einzelausnahme'], 42, 'planner');
+    $savedException = $repository->saved[array_key_last($repository->saved)][0];
+    if ($savedException->seriesUid() !== 'series_demo' || $savedException->seriesTimezone() !== 'Europe/Berlin') {
+        throw new RuntimeException('Bearbeitetes Einzelvorkommen hat seine Serienzuordnung verloren.');
+    }
+
     echo "CalendarServiceShiftSyncTest: OK\n";
 }

@@ -4,10 +4,11 @@ Diese Datei bündelt geplante Erweiterungen und offene Produktentscheidungen. Ve
 
 ## Aktueller Fokus
 
-- Wochenplanung, Meeting-Lückensuche, persönliche Standards und optionale Urlaubsmarkierungen auf einem realitätsnahen Staging fachlich abnehmen.
+- Wochen- und Monatsplanung, Meeting-Lückensuche, persönliche Standards und optionale Urlaubsmarkierungen auf einem realitätsnahen Staging fachlich abnehmen.
 - Rollen-, Bereichs- und Personenfilter einschließlich bereichsübergreifender Leitungen in der sichtbaren Oberfläche prüfen.
 - Die ergänzten globalen Gruppen Stv. PDL, Büroorganisation Pflege, Fahrzeugverwaltung und Empfang mit ihrer Backend-Reihenfolge und Hierarchie im Kalender abnehmen.
 - Den einseitigen Abgleich persönlicher Dienste in den privaten Nextcloud-Kalender „AD Dienste“ fachlich abnehmen.
+- Persönliche Kopano-, Google-, Apple- und manuelle CalDAV-Verbindungen mit realen Testkonten auf Staging fachlich abnehmen.
 
 ## Umgesetzte Synchronisationsstufe
 
@@ -19,12 +20,30 @@ Diese Datei bündelt geplante Erweiterungen und offene Produktentscheidungen. Ve
 - AD Kalender bleibt auch bei einem DAV-Fehler führend. Die fachliche Änderung wird gespeichert und der Übertragungsfehler sicher protokolliert.
 - Ein nicht paralleler Nextcloud-Hintergrundjob wird alle 15 Minuten erneut fällig und gleicht standardmäßig aktive Konten mit Diensten sowie ausdrücklich aktivierte Konten vollständig mit dem führenden AD-Dienstbestand ab; gespeicherte Opt-outs bleiben ausgeschlossen. Der tatsächliche Start hängt von der konfigurierten Nextcloud-Cron-Ausführung ab. Bei einem späteren bidirektionalen Ausbau bleibt dieser Lauf als ausgehender Konsistenzschritt nach Import und Konfliktauflösung erhalten.
 - Der Adminbereich zeigt den letzten Lauf nur aggregiert mit Zeitpunkt sowie geprüften, erfolgreichen und fehlgeschlagenen Abgleichen. Es werden keine Konto- oder Kalenderkennungen persistiert; die gespeicherte Richtung erlaubt später getrennte Import-/Export-Aggregate.
+- Im persönlichen Einstellungs-Tab können Kopano, Google, Apple und generisches CalDAV parallel verbunden werden. Kopano verwendet die änderbare Vorgabe `https://mail.adberlin.org`; Apple und manuelles CalDAV erklären die erforderlichen Zugangsdaten im Dialog.
+- Externe Anbieter erhalten einen sichtbaren, app-eigenen Kalender „AD Dienste“. Ihre Kalender werden nicht als zusätzliche Ansichten in AD Calendar eingeblendet.
+- CalDAV-Zugangsdaten und Google-Refresh-Tokens werden mit Nextclouds `ICrypto` verschlüsselt und als sensible persönliche Konfiguration gespeichert. Statusantworten und Logs enthalten keine Geheimnisse oder Kontokennungen.
+- Google verwendet Webserver-OAuth mit einmaligem, nutzergebundenem Statuswert, Offline-Zugriff und dem auf app-erzeugte Kalender begrenzten Scope. Ohne systemweit hinterlegten OAuth-Client bleibt die persönliche Schaltfläche sichtbar, aber deaktiviert.
+- Providerfehler bleiben voneinander und von der führenden AD-Mutation isoliert. Der Hintergrundlauf bezieht verbundene externe Konten auch dann ein, wenn ihr interner Nextcloud-Kalender deaktiviert wurde.
+
+## Umgesetzte Terminserien
+
+- Einzeltermine und Sperrtermine können täglich, wöchentlich oder monatlich mit Intervall, ausgewählten Wochentagen und verpflichtendem Enddatum wiederholt werden.
+- Serien sind auf 500 Vorkommen begrenzt und werden nach vollständiger Rechte-, Urlaubs- und Dienstzuordnungsprüfung atomar materialisiert. Die lokale Uhrzeit bleibt über Zeitumstellungen stabil; nicht vorhandene Monatstage werden ausgelassen.
+- Einzelne Vorkommen können als Ausnahme oder gemeinsam mit der vollständigen Serie bearbeitet und gelöscht werden. Gemeinsame Meeting-Blöcke und Dienste bleiben außerhalb dieses Serienvertrags.
+- „Dieses und folgende“ sowie eine nachträgliche Änderung des Wiederholungsmusters bleiben mögliche spätere Erweiterungen nach konkretem Fachbedarf.
+
+## Umgesetzte Ansichtszeiträume
+
+- Zwischen Wochen- und Monatsansicht kann direkt in der Kalendernavigation umgeschaltet werden; der Zeitraum ist Teil des persönlichen Standards.
+- Die Monatsansicht zeigt die betroffenen Wochenblöcke untereinander, hält Personen als Zeilen und dimmt Tage außerhalb des gewählten Monats.
+- Die Personenspalte bleibt beim horizontalen Scrollen sichtbar. Anlegen, Bearbeiten und Löschen verwenden unverändert den bestehenden serverseitigen Rechtevertrag.
+- Die Meeting-Lückensuche bleibt bewusst auf die ausgewählte Wochenansicht begrenzt.
 
 ## Geplante Erweiterungen
 
-- Dieselben Dienste sollen optional mit externen Kalendersystemen wie Kopano synchronisiert werden können.
 - Für den Produktivbetrieb ist noch festzulegen, wie fehlgeschlagene Hintergrundläufe überwacht und administrativ sichtbar gemacht werden.
-- Benötigte Auswertungszeiträume über die bestehende Wochenansicht hinaus werden nach einem konkreten Fachbedarf festgelegt.
+- Weitere Auswertungszeiträume über Woche und Monat hinaus werden nach einem konkreten Fachbedarf festgelegt.
 
 ## Festgelegte Synchronisationsleitplanken
 
@@ -32,9 +51,8 @@ Diese Datei bündelt geplante Erweiterungen und offene Produktentscheidungen. Ve
 - Die erste Ausbaustufe importiert keine Änderungen aus privaten Nextcloud- oder externen Kalendern.
 - Provideradapter und stabile Zuordnungskennungen halten eine spätere bidirektionale Synchronisation offen.
 
-## Vor externen oder bidirektionalen Synchronisationsstufen zu klären
+## Vor bidirektionalen Synchronisationsstufen zu klären
 
-- Providerneutrale Anbindung externer Systeme, Authentifizierung und sichere Ablage notwendiger Zugangsdaten.
 - Konfliktauflösung, Löschungen und Zuständigkeit bei einem späteren Rückimport.
-- Einwilligung, Datenschutz, Protokollierung, Monitoring und Wiederholungsstrategie für externe Anbieter.
+- Einwilligung, Datenschutz, Monitoring und Wiederholungsstrategie für einen späteren Rückimport.
 - Serverseitige Rechteprüfung; eine Synchronisation erweitert niemals Planungs- oder Leserechte.

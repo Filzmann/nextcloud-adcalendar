@@ -9,17 +9,21 @@
             return this.request(`/api/week?start=${this.encode(start)}`);
         }
 
-        save(entry, id = null) {
+        range(start, end) {
+            return this.request(`/api/range?start=${this.encode(start)}&end=${this.encode(end)}`);
+        }
+
+        save(entry, id = null, seriesScope = 'occurrence') {
             return this.request(id == null ? '/api/entries' : `/api/entries/${this.encode(id)}`, {
                 method: id == null ? 'POST' : 'PUT',
-                body: JSON.stringify(entry),
+                body: JSON.stringify(id == null ? entry : { ...entry, seriesScope }),
             });
         }
 
-        remove(id, childMode = '') {
+        remove(id, childMode = '', seriesScope = 'occurrence') {
             return this.request(`/api/entries/${this.encode(id)}`, {
                 method: 'DELETE',
-                body: JSON.stringify({ childMode }),
+                body: JSON.stringify({ childMode, seriesScope }),
             });
         }
 
@@ -33,6 +37,24 @@
 
         saveCalendarSync(enabled) {
             return this.request('/api/preferences/calendar-sync', { method: 'PUT', body: JSON.stringify({ enabled }) });
+        }
+
+        externalCalendars() {
+            return this.request('/api/external-calendars');
+        }
+
+        connectCalDav(provider, serverUrl, username, password) {
+            return this.request('/api/external-calendars/caldav', {
+                method: 'POST', body: JSON.stringify({ provider, serverUrl, username, password }),
+            });
+        }
+
+        disconnectExternalCalendar(provider) {
+            return this.request(`/api/external-calendars/${this.encode(provider)}`, { method: 'DELETE' });
+        }
+
+        startGoogleCalendarConnection() {
+            return this.request('/api/external-calendars/google/start', { method: 'POST' });
         }
 
         meetingGaps(start, employeeUids, durationMinutes) {

@@ -12,7 +12,7 @@
     const leadershipStaffRoles = new Set();
     let loadSequence = 0;
     let organization = new OrganizationModel({});
-    const elements = Object.fromEntries(['calendar-body','calendar-head','filter-status'].map(id => [id, document.getElementById(`adc-${id}`)]));
+    const elements = Object.fromEntries(['calendar-tables','filter-status'].map(id => [id, document.getElementById(`adc-${id}`)]));
     const state = new window.AdCalendar.modules.CalendarState(leadershipStaffRoles).restore();
     const meetingCapabilities = new window.AdCalendar.modules.MeetingCapabilities();
     const tabs = new window.AdCalendar.components.TabNavigation({
@@ -25,7 +25,7 @@
     tabs.show(state.activeTab, false);
     const calendarCell = new window.AdCalendar.components.CalendarCell();
     const weekTable = new window.AdCalendar.components.WeekTable({
-        head: elements['calendar-head'], body: elements['calendar-body'], calendarCell,
+        container: elements['calendar-tables'], calendarCell,
         organization: () => organization,
     });
     let entryWorkflow;
@@ -41,6 +41,7 @@
     });
     const shiftDefaults = new window.AdCalendar.components.ShiftDefaults({ onSave: saveShiftDefaults });
     const shiftCalendarSync = new window.AdCalendar.components.ShiftCalendarSync({ onSave: saveCalendarSync });
+    const externalCalendars = new window.AdCalendar.components.ExternalCalendars({ repository, onMessage: show });
     const calendarFilters = new window.AdCalendar.components.CalendarFilters({
         state,
         organization: () => organization,
@@ -51,12 +52,13 @@
         state,
         onWeekChange: load,
         onViewChange: renderTable,
+        onPeriodChange: load,
     });
     entryWorkflow = new window.AdCalendar.modules.EntryWorkflow({
         repository,
         state,
         dialog: entryDialog,
-        body: elements['calendar-body'],
+        body: elements['calendar-tables'],
         show,
         reload: load,
     });
@@ -68,7 +70,9 @@
         entryDialog.setEmployees(state.data.employees.filter(employee => employee.canManage));
         shiftDefaults.set(state.data.shiftDefaults || {});
         shiftCalendarSync.set(state.data.calendarSync || {});
-        document.getElementById('adc-open-meeting-finder').disabled = false;
+        const meetingButton = document.getElementById('adc-open-meeting-finder');
+        meetingButton.disabled = state.period === 'month';
+        meetingButton.title = state.period === 'month' ? 'Die Meetinglückensuche ist in der Wochenansicht verfügbar.' : '';
     }
 
     async function saveShiftDefaults(defaults) {
@@ -104,16 +108,26 @@
 
     async function load() {
         const sequence = ++loadSequence;
-        const week = CalendarDate.isoDay(state.monday);
+        const visibleRange = state.visibleRange();
+        const range = { start: CalendarDate.isoDay(visibleRange.start), end: CalendarDate.isoDay(visibleRange.end) };
         weekNavigation.render();
         try {
-            const data = await repository.week(week);
+            const requestedPeriod = state.period;
+            const data = state.period === 'month'
+                ? await repository.range(range.start, range.end)
+                : await repository.week(range.start);
             if (sequence !== loadSequence) return;
             data.entries = EntryModel.get_all(data.entries);
             meetingCapabilities.apply(data.entries, data.employees);
             state.data = data;
             applyOrganization(data.organization);
             state.applyInitialFilters();
+            if (state.period !== requestedPeriod) {
+                state.persist();
+                await load();
+                return;
+            }
+            weekNavigation.render();
             renderFilters();
             renderTable();
             tabs.show(state.activeTab, false);
@@ -130,5 +144,9 @@
             show('Aktuelle Filter und Ansicht wurden zum persönlichen Standard gemacht.');
         } catch (error) { show(error, true); }
     });
+    externalCalendars.load();
+    const connectionResult = new URLSearchParams(window.location.search).get('calendarConnection');
+    if (connectionResult === 'google-connected') show('Google-Kalender wurde verbunden.');
+    else if (connectionResult === 'google-error') show('Die Google-Verbindung konnte nicht abgeschlossen werden.', true);
     load();
 }());

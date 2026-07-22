@@ -85,6 +85,7 @@
         header(entry, label, canManage) {
             const title = entry.title ? `<span class="adc-entry__title">${esc(entry.title)}</span>` : '';
             const blockedMarker = label === 'Sperrtermin' ? '<span class="adc-entry__blocked-marker" aria-hidden="true">🔒</span>' : '';
+            const seriesMarker = entry.seriesUid ? '<span class="adc-entry__series-marker" title="Serientermin"><span aria-hidden="true">↻</span><span class="hidden-visually">Serientermin</span></span>' : '';
             const controls = canManage
                 ? `<span class="adc-entry__actions">
                     <button type="button" class="adc-icon-button icon-rename" data-action="edit-entry" data-entry-id="${esc(entry.id)}" aria-label="${esc(label)} bearbeiten" title="Bearbeiten"></button>
@@ -92,7 +93,7 @@
                 </span>`
                 : '';
 
-            return `<header class="adc-entry__header"><span>${blockedMarker}<strong>${esc(label)}</strong> ${esc(this.time(entry.start))}–${esc(this.time(entry.end))}</span>${controls}</header>${title}`;
+            return `<header class="adc-entry__header"><span>${blockedMarker}${seriesMarker}<strong>${esc(label)}</strong> ${esc(this.time(entry.start))}–${esc(this.time(entry.end))}</span>${controls}</header>${title}`;
         }
 
         time(value) {

@@ -12,11 +12,14 @@
             this.entries = options.entries;
             this.shiftDefaults = options.shiftDefaults;
             this.onSubmit = options.onSubmit;
-            this.fields = Object.fromEntries(['entry-id', 'employee', 'type', 'start', 'end', 'title', 'title-field', 'title-label', 'title-help', 'time-help', 'entry-dialog-title'].map(id => [id, document.getElementById(`adc-${id}`)]));
+            this.fields = Object.fromEntries(['entry-id', 'employee', 'type', 'start', 'end', 'title', 'title-field', 'title-label', 'title-help', 'time-help', 'entry-dialog-title', 'recurrence-fields', 'recurrence-frequency', 'recurrence-options', 'recurrence-interval', 'recurrence-until', 'recurrence-weekdays'].map(id => [id, document.getElementById(`adc-${id}`)]));
+            this.weekdays = Array.from(document.querySelectorAll('input[name="adc-recurrence-weekday"]'));
             document.getElementById('adc-cancel-edit').addEventListener('click', () => this.close());
             document.getElementById('adc-dialog-cancel').addEventListener('click', () => this.close());
             this.dialog.addEventListener('cancel', event => { event.preventDefault(); this.close(); });
             this.fields.type.addEventListener('change', () => { this.updateType(); this.validate(); });
+            this.fields['recurrence-frequency'].addEventListener('change', () => this.updateRecurrence());
+            this.fields.start.addEventListener('change', () => this.updateRecurrenceDate());
             this.fields.employee.addEventListener('change', () => this.validate());
             this.fields.start.addEventListener('input', () => this.validate());
             this.fields.end.addEventListener('input', () => this.validate());
@@ -61,6 +64,7 @@
             this.fields['entry-id'].value = '';
             this.fields.type.disabled = false;
             this.fields.employee.disabled = false;
+            this.fields['recurrence-fields'].hidden = true;
         }
 
         updateType() {
@@ -72,6 +76,35 @@
                 ? 'Außerhalb eines Dienstes wird der Termin als Sperrtermin angezeigt.'
                 : 'Ein Dienst kann ohne Titel gespeichert werden.';
             this.fields.title.required = appointment;
+            const recurrenceAvailable = appointment && !editing;
+            this.fields['recurrence-fields'].hidden = !recurrenceAvailable;
+            if (!recurrenceAvailable) this.fields['recurrence-frequency'].value = '';
+            this.updateRecurrence();
+        }
+
+        updateRecurrence() {
+            const frequency = this.fields['recurrence-frequency'].value;
+            const active = !this.fields['recurrence-fields'].hidden && frequency !== '';
+            this.fields['recurrence-options'].hidden = !active;
+            this.fields['recurrence-weekdays'].hidden = !active || frequency !== 'weekly';
+            this.fields['recurrence-interval'].required = active;
+            this.fields['recurrence-until'].required = active;
+            this.fields['recurrence-frequency'].setCustomValidity('');
+            if (active && frequency === 'weekly' && !this.weekdays.some(input => input.checked)) {
+                const weekday = new Date(this.fields.start.value || Date.now()).getDay() || 7;
+                const input = this.weekdays.find(item => Number(item.value) === weekday);
+                if (input) input.checked = true;
+            }
+            this.updateRecurrenceDate();
+        }
+
+        updateRecurrenceDate() {
+            if (!this.fields.start.value) return;
+            const date = this.fields.start.value.slice(0, 10);
+            this.fields['recurrence-until'].min = date;
+            if (this.fields['recurrence-until'].value && this.fields['recurrence-until'].value < date) {
+                this.fields['recurrence-until'].value = date;
+            }
         }
 
         validate() {
@@ -98,6 +131,12 @@
 
         async submit(event) {
             event.preventDefault();
+            const frequency = this.fields['recurrence-frequency'].value;
+            if (frequency === 'weekly' && !this.weekdays.some(input => input.checked)) {
+                this.fields['recurrence-frequency'].setCustomValidity('Bitte mindestens einen Wochentag auswählen.');
+            } else {
+                this.fields['recurrence-frequency'].setCustomValidity('');
+            }
             if (!this.validate() || !this.form.reportValidity()) return;
             await this.onSubmit({
                 id: this.fields['entry-id'].value || null,
@@ -106,7 +145,18 @@
                 start: new Date(this.fields.start.value).toISOString(),
                 end: new Date(this.fields.end.value).toISOString(),
                 title: this.fields.title.value,
+                recurrenceFrequency: frequency,
+                recurrenceInterval: Number(this.fields['recurrence-interval'].value || 1),
+                recurrenceUntil: this.fields['recurrence-until'].value,
+                recurrenceWeekdays: this.weekdays.filter(input => input.checked).map(input => Number(input.value)),
+                recurrenceTimezone: this.timezone(),
             });
+        }
+
+        timezone() {
+            const configured = window.OC?.getTimeZone?.();
+            if (typeof configured === 'string' && configured.trim() !== '') return configured;
+            return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
         }
 
         nextFreeShift(employeeUid, day) {

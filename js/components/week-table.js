@@ -8,24 +8,49 @@
      */
     class WeekTable {
         constructor(options) {
-            this.head = options.head;
-            this.body = options.body;
+            this.container = options.container;
             this.calendarCell = options.calendarCell;
             this.organization = options.organization;
             this.timeline = new window.AdCalendar.modules.CalendarTimeline();
         }
 
         render(employees, state) {
-            const days = this.days(state.monday);
             const orderedEmployees = this.orderedEmployees(employees);
-            if (state.vertical) this.vertical(orderedEmployees, state, days);
-            else this.horizontal(orderedEmployees, state, days);
+            const range = state.visibleRange();
+            const blocks = range.weeks.map(monday => this.weekBlock(orderedEmployees, state, monday));
+            this.container.classList.toggle('adc-month-weeks', state.period === 'month');
+            this.container.replaceChildren(...blocks);
         }
 
-        vertical(employees, state, days) {
+        weekBlock(employees, state, monday) {
+            const block = document.createElement('section');
+            block.className = 'adc-week-block';
+            const days = this.days(monday);
+            if (state.period === 'month') {
+                const sunday = days[6];
+                const heading = this.node('h3', `KW ${CalendarDate.isoWeekValue(monday).split('-W')[1]} · ${monday.toLocaleDateString('de-DE')} – ${sunday.toLocaleDateString('de-DE')}`);
+                block.append(heading);
+            }
+            const wrap = document.createElement('div');
+            wrap.className = 'adc-table-wrap';
+            const table = document.createElement('table');
+            table.className = 'adc-calendar';
+            const caption = this.node('caption', 'Geplante Dienste und Termine je Mitarbeiter*in');
+            const head = document.createElement('thead');
+            const body = document.createElement('tbody');
+            table.append(caption, head, body);
+            wrap.append(table);
+            block.append(wrap);
+            const activeMonth = state.period === 'month' ? state.month : null;
+            if (state.period === 'month' || state.vertical) this.vertical(employees, state, days, head, body, activeMonth);
+            else this.horizontal(employees, state, days, head, body);
+            return block;
+        }
+
+        vertical(employees, state, days, head, body, activeMonth = null) {
             const header = document.createElement('tr'); header.append(this.node('th', 'Mitarbeiter*in'));
-            for (const day of days) header.append(this.node('th', day.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })));
-            this.head.replaceChildren(header);
+            for (const day of days) header.append(this.node('th', day.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' }), this.outsideMonth(day, activeMonth) ? 'adc-outside-month' : ''));
+            head.replaceChildren(header);
 
             const rows = [];
             let previousCluster = null;
@@ -41,16 +66,16 @@
                 name.scope = 'row'; row.append(name);
                 const employeeEntries = state.data.entries.filter(entry => entry.employeeUid === employee.uid);
                 const layout = this.timeline.layout(employeeEntries, days);
-                for (const day of days) row.append(this.cellFor(employee, day, state.data.entries, state.data.absences || [], layout));
+                for (const day of days) row.append(this.cellFor(employee, day, state.data.entries, state.data.absences || [], layout, activeMonth));
                 rows.push(row);
             }
-            this.body.replaceChildren(...rows);
+            body.replaceChildren(...rows);
         }
 
-        horizontal(employees, state, days) {
+        horizontal(employees, state, days, head, body) {
             const header = document.createElement('tr'); header.append(this.node('th', 'Tag'));
             for (const employee of employees) header.append(this.node('th', employee.displayName, state.selected.has(employee.uid) ? 'adc-selected' : ''));
-            this.head.replaceChildren(header);
+            head.replaceChildren(header);
             const rows = days.map(day => {
                 const row = document.createElement('tr');
                 const label = this.node('th', day.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit' }));
@@ -62,18 +87,23 @@
                 for (const employee of employees) row.append(this.cellFor(employee, day, state.data.entries, state.data.absences || [], layout));
                 return row;
             });
-            this.body.replaceChildren(...rows);
+            body.replaceChildren(...rows);
         }
 
-        cellFor(employee, day, allEntries, allAbsences, layout) {
+        cellFor(employee, day, allEntries, allAbsences, layout, activeMonth = null) {
             const cell = document.createElement('td');
             const dayEnd = new Date(day); dayEnd.setDate(dayEnd.getDate() + 1);
             const entries = allEntries.filter(entry => entry.employeeUid === employee.uid && new Date(entry.start) < dayEnd && new Date(entry.end) > day);
             const absences = allAbsences.filter(absence => absence.employeeUid === employee.uid && new Date(absence.start) < dayEnd && new Date(absence.end) > day);
             cell.dataset.employeeUid = employee.uid;
             cell.dataset.day = CalendarDate.isoDay(day);
+            if (this.outsideMonth(day, activeMonth)) cell.classList.add('adc-outside-month');
             cell.innerHTML = this.calendarCell.render(entries, employee, absences, layout, day, this.timeline);
             return cell;
+        }
+
+        outsideMonth(day, activeMonth) {
+            return activeMonth !== null && (day.getFullYear() !== activeMonth.getFullYear() || day.getMonth() !== activeMonth.getMonth());
         }
 
         clusterLabel(employee) {

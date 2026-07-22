@@ -21,6 +21,7 @@ AD Kalender uebertraegt den fachlichen Kern des bisherigen WordPress-Plugins `ad
 Kernprozess:
 
 - Eine Wochenansicht zeigt Mitarbeiter*innen als Zeilen und Kalendertage als Spalten.
+- Eine umschaltbare Monatsansicht zeigt die betroffenen Wochenblöcke untereinander, behält Mitarbeiter*innen als Zeilen bei, dimmt Randtage und fixiert die Personenspalte beim horizontalen Scrollen.
 - Dienste besitzen Mitarbeiter*in, Beginn und Ende. Der Titel bleibt bei Diensten optional.
 - Termine besitzen zusaetzlich einen sprechenden Titel.
 - Termine innerhalb eines Dienstes werden diesem Dienst in der Darstellung zugeordnet.
@@ -41,6 +42,9 @@ Kernprozess:
 - Das Opt-out entfernt alle von AD Kalender erzeugten Dienstobjekte. Fremde Objekte im reservierten Kalender bleiben unangetastet; der Kalender selbst wird nur gelöscht, wenn er danach leer ist. DAV-Fehler nach einer fachlichen Mutation rollen die führenden AD-Daten nicht zurück, sondern werden sicher protokolliert. Provideradapter und deterministische Kalender-, Objekt- und Ereigniskennungen halten einen späteren bidirektionalen Ausbau offen.
 - Ein zeitunkritischer, nicht paralleler Nextcloud-Hintergrundjob wird im 15-Minuten-Intervall fällig; der tatsächliche Start richtet sich nach der Nextcloud-Cron-Ausführung. Er gleicht alle standardmäßig aktiven Konten mit Diensten sowie ausdrücklich aktivierte Konten vollständig ab und respektiert gespeicherte Opt-outs; der Fehler einer Person blockiert keine weiteren Konten. Bei einem bidirektionalen Ausbau bleibt dieser Lauf der ausgehende Konsistenzschritt nach Providerimport und fachlicher Konfliktauflösung; er darf diese beiden künftigen Schritte nicht vorwegnehmen.
 - Der Adminstatus dieses Hintergrundjobs speichert und zeigt ausschließlich Zeitpunkt sowie aggregierte Anzahlen des letzten ausgehenden Laufs. Konto-, Kalender- und Fehlerkennungen bleiben ausgeschlossen; eine explizite Richtungsangabe im internen Statusvertrag hält spätere getrennte Import-/Export-Aggregate offen.
+- Jede angemeldete Person kann im eigenen Einstellungs-Tab Kopano, Google, Apple und einen manuellen CalDAV-Anbieter verbinden. Kopano ist mit `https://mail.adberlin.org` vorbelegt, bleibt aber änderbar. Externe Anbieter erhalten einen sichtbaren, app-eigenen Kalender „AD Dienste“; ihre Kalenderinhalte werden nicht in AD Calendar eingeblendet.
+- Persönliche CalDAV-Zugangsdaten und Google-Tokens werden mit Nextclouds Kryptodienst verschlüsselt und als sensible Benutzerkonfiguration gespeichert. Antworten und Logs enthalten weder Passwörter, Tokens, Konto- noch Kalenderkennungen. Google benötigt einen systemweit administrierten OAuth-Webclient; ohne ihn bleibt der persönliche Verbindungsweg deaktiviert.
+- Persönliche Providerverbindungen können parallel bestehen und arbeiten unabhängig vom Opt-out für den internen Nextcloud-Kalender. Ein Providerfehler blockiert weder andere Provider noch die führende AD-Mutation. Der Abgleich bleibt einseitig und überträgt auch extern ausschließlich Dienste.
 - Das Kalender-Demo-Pack wird ausschließlich nach ausdrücklicher Bestätigung im app-eigenen Nextcloud-Adminabschnitt installiert; `adcalendar:demo:seed` delegiert auf denselben Service. Es synchronisiert neutrale, benannte Demokonten für jede Kalenderrolle und jeden Bürobereich. Namen tragen die fachliche Demo-Zuordnung in Klammern; Mehrfachrollen werden auch in Gruppentiteln als Hauptrolle mit weiteren Rollen in Klammern dargestellt.
 - Demo-Provisioning übernimmt niemals ein vorhandenes fremdes oder LDAP-verwaltetes Konto. Read-only LDAP-Gruppen brechen das Pack im Preflight vor der ersten Mutation ab; eigene lokale Demokonten werden explizit in LocalBase registriert.
 - Ist `adurlaub` aktiviert, erscheinen geplante Urlaube read-only als `U?` ohne Blockade. Genehmigte Urlaube erscheinen als `U`, blockieren neue Dienste/Termine, verhindern Standarddienst-Materialisierung und werden aus Meetingluecken entfernt. Genehmigungen mit bestehenden Eintraegen werden ueber einen read-only Konfliktvertrag bereits in `adurlaub` abgelehnt.
@@ -82,7 +86,7 @@ Hierarchie fuer Fremdbearbeitung:
 
 Offene Fachentscheidungen:
 - Dienste derselben Person duerfen sich nicht ueberschneiden; dadurch bleibt die Terminzuordnung eindeutig.
-- Welche Auswertungszeitraeume neben der Woche benoetigt werden.
+- Welche Auswertungszeitraeume neben Woche und Monat benoetigt werden.
 - Die offenen Entscheidungen für externe Systeme, Wiederholungsmechanismen und einen möglichen späteren Rückimport sind in `ROADMAP.md` beschrieben.
 
 Nicht Bestandteil:
@@ -119,6 +123,9 @@ Urlaubsansichten sind dynamisch ergänzbare Rollen-/Bereichsschnitte. Die Standa
 - Persistente Kernobjekte nutzen `get(...)`, `get_all([...])`, `toArray()` und nur bei Store-Bindung `save()`.
 - Dienste und Termine werden als ein gemeinsamer Kalendereintrag mit explizitem Typ modelliert; die fachliche Darstellung eines externen Termins als Sperrtermin wird abgeleitet und nicht als widerspruechliche zweite Datenwahrheit gespeichert.
 - Termine innerhalb eines Dienstes referenzieren diesen explizit ueber `parent_entry_id`; Termine ohne Parent sind Sperrtermine.
+- Einzeltermine und Sperrtermine können täglich, wöchentlich oder monatlich mit Intervall und verpflichtendem Enddatum wiederholt werden. Eine Serie enthält mindestens zwei und höchstens 500 materialisierte Vorkommen; Monate ohne den gewählten Kalendertag werden ausgelassen. Die lokale Uhrzeit bleibt anhand der beim Anlegen verwendeten IANA-Zeitzone über Zeitumstellungen stabil.
+- Ein Vorkommen einer Terminserie kann als Ausnahme einzeln oder gemeinsam mit der vollständigen Serie bearbeitet und gelöscht werden. „Dieses und folgende“ ist nicht Bestandteil dieser Ausbaustufe. Dienste und gemeinsam verknüpfte Meetings werden nicht über diesen Serienvertrag wiederholt.
+- Serien werden vollständig vorgeprüft und atomar gespeichert. Ein genehmigter Urlaub oder eine andere serverseitige Sperre an einem Vorkommen bricht die gesamte Mutation mit Datumsangabe ab; kein Vorkommen wird stillschweigend ausgelassen.
 - Materialisierte Standarddienste tragen ein eindeutiges Mitarbeiter*innen-/Datumsmerkmal. `default_modified` schuetzt Einzelabweichungen vor spaeterer Seriensynchronisierung; `default_deleted` bewahrt eine Loeschausnahme als Tombstone.
 - Bestehende Eintraege duerfen ihren Typ nicht wechseln; Dienst und Termin haben unterschiedliche Folge- und Loeschvertraege.
 - Beim Loeschen eines Dienstes muss zwischen gemeinsamem Loeschen der Termine und deren Erhalt als Sperrtermine gewaehlt werden.
@@ -126,6 +133,7 @@ Urlaubsansichten sind dynamisch ergänzbare Rollen-/Bereichsschnitte. Die Standa
 - Der Frontend-Unterbau nutzt die vorhandenen LocalBase-Vertraege `ApiClient`, `Repository`, `Model` und `Notice`; AD-Kalender-spezifische API-Pfade, Modelle und Renderinglogik bleiben in diesem Repo.
 - Sichtbare Gruppenbezeichnungen, Filter, Leitungsblock, Hierarchiedarstellung und Demo-Gruppenzuordnungen werden aus der gemeinsamen Organisationsdefinition abgeleitet.
 - Die Fachschicht spricht für den persönlichen Dienstabgleich ausschließlich `ShiftCalendarPublisher` an. Der bewusst freigegebene interne Nextcloud-DAV-Vertrag `OCA\DAV\CalDAV\CalDavBackend` bleibt auf `NextcloudDavShiftCalendarPublisher` begrenzt und kann durch einen anderen Provideradapter ersetzt werden.
+- Externe Provideradapter verwenden ausschließlich den Nextcloud-HTTP-Client. Nutzerkonfigurierte CalDAV-Adressen müssen HTTPS nutzen, bleiben auf denselben Ursprung begrenzt und unterliegen zusätzlich Nextclouds SSRF-Schutz; Zugangsdaten werden nie an einen Discovery-Ursprung auf einem anderen Host weitergereicht.
 - `ShiftCalendarReconciliationService` leitet standardmäßig aktive Konten ausschließlich aus dem vorhandenen AD-Dienstbestand und ausdrücklich aktivierten persönlichen Einstellungen ab, respektiert native Nextcloud-Opt-outs und stellt den vollständigen ausgehenden Dienstbestand wieder her. Background-Jobs erhalten dadurch keine zusätzlichen Planungs- oder Leserechte, enumerieren nicht pauschal alle Nextcloud-Konten und erzeugen keine zweite Fachdatenhaltung.
 - Die UI bleibt per Tastatur bedienbar, verwendet semantische Tabellen/Listen, sichtbare Fokuszustaende und Textkennzeichnungen zusaetzlich zu Farben.
 - Keine vorsorgliche gemeinsame Library und keine WordPress-Kompatibilitaetsschicht.

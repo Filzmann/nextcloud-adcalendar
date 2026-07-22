@@ -24,9 +24,24 @@ final class CalendarService {
 
     public function week(DateTimeImmutable $start, array $employees): array {
         $end = $start->modify('+7 days');
-        $absences = $this->absences->query($start, $end, array_column($employees, 'uid'));
-        $this->defaultShifts->syncWeek($start, array_column($employees, 'uid'), $absences);
-        $entries = $this->entries->findRange($start, $end, array_column($employees, 'uid'));
+        return $this->range($start, $end, $employees);
+    }
+
+    /**
+     * Liefert vollständige Kalenderwochen für Wochen- und Monatsansichten in einem gemeinsamen Lesevorgang.
+     * Der Bereich ist auf sechs Wochen begrenzt, damit UI-Parameter keine unbeschränkte Materialisierung auslösen.
+     */
+    public function range(DateTimeImmutable $start, DateTimeImmutable $end, array $employees): array {
+        $days = (int)$start->diff($end)->format('%r%a');
+        if ($start->format('N') !== '1' || $end->format('N') !== '1' || $days < 7 || $days > 42 || $days % 7 !== 0) {
+            throw new InvalidArgumentException('Der Kalenderbereich muss eine bis sechs vollständige Wochen (maximal 42 Tage) umfassen.');
+        }
+        $employeeUids = array_column($employees, 'uid');
+        $absences = $this->absences->query($start, $end, $employeeUids);
+        for ($week = $start; $week < $end; $week = $week->modify('+7 days')) {
+            $this->defaultShifts->syncWeek($week, $employeeUids, $absences);
+        }
+        $entries = $this->entries->findRange($start, $end, $employeeUids);
         return [
             'start' => $start->format('Y-m-d'),
             'end' => $end->format('Y-m-d'),
@@ -42,6 +57,12 @@ final class CalendarService {
             $existing = $previous = $this->existing($id);
             if ($existing->meetingUid() !== null) {
                 throw new InvalidArgumentException('Gemeinsame Meetings werden zusammen bearbeitet.');
+            }
+            if ($existing->seriesUid() !== null) {
+                $payload = array_replace($payload, [
+                    'seriesUid' => $existing->seriesUid(),
+                    'seriesTimezone' => $existing->seriesTimezone(),
+                ]);
             }
             if ($existing->defaultDate() !== null) {
                 if ($existing->employeeUid() !== (string)($payload['employeeUid'] ?? '')) {

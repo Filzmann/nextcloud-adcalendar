@@ -19,20 +19,31 @@
         async save(data) {
             try {
                 const existing = this.state.data.entries.find(entry => entry.id === Number(data.id));
+                let message = 'Eintrag gespeichert.';
                 if (existing?.meetingUid) {
                     if (!existing.canManageMeeting) throw new Error('Das gemeinsame Meeting darf nur bearbeitet werden, wenn alle beteiligten Kalender bearbeitet werden dürfen.');
                     await this.repository.updateMeeting(existing.meetingUid, data.start, data.end, data.title);
+                    message = 'Meeting für alle Beteiligten gespeichert.';
                 } else {
-                    await this.repository.save({
+                    const seriesScope = existing?.seriesUid ? await this.seriesChoice('bearbeiten') : 'occurrence';
+                    if (seriesScope === null) return;
+                    const result = await this.repository.save({
                         employeeUid: data.employeeUid,
                         type: data.type,
                         start: data.start,
                         end: data.end,
                         title: data.title,
-                    }, data.id);
+                        recurrenceFrequency: data.recurrenceFrequency,
+                        recurrenceInterval: data.recurrenceInterval,
+                        recurrenceUntil: data.recurrenceUntil,
+                        recurrenceWeekdays: data.recurrenceWeekdays,
+                        recurrenceTimezone: data.recurrenceTimezone,
+                    }, data.id, seriesScope);
+                    if (result?.seriesCount > 1) message = `${result.seriesCount} Serientermine gespeichert.`;
+                    else if (existing?.seriesUid) message = 'Serientermin gespeichert.';
                 }
                 this.dialog.close();
-                this.show(existing?.meetingUid ? 'Meeting für alle Beteiligten gespeichert.' : 'Eintrag gespeichert.');
+                this.show(message);
                 await this.reload();
             } catch (error) {
                 this.show(error, true);
@@ -45,6 +56,8 @@
                 return;
             }
             let mode = '';
+            const seriesScope = entry.seriesUid ? await this.seriesChoice('löschen') : 'occurrence';
+            if (seriesScope === null) return;
             if (entry.type === 'shift') {
                 try {
                     await this.repository.remove(entry.id);
@@ -59,12 +72,12 @@
                     mode = await this.deletionChoice(error.data.children.length);
                 }
                 if (mode === null) return;
-            } else if (!window.confirm('Termin wirklich löschen?')) {
+            } else if (!entry.seriesUid && !window.confirm('Termin wirklich löschen?')) {
                 return;
             }
             try {
-                await this.repository.remove(entry.id, mode);
-                this.show(mode === 'detach' ? 'Dienst gelöscht; Termine sind jetzt Sperrtermine.' : 'Eintrag gelöscht.');
+                await this.repository.remove(entry.id, mode, seriesScope);
+                this.show(seriesScope === 'series' ? 'Terminserie gelöscht.' : mode === 'detach' ? 'Dienst gelöscht; Termine sind jetzt Sperrtermine.' : 'Eintrag gelöscht.');
                 await this.reload();
             } catch (error) {
                 this.show(error, true);
@@ -120,6 +133,35 @@
                 title.id = 'adc-delete-title';
                 dialog.append(title, this.node('p', `Der Dienst enthält ${count} Termin(e). Was soll damit geschehen?`));
                 [['delete', 'Dienst und Termine löschen'], ['detach', 'Nur Dienst löschen; Termine als Sperrtermine behalten'], [null, 'Abbrechen']]
+                    .forEach(([value, label]) => {
+                        const button = this.node('button', label);
+                        button.type = 'button';
+                        button.addEventListener('click', () => finish(value));
+                        dialog.append(button);
+                    });
+                dialog.addEventListener('cancel', event => { event.preventDefault(); finish(null); });
+                document.body.append(dialog);
+                dialog.showModal();
+            });
+        }
+
+        seriesChoice(action) {
+            return new Promise(resolve => {
+                const dialog = document.createElement('dialog');
+                dialog.className = 'adc-dialog adc-delete-dialog';
+                dialog.setAttribute('aria-labelledby', 'adc-series-scope-title');
+                let settled = false;
+                const finish = value => {
+                    if (settled) return;
+                    settled = true;
+                    dialog.close();
+                    dialog.remove();
+                    resolve(value);
+                };
+                const title = this.node('h2', `Serientermin ${action}`);
+                title.id = 'adc-series-scope-title';
+                dialog.append(title, this.node('p', `Soll nur dieses Vorkommen oder die gesamte Serie ${action} werden?`));
+                [['occurrence', 'Nur dieses Vorkommen'], ['series', 'Gesamte Serie'], [null, 'Abbrechen']]
                     .forEach(([value, label]) => {
                         const button = this.node('button', label);
                         button.type = 'button';
