@@ -13,6 +13,7 @@ const shiftDefaults = readFileSync(new URL('../../js/components/shift-defaults.j
 const shiftCalendarSync = readFileSync(new URL('../../js/components/shift-calendar-sync.js', import.meta.url), 'utf8');
 const externalCalendars = readFileSync(new URL('../../js/components/external-calendars.js', import.meta.url), 'utf8');
 const dateSource = readFileSync(new URL('../../js/modules/calendar-date.js', import.meta.url), 'utf8');
+const publicHolidaysSource = readFileSync(new URL('../../js/modules/berlin-public-holidays.js', import.meta.url), 'utf8');
 const timelineSource = readFileSync(new URL('../../js/modules/calendar-timeline.js', import.meta.url), 'utf8');
 const stateSource = readFileSync(new URL('../../js/modules/calendar-state.js', import.meta.url), 'utf8');
 const entryWorkflow = readFileSync(new URL('../../js/modules/entry-workflow.js', import.meta.url), 'utf8');
@@ -114,6 +115,14 @@ navigation.setPeriod('week');
 if (navigation.state.period !== 'week' || navigation.state.monday.getDay() !== 1) {
     throw new Error('Umschalter stellt beim Wechsel zur Woche keinen gültigen Wochenanfang her.');
 }
+const navigationElement = () => ({ hidden: null, value: '', textContent: '', attributes: {}, setAttribute(name, value) { this.attributes[name] = value; } });
+const monthNavigation = Object.create(navigationContext.window.AdCalendar.components.WeekNavigation.prototype);
+monthNavigation.state = { monday: new Date(2026, 6, 13), month: new Date(2026, 6, 1), period: 'month', vertical: false };
+for (const property of ['label', 'weekNumber', 'monthNumber', 'weekPicker', 'monthPicker', 'previous', 'next', 'weekButton', 'monthButton', 'toggleView', 'heading']) monthNavigation[property] = navigationElement();
+monthNavigation.render();
+if (monthNavigation.toggleView.hidden !== false || monthNavigation.toggleView.textContent !== 'Personen als Zeilen' || monthNavigation.toggleView.attributes['aria-pressed'] !== 'true') {
+    throw new Error('Ausrichtungsumschalter bleibt in der Monatsansicht nicht sichtbar oder verliert seinen Zustand.');
+}
 class FakeNode {
     constructor(tag = 'div') {
         this.tagName = tag.toUpperCase(); this.children = []; this.dataset = {}; this.className = ''; this.textContent = '';
@@ -128,8 +137,16 @@ class FakeNode {
 const tableDocument = { createElement: tag => new FakeNode(tag) };
 const tableContext = { window: {}, document: tableDocument, Date, Number, Set, Math };
 runInNewContext(dateSource, tableContext);
+runInNewContext(publicHolidaysSource, tableContext);
 runInNewContext(timelineSource, tableContext);
 runInNewContext(weekTable, tableContext);
+const publicHolidays = new tableContext.window.AdCalendar.modules.BerlinPublicHolidays();
+if (publicHolidays.name(new Date(2026, 4, 1)) !== 'Tag der Arbeit'
+    || publicHolidays.name(new Date(2026, 3, 3)) !== 'Karfreitag'
+    || publicHolidays.name(new Date(2028, 5, 17)) !== '75. Jahrestag des Aufstandes vom 17. Juni 1953'
+    || publicHolidays.name(new Date(2026, 4, 2)) !== '') {
+    throw new Error('Gesetzliche Berliner Feiertage werden nicht vollständig und datumsstabil bestimmt.');
+}
 const clusterTable = Object.create(tableContext.window.AdCalendar.components.WeekTable.prototype);
 clusterTable.organization = () => ({
     staffRoleGroups: () => [], staffBlockLabel: 'Leitungen',
@@ -165,7 +182,22 @@ const flattenNodes = node => [node, ...node.children.flatMap(flattenNodes)];
 const renderedNodes = flattenNodes(monthContainer);
 if (monthContainer.children.length !== 5 || !monthContainer.className.includes('adc-month-weeks')) throw new Error('Monatsansicht rendert nicht alle betroffenen Wochenblöcke.');
 if (!renderedNodes.some(node => node.className.includes('adc-outside-month'))) throw new Error('Randtage der Monatsansicht werden nicht gekennzeichnet.');
-if (!renderedNodes.some(node => node.tagName === 'TH' && node.scope === 'row' && node.textContent === 'Person A')) throw new Error('Monatsansicht behält Personen als Zeilen bei.');
+if (!renderedNodes.some(node => node.tagName === 'TH' && node.scope === 'col' && node.className.includes('adc-person-heading') && node.textContent === 'Person A')) throw new Error('Monatsansicht übernimmt die gewählte Ausrichtung mit Personen als Spalten nicht.');
+if (renderedNodes.some(node => node.tagName === 'TH' && node.scope === 'row' && node.textContent === 'Person A')) throw new Error('Monatsansicht erzwingt trotz Umschaltung weiterhin Personen als Zeilen.');
+if (!renderedNodes.some(node => node.tagName === 'TH' && node.scope === 'row' && node.className.includes('adc-weekend') && node.textContent.includes('Wochenende'))) throw new Error('Wochenenden werden in der Tagesbeschriftung nicht barrierefrei gekennzeichnet.');
+if (!renderedNodes.some(node => node.tagName === 'TD' && node.className.includes('adc-weekend'))) throw new Error('Wochenendspalten oder -zeilen werden in der Kalendermatrix nicht markiert.');
+monthTable.render([{ uid: 'person-a', displayName: 'Person A', roles: ['ad-Buero'], areas: ['ad-Bereich-West'] }], {
+    period: 'month', month: new Date(2026, 6, 1), vertical: true, selected: new Set(),
+    data: { entries: [], absences: [] },
+    visibleRange: () => monthDate.monthRange(new Date(2026, 6, 1)),
+});
+const verticalMonthNodes = flattenNodes(monthContainer);
+if (!verticalMonthNodes.some(node => node.tagName === 'TH' && node.scope === 'row' && node.className.includes('adc-person-heading') && node.textContent === 'Person A')) throw new Error('Personenspalte der Monatsansicht ist nicht als fixierter Personenbezug gekennzeichnet.');
+if (!verticalMonthNodes.some(node => node.tagName === 'TH' && node.scope === 'col' && node.className.includes('adc-weekend') && node.textContent.includes('Wochenende'))) throw new Error('Wochenendspalten werden in der vertikalen Monatsausrichtung nicht barrierefrei gekennzeichnet.');
+if (!monthTable.dayLabel(new Date(2026, 4, 1), { weekday: 'long', day: '2-digit', month: '2-digit' }).includes('Tag der Arbeit')
+    || !monthTable.dayClasses(new Date(2026, 4, 1), null).includes('adc-holiday')) {
+    throw new Error('Berliner Feiertage erhalten in der Kalendermatrix keine sichtbare und textliche Kennzeichnung.');
+}
 for (const contract of ["params.set('people'", "params.set('roles'", "params.set('areas'", "params.set('period', 'month')", 'this.data.defaultFilters ||', 'this.data.currentUserProfile?.roles', 'if (this.selected.size) return this.selected.has(employee.uid)', 'showLeadershipStaff: this.showLeadershipStaff', 'period: this.period']) {
     if (!stateSource.includes(contract)) throw new Error(`Kalenderzustandsvertrag fehlt: ${contract}`);
 }
@@ -201,7 +233,7 @@ for (const contract of ['class ShiftDefaults', 'Array.from({ length: 7 }', 'data
 for (const contract of ['class ShiftCalendarSync', 'this.onSave(this.input.checked)', 'status.calendarName', 'Kalender ist aktiv']) {
     if (!shiftCalendarSync.includes(contract)) throw new Error(`Dienstkalender-Komponentenvertrag fehlt: ${contract}`);
 }
-for (const contract of ['class ExternalCalendars', "provider === 'google'", 'window.location.assign(response.authorizationUrl)', 'this.dialog.showModal()', 'this.repository.connectCalDav', 'this.repository.disconnectExternalCalendar', 'window.confirm(', 'this.password.value = \'\'', 'https://mail.adberlin.org']) {
+for (const contract of ['class ExternalCalendars', "provider === 'google'", 'window.location.assign(response.authorizationUrl)', 'this.dialog.showModal()', 'this.repository.connectCalDav', 'this.repository.disconnectExternalCalendar', 'window.confirm(', 'this.password.value = \'\'', 'https://mail.adberlin.org', 'Der Kopano-Betreiber muss CalDAV']) {
     if (!externalCalendars.includes(contract)) throw new Error(`Externe-Kalender-Komponentenvertrag fehlt: ${contract}`);
 }
 const externalElements = {};
